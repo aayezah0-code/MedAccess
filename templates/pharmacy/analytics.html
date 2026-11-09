@@ -1,0 +1,1760 @@
+{% extends 'pharmacy/base_pharmacy.html' %}
+
+{% block title %}Analytics & Reports | Pharmacy Portal | MedAccess{% endblock title %}
+{% block header_title %}Analytics & Reports{% endblock header_title %}
+{% block nav_analytics %}active{% endblock nav_analytics %}
+
+{% block content %}
+<div class="analytics-page-wrapper" style="display: flex; flex-direction: column; gap: 1.75rem;">
+
+    <!-- 1. Hero Overview Banner -->
+    <div class="welcome-card" style="background: linear-gradient(135deg, #042f2e 0%, #0f766e 100%); color: #ffffff; padding: 2rem; border-radius: var(--radius-md); box-shadow: var(--shadow-md);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1.25rem;">
+            <div>
+                <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+                    <span class="status-badge" style="background: rgba(220, 252, 231, 0.2); color: #86efac; border: 1px solid rgba(134, 239, 172, 0.4); font-size: 0.75rem; padding: 0.25rem 0.625rem; border-radius: 9999px; font-weight: 600; display: inline-flex; align-items: center; gap: 0.375rem;">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        Clinical Intelligence
+                    </span>
+                    <span style="font-size: 0.8125rem; color: #ccfbf1;">Tata 1mg Verified Dataset Integrated</span>
+                </div>
+                <h1 style="font-size: 1.75rem; font-weight: 700; margin: 0; color: #ffffff; letter-spacing: -0.02em;">
+                    Analytics & Operational Reports
+                </h1>
+                <p style="margin-top: 0.5rem; margin-bottom: 0; color: #ccfbf1; max-width: 680px; font-size: 0.9375rem; line-height: 1.55;">
+                    Track real-time inventory performance, analyze store health, and instantly look up verified salt compositions across over 273,000 pharmaceutical formulations.
+                </p>
+            </div>
+
+            <div style="background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); padding: 1.125rem 1.375rem; border-radius: var(--radius-sm); border: 1px solid rgba(255, 255, 255, 0.15); min-width: 240px;">
+                <div style="font-size: 0.75rem; color: #ccfbf1; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;">Store Profile</div>
+                <div style="font-weight: 700; font-size: 1rem; color: #ffffff; margin-top: 0.25rem;">
+                    {{ pharmacy_profile.pharmacy_name|default:"Partner Pharmacy" }}
+                </div>
+                <div style="font-size: 0.8125rem; color: #99f6e4; margin-top: 0.35rem; display: flex; align-items: center; gap: 0.375rem;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                        <circle cx="12" cy="10" r="3"></circle>
+                    </svg>
+                    {{ pharmacy_profile.city|default:"City" }}, {{ pharmacy_profile.state|default:"State" }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Operational Metrics Overview Grid -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.25rem;">
+
+        <!-- Card 1: Active Inventory Items -->
+        <div style="background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 1.35rem; box-shadow: var(--shadow-subtle); display: flex; flex-direction: column; justify-content: space-between;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div>
+                    <span style="font-size: 0.75rem; color: var(--color-text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;">Stocked Medicines</span>
+                    <div style="font-size: 2rem; font-weight: 800; color: var(--color-text-main); line-height: 1.2; margin-top: 0.35rem;">
+                        {{ total_inventory_items }}
+                    </div>
+                </div>
+                <div style="width: 40px; height: 40px; border-radius: var(--radius-sm); background: #ecfdf5; color: #059669; display: flex; align-items: center; justify-content: center;">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                        <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                        <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                    </svg>
+                </div>
+            </div>
+            <div style="margin-top: 0.85rem; font-size: 0.8125rem; color: var(--color-text-muted); border-top: 1px solid var(--color-border); padding-top: 0.65rem; display: flex; justify-content: space-between;">
+                <span>Total Units in Stock:</span>
+                <strong style="color: var(--color-text-main);">{{ total_units_in_stock }}</strong>
+            </div>
+        </div>
+
+        <!-- Card 2: Batch Health & Alerts -->
+        <div style="background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 1.35rem; box-shadow: var(--shadow-subtle); display: flex; flex-direction: column; justify-content: space-between;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div>
+                    <span style="font-size: 0.75rem; color: var(--color-text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;">Active Batches</span>
+                    <div style="font-size: 2rem; font-weight: 800; color: var(--color-text-main); line-height: 1.2; margin-top: 0.35rem;">
+                        {{ active_batches }}
+                    </div>
+                </div>
+                <div style="width: 40px; height: 40px; border-radius: var(--radius-sm); background: #fef3c7; color: #d97706; display: flex; align-items: center; justify-content: center;">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                </div>
+            </div>
+            <div style="margin-top: 0.85rem; font-size: 0.8125rem; color: var(--color-text-muted); border-top: 1px solid var(--color-border); padding-top: 0.65rem; display: flex; justify-content: space-between;">
+                <span>Low Stock Alerts:</span>
+                <strong style="color: {% if low_stock_count > 0 %}#dc2626{% else %}#16a34a{% endif %};">{{ low_stock_count }}</strong>
+            </div>
+        </div>
+
+        <!-- Card 3: Patient Feedback Rating -->
+        <div style="background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 1.35rem; box-shadow: var(--shadow-subtle); display: flex; flex-direction: column; justify-content: space-between;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div>
+                    <span style="font-size: 0.75rem; color: var(--color-text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;">Patient Rating</span>
+                    <div style="font-size: 2rem; font-weight: 800; color: var(--color-text-main); line-height: 1.2; margin-top: 0.35rem; display: flex; align-items: baseline; gap: 0.35rem;">
+                        {% if total_feedback > 0 %}
+                            {{ avg_rating }} <span style="font-size: 1rem; color: var(--color-text-muted); font-weight: 500;">/ 5.0</span>
+                        {% else %}
+                            <span style="font-size: 1.5rem; color: var(--color-text-muted);">No Ratings</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div style="width: 40px; height: 40px; border-radius: var(--radius-sm); background: #fef9c3; color: #ca8a04; display: flex; align-items: center; justify-content: center;">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                    </svg>
+                </div>
+            </div>
+            <div style="margin-top: 0.85rem; font-size: 0.8125rem; color: var(--color-text-muted); border-top: 1px solid var(--color-border); padding-top: 0.65rem; display: flex; justify-content: space-between;">
+                <span>Total Patient Reviews:</span>
+                <strong style="color: var(--color-text-main);">{{ total_feedback }}</strong>
+            </div>
+        </div>
+
+        <!-- Card 4: Verified Composition Database -->
+        <div style="background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 1.35rem; box-shadow: var(--shadow-subtle); display: flex; flex-direction: column; justify-content: space-between;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div>
+                    <span style="font-size: 0.75rem; color: var(--color-text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;">Verified Formulations</span>
+                    <div style="font-size: 2rem; font-weight: 800; color: #0f766e; line-height: 1.2; margin-top: 0.35rem;">
+                        {{ verified_dataset_count_display|default:verified_dataset_count|default:"273,929" }}
+                    </div>
+                </div>
+                <div style="width: 40px; height: 40px; border-radius: var(--radius-sm); background: #ccfbf1; color: #0f766e; display: flex; align-items: center; justify-content: center;">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                        <polyline points="9 12 11 14 15 10"></polyline>
+                    </svg>
+                </div>
+            </div>
+            <div style="margin-top: 0.85rem; font-size: 0.8125rem; color: var(--color-text-muted); border-top: 1px solid var(--color-border); padding-top: 0.65rem; display: flex; justify-content: space-between;">
+                <span>Tata 1mg Clinical Index:</span>
+                <strong style="color: #0f766e;">100% Indexed</strong>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- 3. Dedicated Section: Medicine Composition Lookup -->
+    <div id="composition-lookup-section" style="background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); box-shadow: var(--shadow-md); overflow: hidden;">
+
+        <!-- Section Header -->
+        <div style="padding: 1.5rem 1.75rem; border-bottom: 1px solid var(--color-border); background: linear-gradient(to right, rgba(15, 118, 110, 0.04), transparent); display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+            <div>
+                <div style="display: flex; align-items: center; gap: 0.65rem;">
+                    <span style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: var(--radius-sm); background: #0f766e; color: #ffffff;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                    </span>
+                    <h2 style="font-size: 1.35rem; font-weight: 700; margin: 0; color: var(--color-text-main); letter-spacing: -0.01em;">
+                        Medicine Composition Lookup
+                    </h2>
+                    <span style="font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; background: #ccfbf1; color: #0f766e; padding: 0.2rem 0.55rem; border-radius: 9999px; letter-spacing: 0.04em;">
+                        Verified Clinical DB
+                    </span>
+                </div>
+                <p style="margin: 0.4rem 0 0 0; color: var(--color-text-muted); font-size: 0.875rem; max-width: 680px; line-height: 1.5;">
+                    Search any branded or generic medicine to instantly retrieve its verified Active Pharmaceutical Ingredients (APIs), manufacturer details, and packaging strengths from the clinical Tata 1mg dataset.
+                </p>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; color: var(--color-text-muted); background: var(--color-bg); padding: 0.4rem 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--color-border);">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 14 14"></polyline>
+                </svg>
+                <span>Sub-millisecond Indexed Search</span>
+            </div>
+        </div>
+
+        <!-- Search Form Container -->
+        <div style="padding: 1.75rem; background: var(--color-surface);">
+            <form id="composition-search-form" method="GET" action="." style="display: flex; flex-direction: column; gap: 0.875rem;">
+                <div style="display: flex; gap: 0.75rem; align-items: stretch; flex-wrap: wrap;">
+                    
+                    <!-- Search Input Wrapper -->
+                    <div style="position: relative; flex: 1; min-width: 280px;" id="composition-search-wrapper">
+                        <span style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--color-text-muted); pointer-events: none; display: flex; align-items: center; z-index: 2;">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                            </svg>
+                        </span>
+                        
+                        <input
+                            type="text"
+                            id="composition-query-input"
+                            name="q"
+                            value="{{ initial_query }}"
+                            placeholder="Type medicine name (e.g., Dolo 650 Tablet, Augmentin 625 Duo, Azithral 500, A Rex Drop)..."
+                            autocomplete="off"
+                            role="combobox"
+                            aria-expanded="false"
+                            aria-autocomplete="list"
+                            aria-controls="composition-autocomplete-dropdown"
+                            style="width: 100%; height: 48px; padding: 0 4.25rem 0 2.75rem; border-radius: var(--radius-sm); border: 1.5px solid var(--color-border); background: var(--color-surface); color: var(--color-text-main); font-size: 0.9375rem; font-weight: 500; transition: border-color 0.2s, box-shadow 0.2s; outline: none; box-sizing: border-box;"
+                        />
+
+                        <!-- Inline Autocomplete Spinner (fetching live suggestions) -->
+                        <div
+                            id="composition-autocomplete-spinner"
+                            title="Fetching live suggestions..."
+                            style="position: absolute; right: 2.6rem; top: 50%; transform: translateY(-50%); color: #0f766e; display: none; align-items: center; justify-content: center; pointer-events: none; z-index: 2;"
+                        >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="animation: spin 0.8s linear infinite;">
+                                <line x1="12" y1="2" x2="12" y2="6"></line>
+                                <line x1="12" y1="18" x2="12" y2="22"></line>
+                                <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line>
+                                <line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line>
+                                <line x1="2" y1="12" x2="6" y2="12"></line>
+                                <line x1="18" y1="12" x2="22" y2="12"></line>
+                            </svg>
+                        </div>
+
+                        <!-- Clear Button -->
+                        <button
+                            type="button"
+                            id="composition-clear-btn"
+                            title="Clear search"
+                            style="position: absolute; right: 0.85rem; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--color-text-muted); cursor: pointer; padding: 0.25rem; display: {% if initial_query %}flex{% else %}none{% endif %}; align-items: center; justify-content: center; border-radius: 50%; transition: color 0.15s; z-index: 2;"
+                        >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                        </button>
+
+                        <!-- Autocomplete Dropdown List -->
+                        <div
+                            id="composition-autocomplete-dropdown"
+                            style="display: none; position: absolute; top: calc(100% + 5px); left: 0; right: 0; z-index: 100; max-height: 380px; overflow-y: auto; background: var(--color-surface); border: 1.5px solid var(--color-border); border-radius: var(--radius-sm); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.12), 0 8px 10px -6px rgba(0, 0, 0, 0.08); margin: 0; padding: 0.35rem 0;"
+                            role="listbox"
+                        ></div>
+                    </div>
+
+                    <!-- Search Submit Button -->
+                    <button
+                        type="submit"
+                        id="composition-search-btn"
+                        style="height: 48px; padding: 0 1.75rem; background: #0f766e; color: #ffffff; border: none; border-radius: var(--radius-sm); font-size: 0.9375rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; transition: background 0.2s, transform 0.1s; box-shadow: 0 2px 4px rgba(15, 118, 110, 0.2); white-space: nowrap;"
+                    >
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                        <span>Search Composition</span>
+                    </button>
+                </div>
+
+                <!-- Quick Example Suggestion Chips -->
+                <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.35rem;">
+                    <span style="font-size: 0.75rem; color: var(--color-text-muted); font-weight: 600;">Try Examples:</span>
+                    <button type="button" class="example-chip" data-query="Dolo 650 Tablet" style="background: var(--color-bg); border: 1px solid var(--color-border); padding: 0.25rem 0.65rem; border-radius: 9999px; font-size: 0.75rem; color: var(--color-text-main); cursor: pointer; transition: all 0.15s;">
+                        Dolo 650 Tablet
+                    </button>
+                    <button type="button" class="example-chip" data-query="Augmentin 625 Duo Tablet" style="background: var(--color-bg); border: 1px solid var(--color-border); padding: 0.25rem 0.65rem; border-radius: 9999px; font-size: 0.75rem; color: var(--color-text-main); cursor: pointer; transition: all 0.15s;">
+                        Augmentin 625 Duo Tablet
+                    </button>
+                    <button type="button" class="example-chip" data-query="Azithral 500 Tablet" style="background: var(--color-bg); border: 1px solid var(--color-border); padding: 0.25rem 0.65rem; border-radius: 9999px; font-size: 0.75rem; color: var(--color-text-main); cursor: pointer; transition: all 0.15s;">
+                        Azithral 500 Tablet
+                    </button>
+                    <button type="button" class="example-chip" data-query="A Rex Drop" style="background: #fef3c7; border: 1px solid #fde68a; padding: 0.25rem 0.65rem; border-radius: 9999px; font-size: 0.75rem; color: #92400e; cursor: pointer; transition: all 0.15s;">
+                        A Rex Drop (Ambiguous)
+                    </button>
+                    <button type="button" class="example-chip" data-query="Doolo 650" style="background: #e0f2fe; border: 1px solid #bae6fd; padding: 0.25rem 0.65rem; border-radius: 9999px; font-size: 0.75rem; color: #0369a1; cursor: pointer; transition: all 0.15s;">
+                        Doolo 650 (Typo)
+                    </button>
+                </div>
+            </form>
+
+            <!-- Results Output Area -->
+            <div id="composition-results-container" style="margin-top: 1.5rem;">
+
+                <!-- 1. Loading State (Hidden by default) -->
+                <div id="composition-loading-state" style="display: none; padding: 3rem 1.5rem; text-align: center;">
+                    <div style="display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; border-radius: 50%; background: #f0fdf4; color: #0f766e; margin-bottom: 0.75rem; animation: spin 1s linear infinite;">
+                        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="2" x2="12" y2="6"></line>
+                            <line x1="12" y1="18" x2="12" y2="22"></line>
+                            <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line>
+                            <line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line>
+                            <line x1="2" y1="12" x2="6" y2="12"></line>
+                            <line x1="18" y1="12" x2="22" y2="12"></line>
+                            <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line>
+                            <line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line>
+                        </svg>
+                    </div>
+                    <div style="font-size: 1rem; font-weight: 600; color: var(--color-text-main);">Searching Tata 1mg verified repository...</div>
+                    <div style="font-size: 0.8125rem; color: var(--color-text-muted); margin-top: 0.25rem;">Checking exact clinical formulation match and active salts</div>
+                </div>
+
+                <!-- 2. Dynamic Results Body -->
+                <div id="composition-results-body">
+                    {% if initial_lookup_result %}
+                        {% if initial_lookup_result.status == 'VERIFIED_MATCH' %}
+                            <!-- Server-rendered Verified Match -->
+                            <div class="result-card-verified" style="border: 1.5px solid #86efac; background: linear-gradient(to bottom, #f0fdf4, #ffffff); border-radius: var(--radius-md); padding: 1.75rem; box-shadow: var(--shadow-sm);">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; border-bottom: 1px solid #dcfce7; padding-bottom: 1rem; margin-bottom: 1.25rem;">
+                                    <div>
+                                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.35rem;">
+                                            <span style="display: inline-flex; align-items: center; gap: 0.35rem; background: #15803d; color: #ffffff; padding: 0.2rem 0.6rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.03em;">
+                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                                </svg>
+                                                VERIFIED MATCH
+                                            </span>
+                                            <span style="font-size: 0.8125rem; color: #166534; font-weight: 600;">Tata 1mg Clinical Repository</span>
+                                        </div>
+                                        <h3 style="font-size: 1.45rem; font-weight: 800; color: #0f172a; margin: 0;">
+                                            {{ initial_lookup_result.medicine_name }}
+                                        </h3>
+                                    </div>
+                                    <div style="text-align: right;">
+                                        <span style="font-size: 0.75rem; color: #64748b; text-transform: uppercase; font-weight: 600; display: block;">Maximum Retail Price</span>
+                                        <span style="font-size: 1.25rem; font-weight: 800; color: #0f172a;">
+                                            {% if initial_lookup_result.mrp %}₹{{ initial_lookup_result.mrp }}{% else %}N/A{% endif %}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <!-- Highlighted Salt Composition Box -->
+                                <div style="background: #ecfdf5; border: 1.5px solid #a7f3d0; border-radius: var(--radius-sm); padding: 1.125rem 1.25rem; margin-bottom: 1.25rem;">
+                                    <div style="font-size: 0.75rem; color: #047857; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; display: flex; align-items: center; gap: 0.35rem;">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                                        </svg>
+                                        Active Salt Composition (Chemical Formulation)
+                                    </div>
+                                    <div style="font-size: 1.2rem; font-weight: 700; color: #065f46; margin-top: 0.4rem; line-height: 1.4;">
+                                        {{ initial_lookup_result.salt_composition }}
+                                    </div>
+                                </div>
+
+                                <!-- Product Details Meta Grid -->
+                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem;">
+                                    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: var(--radius-sm); padding: 0.85rem 1rem;">
+                                        <span style="font-size: 0.75rem; color: #64748b; text-transform: uppercase; font-weight: 600; display: block;">Manufacturer / Pharma</span>
+                                        <strong style="color: #0f172a; font-size: 0.9375rem; margin-top: 0.2rem; display: block;">
+                                            {{ initial_lookup_result.manufacturer|default:"Not Specified" }}
+                                        </strong>
+                                    </div>
+                                    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: var(--radius-sm); padding: 0.85rem 1rem;">
+                                        <span style="font-size: 0.75rem; color: #64748b; text-transform: uppercase; font-weight: 600; display: block;">Packaging / Quantity</span>
+                                        <strong style="color: #0f172a; font-size: 0.9375rem; margin-top: 0.2rem; display: block;">
+                                            {{ initial_lookup_result.quantity|default:"Standard Packaging" }}
+                                        </strong>
+                                    </div>
+                                </div>
+                            </div>
+                        {% elif initial_lookup_result.status == 'AMBIGUOUS_COMPOSITION' %}
+                            <!-- Server-rendered Ambiguous -->
+                            <div class="result-card-ambiguous" style="border: 1.5px solid #fcd34d; background: #fffbeb; border-radius: var(--radius-md); padding: 1.5rem;">
+                                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                                    <span style="background: #d97706; color: #ffffff; padding: 0.2rem 0.6rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 700;">
+                                        MULTIPLE FORMULATIONS FOUND
+                                    </span>
+                                </div>
+                                <h3 style="font-size: 1.25rem; font-weight: 700; color: #78350f; margin: 0;">
+                                    {{ initial_lookup_result.medicine_name }}
+                                </h3>
+                                <p style="color: #92400e; font-size: 0.875rem; margin: 0.4rem 0 1rem 0;">
+                                    {{ initial_lookup_result.message }}
+                                </p>
+                                <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                                    {% for c in initial_lookup_result.candidates %}
+                                        <div style="background: #ffffff; border: 1px solid #fde68a; border-radius: var(--radius-sm); padding: 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+                                            <div>
+                                                <div style="font-weight: 700; color: #0f172a; font-size: 0.9375rem;">{{ c.name }}</div>
+                                                <div style="color: #047857; font-weight: 600; font-size: 0.875rem; margin-top: 0.2rem;">{{ c.salt_composition }}</div>
+                                                <div style="color: #64748b; font-size: 0.75rem; margin-top: 0.25rem;">
+                                                    Mfr: {{ c.manufacturer }} | Pack: {{ c.quantity }} | MRP: {% if c.mrp %}₹{{ c.mrp }}{% else %}N/A{% endif %}
+                                                </div>
+                                            </div>
+                                            <button type="button" class="select-candidate-btn" data-id="{{ c.id }}" style="background: #0f766e; color: #ffffff; border: none; padding: 0.5rem 1rem; border-radius: var(--radius-sm); font-size: 0.8125rem; font-weight: 600; cursor: pointer;">
+                                                Select This Variant
+                                            </button>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% elif initial_lookup_result.status == 'SUGGESTIONS' %}
+                            <!-- Server-rendered Suggestions -->
+                            <div class="result-card-suggestions" style="border: 1.5px solid #bae6fd; background: #f0f9ff; border-radius: var(--radius-md); padding: 1.5rem;">
+                                <div style="font-size: 0.875rem; font-weight: 600; color: #0369a1; margin-bottom: 0.75rem;">
+                                    {{ initial_lookup_result.message }}
+                                </div>
+                                <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                                    {% for s in initial_lookup_result.suggestions %}
+                                        <button type="button" class="suggestion-chip" data-query="{{ s.name }}" style="background: #ffffff; border: 1px solid #7dd3fc; color: #0284c7; padding: 0.4rem 0.85rem; border-radius: 9999px; font-size: 0.8125rem; font-weight: 600; cursor: pointer;">
+                                            {{ s.name }} <span style="font-size: 0.6875rem; opacity: 0.8;">({{ s.score }}%)</span>
+                                        </button>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% elif initial_lookup_result.status == 'NOT_FOUND' %}
+                            <!-- Server-rendered Not Found -->
+                            <div style="border: 1px dashed var(--color-border); border-radius: var(--radius-md); padding: 2.5rem 1.5rem; text-align: center;">
+                                <div style="width: 48px; height: 48px; border-radius: 50%; background: #fef2f2; color: #ef4444; margin: 0 auto 0.75rem auto; display: flex; align-items: center; justify-content: center;">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <line x1="15" y1="9" x2="9" y2="15"></line>
+                                        <line x1="9" y1="9" x2="15" y2="15"></line>
+                                    </svg>
+                                </div>
+                                <div style="font-size: 1.05rem; font-weight: 700; color: var(--color-text-main);">{{ initial_lookup_result.message }}</div>
+                                <div style="font-size: 0.8125rem; color: var(--color-text-muted); margin-top: 0.35rem;">Double check the brand name or try searching generic salt words</div>
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <!-- Default Idle Welcome Card -->
+                        <div style="border: 1px dashed var(--color-border); border-radius: var(--radius-md); padding: 2.5rem 1.5rem; text-align: center; background: var(--color-bg);">
+                            <div style="width: 52px; height: 52px; border-radius: 50%; background: #ecfdf5; color: #059669; margin: 0 auto 0.85rem auto; display: flex; align-items: center; justify-content: center;">
+                                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M10.5 20.5l10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7z"></path>
+                                    <line x1="8.5" y1="8.5" x2="15.5" y2="15.5"></line>
+                                </svg>
+                            </div>
+                            <h3 style="font-size: 1.125rem; font-weight: 700; color: var(--color-text-main); margin: 0 0 0.35rem 0;">
+                                Ready to Verify Medicine Compositions
+                            </h3>
+                            <p style="font-size: 0.875rem; color: var(--color-text-muted); max-width: 520px; margin: 0 auto; line-height: 1.5;">
+                                Enter any medicine name above or click one of the quick example chips to inspect its verified chemical salt formulation, manufacturer, and packaging details.
+                            </p>
+                        </div>
+                    {% endif %}
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    <!-- 4. Dedicated Section: Medicine Price Prediction (ML Model v2) -->
+    <div id="price-prediction-section" style="background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); box-shadow: var(--shadow-md); overflow: hidden;">
+
+        <!-- Section Header -->
+        <div style="padding: 1.5rem 1.75rem; border-bottom: 1px solid var(--color-border); background: linear-gradient(to right, rgba(14, 116, 144, 0.05), transparent); display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+            <div>
+                <div style="display: flex; align-items: center; gap: 0.65rem;">
+                    <span style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: var(--radius-sm); background: #0e7490; color: #ffffff;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="1" x2="12" y2="23"></line>
+                            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                        </svg>
+                    </span>
+                    <h2 style="font-size: 1.35rem; font-weight: 700; margin: 0; color: var(--color-text-main); letter-spacing: -0.01em;">
+                        Medicine Price Prediction
+                    </h2>
+                    <span style="font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; background: #cffafe; color: #0891b2; padding: 0.2rem 0.55rem; border-radius: 9999px; letter-spacing: 0.04em;">
+                        ML Model v2 &bull; Ridge L2
+                    </span>
+                </div>
+                <p style="margin: 0.4rem 0 0 0; color: var(--color-text-muted); font-size: 0.875rem; max-width: 720px; line-height: 1.5;">
+                    Generate an instant AI projection of estimated Maximum Retail Price (MRP in ₹) using our mathematically stabilized Ridge Regression model trained on 273,000+ pharmaceutical formulations.
+                </p>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; color: var(--color-text-muted); background: var(--color-bg); padding: 0.4rem 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--color-border);">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+                <span>Stabilized Coefficients &bull; No Numerical Overflow</span>
+            </div>
+        </div>
+
+        <!-- Predictor Form & Content Container -->
+        <div style="padding: 1.75rem; background: var(--color-surface); display: flex; flex-direction: column; gap: 1.5rem;">
+
+            <form id="price-prediction-form" method="POST" action="{% url 'pharmacy:price_prediction_api' %}" style="display: flex; flex-direction: column; gap: 1.25rem;">
+                {% csrf_token %}
+
+                <!-- Form Fields Grid -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.25rem;">
+
+                    <!-- 1. Medicine Name (with Live Autocomplete) -->
+                    <div style="position: relative;" id="pred-name-wrapper">
+                        <label for="pred-medicine-name" style="display: block; font-size: 0.8125rem; font-weight: 700; color: var(--color-text-main); margin-bottom: 0.4rem;">
+                            Medicine Name <span style="color: #dc2626;">*</span>
+                        </label>
+                        <div style="position: relative;">
+                            <span style="position: absolute; left: 0.875rem; top: 50%; transform: translateY(-50%); color: var(--color-text-muted); pointer-events: none; display: flex; align-items: center; z-index: 2;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M10.5 20.5l10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7z"></path>
+                                    <line x1="8.5" y1="8.5" x2="15.5" y2="15.5"></line>
+                                </svg>
+                            </span>
+                            <input
+                                type="text"
+                                id="pred-medicine-name"
+                                name="name"
+                                required
+                                placeholder="e.g. Dolo 650 Tablet, Augmentin 625 Duo"
+                                autocomplete="off"
+                                style="width: 100%; box-sizing: border-box; padding: 0.75rem 1rem 0.75rem 2.5rem; font-size: 0.9375rem; border: 1.5px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-bg); color: var(--color-text-main); outline: none; transition: all 0.15s ease;"
+                            >
+                        </div>
+                        <!-- Live Autocomplete Suggestions Dropdown -->
+                        <div
+                            id="pred-name-autocomplete"
+                            role="listbox"
+                            style="display: none; position: absolute; left: 0; right: 0; top: 100%; margin-top: 4px; background: #ffffff; border: 1.5px solid var(--color-border); border-radius: var(--radius-sm); box-shadow: var(--shadow-lg); max-height: 240px; overflow-y: auto; z-index: 50;"
+                        ></div>
+                    </div>
+
+                    <!-- 2. Pack Size (Numeric, Required) -->
+                    <div>
+                        <label for="pred-pack-size" style="display: block; font-size: 0.8125rem; font-weight: 700; color: var(--color-text-main); margin-bottom: 0.4rem;">
+                            Pack Size (Units / Tablets / ml) <span style="color: #dc2626;">*</span>
+                        </label>
+                        <div style="position: relative;">
+                            <span style="position: absolute; left: 0.875rem; top: 50%; transform: translateY(-50%); color: var(--color-text-muted); pointer-events: none; display: flex; align-items: center;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                    <line x1="9" y1="9" x2="15" y2="15"></line>
+                                    <line x1="15" y1="9" x2="9" y2="15"></line>
+                                </svg>
+                            </span>
+                            <input
+                                type="number"
+                                id="pred-pack-size"
+                                name="pack_size"
+                                required
+                                min="1"
+                                step="any"
+                                placeholder="e.g. 10, 15, 60, 100"
+                                style="width: 100%; box-sizing: border-box; padding: 0.75rem 1rem 0.75rem 2.5rem; font-size: 0.9375rem; border: 1.5px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-bg); color: var(--color-text-main); outline: none; transition: all 0.15s ease;"
+                            >
+                        </div>
+                    </div>
+
+                    <!-- 3. Packaging Specification (Optional) -->
+                    <div>
+                        <label for="pred-quantity" style="display: block; font-size: 0.8125rem; font-weight: 700; color: var(--color-text-main); margin-bottom: 0.4rem;">
+                            Packaging Specification <span style="font-weight: 400; color: var(--color-text-muted); font-size: 0.75rem;">(optional)</span>
+                        </label>
+                        <div style="position: relative;">
+                            <span style="position: absolute; left: 0.875rem; top: 50%; transform: translateY(-50%); color: var(--color-text-muted); pointer-events: none; display: flex; align-items: center;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                                </svg>
+                            </span>
+                            <input
+                                type="text"
+                                id="pred-quantity"
+                                name="quantity"
+                                placeholder="e.g. strip of 15 tablets, bottle of 100 ml"
+                                style="width: 100%; box-sizing: border-box; padding: 0.75rem 1rem 0.75rem 2.5rem; font-size: 0.9375rem; border: 1.5px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-bg); color: var(--color-text-main); outline: none; transition: all 0.15s ease;"
+                            >
+                        </div>
+                    </div>
+
+                    <!-- 4. Manufacturer / Pharma Brand (Optional) -->
+                    <div>
+                        <label for="pred-manufacturer" style="display: block; font-size: 0.8125rem; font-weight: 700; color: var(--color-text-main); margin-bottom: 0.4rem;">
+                            Manufacturer / Pharma Brand <span style="font-weight: 400; color: var(--color-text-muted); font-size: 0.75rem;">(optional)</span>
+                        </label>
+                        <div style="position: relative;">
+                            <span style="position: absolute; left: 0.875rem; top: 50%; transform: translateY(-50%); color: var(--color-text-muted); pointer-events: none; display: flex; align-items: center;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                                    <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                                </svg>
+                            </span>
+                            <input
+                                type="text"
+                                id="pred-manufacturer"
+                                name="manufacturer"
+                                placeholder="e.g. Micro Labs Ltd, Sun Pharma, Cipla"
+                                style="width: 100%; box-sizing: border-box; padding: 0.75rem 1rem 0.75rem 2.5rem; font-size: 0.9375rem; border: 1.5px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-bg); color: var(--color-text-main); outline: none; transition: all 0.15s ease;"
+                            >
+                        </div>
+                    </div>
+
+                    <!-- 5. Salt Composition (Optional, spanning all cols) -->
+                    <div style="grid-column: 1 / -1;">
+                        <label for="pred-salt-composition" style="display: block; font-size: 0.8125rem; font-weight: 700; color: var(--color-text-main); margin-bottom: 0.4rem;">
+                            Active Salt Composition (Chemical Formulation) <span style="font-weight: 400; color: var(--color-text-muted); font-size: 0.75rem;">(optional)</span>
+                        </label>
+                        <div style="position: relative;">
+                            <span style="position: absolute; left: 0.875rem; top: 50%; transform: translateY(-50%); color: var(--color-text-muted); pointer-events: none; display: flex; align-items: center;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                                </svg>
+                            </span>
+                            <input
+                                type="text"
+                                id="pred-salt-composition"
+                                name="salt_composition"
+                                placeholder="e.g. Paracetamol (650mg), Amoxycillin (500mg) + Clavulanic Acid (125mg)"
+                                style="width: 100%; box-sizing: border-box; padding: 0.75rem 1rem 0.75rem 2.5rem; font-size: 0.9375rem; border: 1.5px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-bg); color: var(--color-text-main); outline: none; transition: all 0.15s ease;"
+                            >
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Action Buttons & Quick Presets -->
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; padding-top: 0.5rem; border-top: 1px solid var(--color-border);">
+                    <!-- Example Quick Pills -->
+                    <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                        <span style="font-size: 0.75rem; font-weight: 600; color: var(--color-text-muted); text-transform: uppercase;">Quick Presets:</span>
+                        <button type="button" class="pred-example-chip" data-name="Dolo 650 Tablet" data-qty="strip of 15 tablets" data-pack="15" data-mfg="Micro Labs Ltd" data-salt="Paracetamol (650mg)" style="background: var(--color-bg); border: 1px solid var(--color-border); border-radius: 9999px; padding: 0.25rem 0.75rem; font-size: 0.75rem; font-weight: 600; color: var(--color-text-muted); cursor: pointer; transition: all 0.15s;">
+                            Dolo 650 (15 tabs)
+                        </button>
+                        <button type="button" class="pred-example-chip" data-name="Augmentin 625 Duo Tablet" data-qty="strip of 10 tablets" data-pack="10" data-mfg="Glaxo SmithKline Pharmaceuticals Ltd" data-salt="Amoxycillin (500mg) + Clavulanic Acid (125mg)" style="background: var(--color-bg); border: 1px solid var(--color-border); border-radius: 9999px; padding: 0.25rem 0.75rem; font-size: 0.75rem; font-weight: 600; color: var(--color-text-muted); cursor: pointer; transition: all 0.15s;">
+                            Augmentin 625 Duo (10 tabs)
+                        </button>
+                        <button type="button" class="pred-example-chip" data-name="Azithral 500 Tablet" data-qty="strip of 5 tablets" data-pack="5" data-mfg="Alembic Pharmaceuticals Ltd" data-salt="Azithromycin (500mg)" style="background: var(--color-bg); border: 1px solid var(--color-border); border-radius: 9999px; padding: 0.25rem 0.75rem; font-size: 0.75rem; font-weight: 600; color: var(--color-text-muted); cursor: pointer; transition: all 0.15s;">
+                            Azithral 500 (5 tabs)
+                        </button>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                        <button
+                            type="button"
+                            id="pred-clear-btn"
+                            style="background: transparent; border: 1px solid var(--color-border); color: var(--color-text-muted); padding: 0.75rem 1.25rem; border-radius: var(--radius-sm); font-size: 0.875rem; font-weight: 600; cursor: pointer; transition: all 0.15s;"
+                        >
+                            Reset
+                        </button>
+                        <button
+                            type="submit"
+                            id="pred-submit-btn"
+                            style="background: #0e7490; color: #ffffff; border: none; padding: 0.75rem 1.75rem; border-radius: var(--radius-sm); font-size: 0.875rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; transition: background 0.15s ease, transform 0.1s ease; box-shadow: var(--shadow-sm);"
+                        >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="12" y1="1" x2="12" y2="23"></line>
+                                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                            </svg>
+                            <span id="pred-btn-text">Predict Estimated Price</span>
+                        </button>
+                    </div>
+                </div>
+
+            </form>
+
+            <!-- Loading Spinner State -->
+            <div id="pred-loading-state" style="display: none; padding: 2.5rem 1.5rem; text-align: center;">
+                <div style="display: inline-block; width: 36px; height: 36px; border: 3px solid rgba(14, 116, 144, 0.2); border-radius: 50%; border-top-color: #0e7490; animation: spin 0.8s linear infinite;"></div>
+                <div style="margin-top: 0.75rem; font-weight: 600; color: var(--color-text-main); font-size: 0.9375rem;">
+                    Computing AI Price Projection...
+                </div>
+                <div style="font-size: 0.8125rem; color: var(--color-text-muted); margin-top: 0.25rem;">
+                    Transforming categorical & numeric feature matrices with Ridge L2 estimator
+                </div>
+            </div>
+
+            <!-- Error Banner -->
+            <div id="pred-error-state" style="display: none; border: 1px solid #fecaca; background: #fef2f2; border-radius: var(--radius-md); padding: 1.25rem 1.5rem;">
+                <div style="display: flex; align-items: center; gap: 0.5rem; color: #b91c1c; font-weight: 700; font-size: 0.9375rem;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                    <span>Price Prediction Notice</span>
+                </div>
+                <p id="pred-error-message" style="margin: 0.4rem 0 0 0; color: #991b1b; font-size: 0.875rem;"></p>
+            </div>
+
+            <!-- Prediction Result Card -->
+            <div id="pred-result-card" style="display: none; animation: fadeIn 0.3s ease-out;">
+                <!-- Filled dynamically by JavaScript -->
+            </div>
+
+        </div>
+    </div>
+
+<!-- Vanilla JavaScript Client for Interactive Composition Lookup -->
+<script>
+(function() {
+    const searchForm = document.getElementById('composition-search-form');
+    const queryInput = document.getElementById('composition-query-input');
+    const clearBtn = document.getElementById('composition-clear-btn');
+    const searchWrapper = document.getElementById('composition-search-wrapper');
+    const dropdown = document.getElementById('composition-autocomplete-dropdown');
+    const autoSpinner = document.getElementById('composition-autocomplete-spinner');
+    const resultsBody = document.getElementById('composition-results-body');
+    const loadingState = document.getElementById('composition-loading-state');
+    const searchBtn = document.getElementById('composition-search-btn');
+
+    let debounceTimer = null;
+    let activeAbortController = null;
+    let currentSuggestions = [];
+    let selectedIndex = -1;
+
+    function openDropdown() {
+        if (dropdown) {
+            dropdown.style.display = 'block';
+            if (queryInput) queryInput.setAttribute('aria-expanded', 'true');
+        }
+    }
+
+    function closeDropdown() {
+        if (dropdown) {
+            dropdown.style.display = 'none';
+            dropdown.innerHTML = '';
+            if (queryInput) {
+                queryInput.setAttribute('aria-expanded', 'false');
+                queryInput.removeAttribute('aria-activedescendant');
+            }
+        }
+        currentSuggestions = [];
+        selectedIndex = -1;
+    }
+
+    function highlightActiveItem() {
+        if (!dropdown) return;
+        const items = dropdown.querySelectorAll('.autocomplete-item');
+        items.forEach(function(item, idx) {
+            if (idx === selectedIndex) {
+                item.classList.add('active');
+                item.style.background = '#f0fdf4';
+                item.style.borderLeft = '3px solid #0f766e';
+                item.setAttribute('aria-selected', 'true');
+                if (queryInput) queryInput.setAttribute('aria-activedescendant', item.id);
+                item.scrollIntoView({ block: 'nearest' });
+            } else {
+                item.classList.remove('active');
+                item.style.background = 'transparent';
+                item.style.borderLeft = '3px solid transparent';
+                item.setAttribute('aria-selected', 'false');
+            }
+        });
+    }
+
+    function fetchSuggestions(query) {
+        if (activeAbortController) {
+            activeAbortController.abort();
+        }
+        activeAbortController = new AbortController();
+
+        if (autoSpinner) autoSpinner.style.display = 'flex';
+
+        const url = "{% url 'pharmacy:composition_autocomplete_api' %}?q=" + encodeURIComponent(query);
+
+        fetch(url, {
+            signal: activeAbortController.signal,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(function(res) {
+            if (!res.ok) throw new Error('Network error');
+            return res.json();
+        })
+        .then(function(data) {
+            // Guard against stale response if user continued typing or changed input
+            if (!queryInput || queryInput.value.trim().toLowerCase() !== query.toLowerCase()) {
+                return;
+            }
+            renderSuggestions(data.suggestions || [], query);
+        })
+        .catch(function(err) {
+            if (err.name !== 'AbortError') {
+                console.error('Autocomplete fetch error:', err);
+                closeDropdown();
+            }
+        })
+        .finally(function() {
+            if (autoSpinner) autoSpinner.style.display = 'none';
+        });
+    }
+
+    function renderSuggestions(suggestions, query) {
+        if (!dropdown) return;
+        currentSuggestions = suggestions;
+        selectedIndex = -1;
+
+        if (!suggestions || suggestions.length === 0) {
+            dropdown.innerHTML = `
+                <div style="padding: 0.85rem 1rem; text-align: center; color: var(--color-text-muted); font-size: 0.8125rem;">
+                    No medicine names starting with "<strong>${escapeHtml(query)}</strong>" found
+                </div>
+            `;
+            openDropdown();
+            return;
+        }
+
+        let html = '';
+        suggestions.forEach(function(item, idx) {
+            const highlightedName = formatMatchHighlight(item, query);
+            html += `
+                <div
+                    class="autocomplete-item"
+                    id="autocomplete-opt-${idx}"
+                    role="option"
+                    data-name="${escapeHtml(item)}"
+                    style="padding: 0.65rem 1rem; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: all 0.12s; border-bottom: 1px solid #f8fafc; font-size: 0.875rem; border-left: 3px solid transparent;"
+                >
+                    <div style="display: flex; align-items: center; gap: 0.65rem; min-width: 0;">
+                        <span style="color: #0f766e; flex-shrink: 0; display: flex; align-items: center;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M10.5 20.5l10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7z"></path>
+                                <line x1="8.5" y1="8.5" x2="15.5" y2="15.5"></line>
+                            </svg>
+                        </span>
+                        <span style="color: var(--color-text-main); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                            ${highlightedName}
+                        </span>
+                    </div>
+                    <span style="font-size: 0.6875rem; color: #0f766e; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 0.15rem 0.45rem; border-radius: 4px; font-weight: 600; flex-shrink: 0; margin-left: 0.75rem;">
+                        Tata 1mg
+                    </span>
+                </div>
+            `;
+        });
+
+        dropdown.innerHTML = html;
+        openDropdown();
+
+        // Attach mouse events to rendered items
+        dropdown.querySelectorAll('.autocomplete-item').forEach(function(el, idx) {
+            el.addEventListener('mouseenter', function() {
+                selectedIndex = idx;
+                highlightActiveItem();
+            });
+            el.addEventListener('click', function(e) {
+                e.preventDefault();
+                selectSuggestion(this.getAttribute('data-name'));
+            });
+        });
+    }
+
+    function selectSuggestion(name) {
+        if (!name) return;
+        if (queryInput) {
+            queryInput.value = name;
+            if (clearBtn) clearBtn.style.display = 'flex';
+        }
+        closeDropdown();
+        executeLookup(name);
+    }
+
+    function formatMatchHighlight(text, query) {
+        if (!query) return escapeHtml(text);
+        const lowerText = text.toLowerCase();
+        const lowerQ = query.toLowerCase();
+        const matchIndex = lowerText.indexOf(lowerQ);
+
+        if (matchIndex === -1) {
+            return escapeHtml(text);
+        }
+
+        const prefix = text.substring(0, matchIndex);
+        const match = text.substring(matchIndex, matchIndex + query.length);
+        const suffix = text.substring(matchIndex + query.length);
+
+        return escapeHtml(prefix) +
+            '<strong style="color: #0f766e; font-weight: 800; background: rgba(15, 118, 110, 0.08); padding: 0 2px; border-radius: 2px;">' +
+            escapeHtml(match) +
+            '</strong>' +
+            escapeHtml(suffix);
+    }
+
+    // Input event for live debounced suggestions
+    if (queryInput) {
+        queryInput.addEventListener('input', function() {
+            const val = this.value.trim();
+            if (clearBtn) {
+                clearBtn.style.display = val ? 'flex' : 'none';
+            }
+
+            clearTimeout(debounceTimer);
+            if (val.length >= 2) {
+                debounceTimer = setTimeout(function() {
+                    fetchSuggestions(val);
+                }, 280);
+            } else {
+                if (activeAbortController) {
+                    activeAbortController.abort();
+                }
+                if (autoSpinner) autoSpinner.style.display = 'none';
+                closeDropdown();
+            }
+        });
+
+        // Accessible keyboard navigation
+        queryInput.addEventListener('keydown', function(e) {
+            if (!dropdown || dropdown.style.display === 'none' || currentSuggestions.length === 0) {
+                if (e.key === 'Escape') {
+                    closeDropdown();
+                }
+                return;
+            }
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                selectedIndex = (selectedIndex + 1) % currentSuggestions.length;
+                highlightActiveItem();
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                selectedIndex = selectedIndex <= 0 ? currentSuggestions.length - 1 : selectedIndex - 1;
+                highlightActiveItem();
+            } else if (e.key === 'Enter') {
+                if (selectedIndex >= 0 && selectedIndex < currentSuggestions.length) {
+                    e.preventDefault();
+                    selectSuggestion(currentSuggestions[selectedIndex]);
+                } else {
+                    closeDropdown();
+                }
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                closeDropdown();
+            }
+        });
+    }
+
+    // Clear button functionality
+    if (clearBtn) {
+        clearBtn.addEventListener('click', function() {
+            if (queryInput) queryInput.value = '';
+            clearBtn.style.display = 'none';
+            clearTimeout(debounceTimer);
+            if (activeAbortController) activeAbortController.abort();
+            if (autoSpinner) autoSpinner.style.display = 'none';
+            closeDropdown();
+            if (queryInput) queryInput.focus();
+        });
+    }
+
+    // Close dropdown on outside click
+    document.addEventListener('click', function(e) {
+        if (searchWrapper && !searchWrapper.contains(e.target)) {
+            closeDropdown();
+        }
+    });
+
+    // Attach click events to example chips
+    document.querySelectorAll('.example-chip').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            const query = this.getAttribute('data-query');
+            if (queryInput) {
+                queryInput.value = query;
+                if (clearBtn) clearBtn.style.display = 'flex';
+                closeDropdown();
+                executeLookup(query);
+            }
+        });
+    });
+
+    // Form submission
+    if (searchForm) {
+        searchForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            closeDropdown();
+            const q = queryInput ? queryInput.value.trim() : '';
+            if (q) {
+                executeLookup(q);
+            }
+        });
+    }
+
+    // Live API fetch execution
+    function executeLookup(query, disambiguateId) {
+        closeDropdown();
+        if (!query && !disambiguateId) return;
+
+        // Show loading state
+        if (loadingState) loadingState.style.display = 'block';
+        if (resultsBody) resultsBody.style.display = 'none';
+        if (searchBtn) searchBtn.disabled = true;
+
+        let url = "{% url 'pharmacy:composition_lookup_api' %}?";
+        if (query) {
+            url += 'q=' + encodeURIComponent(query);
+        }
+        if (disambiguateId) {
+            url += (query ? '&' : '') + 'id=' + encodeURIComponent(disambiguateId);
+        }
+
+        fetch(url, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(function(res) {
+            if (!res.ok) throw new Error('Network response was not ok');
+            return res.json();
+        })
+        .then(function(data) {
+            renderLookupResults(data);
+        })
+        .catch(function(err) {
+            console.error('Lookup error:', err);
+            renderError('Unable to connect to composition verification service. Please try again.');
+        })
+        .finally(function() {
+            if (loadingState) loadingState.style.display = 'none';
+            if (resultsBody) resultsBody.style.display = 'block';
+            if (searchBtn) searchBtn.disabled = false;
+        });
+    }
+
+    // Render response into results container
+    function renderLookupResults(data) {
+        if (!resultsBody) return;
+        resultsBody.innerHTML = '';
+
+        if (data.status === 'VERIFIED_MATCH') {
+            const mrpDisplay = data.mrp !== null && data.mrp !== undefined ? '₹' + Number(data.mrp).toFixed(2) : 'N/A';
+            const mfgDisplay = escapeHtml(data.manufacturer || 'Not Specified');
+            const qtyDisplay = escapeHtml(data.quantity || 'Standard Packaging');
+            const medName = escapeHtml(data.medicine_name || data.query);
+            const saltComp = escapeHtml(data.salt_composition || 'Not Available');
+
+            // Render variants list if there are multiple packaging units for this exact verified salt
+            let variantsHtml = '';
+            if (data.products && data.products.length > 1) {
+                let rows = '';
+                data.products.forEach(function(p) {
+                    const pMrp = p.mrp ? '₹' + Number(p.mrp).toFixed(2) : 'N/A';
+                    rows += `
+                        <tr style="border-bottom: 1px solid #f1f5f9;">
+                            <td style="padding: 0.6rem 0.75rem; font-size: 0.8125rem; font-weight: 600; color: #0f172a;">${escapeHtml(p.name)}</td>
+                            <td style="padding: 0.6rem 0.75rem; font-size: 0.8125rem; color: #475569;">${escapeHtml(p.manufacturer)}</td>
+                            <td style="padding: 0.6rem 0.75rem; font-size: 0.8125rem; color: #475569;">${escapeHtml(p.quantity)}</td>
+                            <td style="padding: 0.6rem 0.75rem; font-size: 0.8125rem; font-weight: 700; color: #0f172a; text-align: right;">${pMrp}</td>
+                        </tr>
+                    `;
+                });
+                variantsHtml = `
+                    <div style="margin-top: 1.25rem; border-top: 1px solid #dcfce7; padding-top: 1rem;">
+                        <span style="font-size: 0.75rem; color: #047857; text-transform: uppercase; font-weight: 700; display: block; margin-bottom: 0.5rem;">
+                            Commercial Formulations & Packaging Variants (${data.products.length})
+                        </span>
+                        <div style="overflow-x: auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: var(--radius-sm);">
+                            <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                                <thead>
+                                    <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                                        <th style="padding: 0.5rem 0.75rem; font-size: 0.75rem; color: #64748b; text-transform: uppercase;">Product Name</th>
+                                        <th style="padding: 0.5rem 0.75rem; font-size: 0.75rem; color: #64748b; text-transform: uppercase;">Manufacturer</th>
+                                        <th style="padding: 0.5rem 0.75rem; font-size: 0.75rem; color: #64748b; text-transform: uppercase;">Pack Size</th>
+                                        <th style="padding: 0.5rem 0.75rem; font-size: 0.75rem; color: #64748b; text-transform: uppercase; text-align: right;">MRP</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${rows}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            }
+
+            resultsBody.innerHTML = `
+                <div class="result-card-verified" style="border: 1.5px solid #86efac; background: linear-gradient(to bottom, #f0fdf4, #ffffff); border-radius: var(--radius-md); padding: 1.75rem; box-shadow: var(--shadow-sm); animation: fadeIn 0.3s ease-out;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; border-bottom: 1px solid #dcfce7; padding-bottom: 1rem; margin-bottom: 1.25rem;">
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.35rem;">
+                                <span style="display: inline-flex; align-items: center; gap: 0.35rem; background: #15803d; color: #ffffff; padding: 0.2rem 0.6rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.03em;">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                    VERIFIED MATCH
+                                </span>
+                                <span style="font-size: 0.8125rem; color: #166534; font-weight: 600;">Tata 1mg Clinical Repository</span>
+                            </div>
+                            <h3 style="font-size: 1.45rem; font-weight: 800; color: #0f172a; margin: 0;">
+                                ${medName}
+                            </h3>
+                        </div>
+                        <div style="text-align: right;">
+                            <span style="font-size: 0.75rem; color: #64748b; text-transform: uppercase; font-weight: 600; display: block;">Maximum Retail Price</span>
+                            <span style="font-size: 1.25rem; font-weight: 800; color: #0f172a;">
+                                ${mrpDisplay}
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Highlighted Salt Composition Box -->
+                    <div style="background: #ecfdf5; border: 1.5px solid #a7f3d0; border-radius: var(--radius-sm); padding: 1.125rem 1.25rem; margin-bottom: 1.25rem;">
+                        <div style="font-size: 0.75rem; color: #047857; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; display: flex; align-items: center; gap: 0.35rem;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                            </svg>
+                            Active Salt Composition (Chemical Formulation)
+                        </div>
+                        <div style="font-size: 1.2rem; font-weight: 700; color: #065f46; margin-top: 0.4rem; line-height: 1.4;">
+                            ${saltComp}
+                        </div>
+                    </div>
+
+                    <!-- Product Details Meta Grid -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem;">
+                        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: var(--radius-sm); padding: 0.85rem 1rem;">
+                            <span style="font-size: 0.75rem; color: #64748b; text-transform: uppercase; font-weight: 600; display: block;">Manufacturer / Pharma</span>
+                            <strong style="color: #0f172a; font-size: 0.9375rem; margin-top: 0.2rem; display: block;">
+                                ${mfgDisplay}
+                            </strong>
+                        </div>
+                        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: var(--radius-sm); padding: 0.85rem 1rem;">
+                            <span style="font-size: 0.75rem; color: #64748b; text-transform: uppercase; font-weight: 600; display: block;">Packaging / Quantity</span>
+                            <strong style="color: #0f172a; font-size: 0.9375rem; margin-top: 0.2rem; display: block;">
+                                ${qtyDisplay}
+                            </strong>
+                        </div>
+                    </div>
+
+                    ${variantsHtml}
+
+                    <!-- Quick action to estimate price using ML Predictor -->
+                    <div style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px dashed #bbf7d0; display: flex; justify-content: flex-end; align-items: center; gap: 0.75rem;">
+                        <span style="font-size: 0.75rem; color: #166534; font-weight: 600;">Want to forecast cost?</span>
+                        <button type="button" class="transfer-to-predictor-btn"
+                            data-name="${escapeHtml(medName)}"
+                            data-mfg="${escapeHtml(mfgDisplay)}"
+                            data-qty="${escapeHtml(qtyDisplay)}"
+                            data-salt="${escapeHtml(saltComp)}"
+                            style="background: #0e7490; color: #ffffff; border: none; padding: 0.5rem 1rem; border-radius: var(--radius-sm); font-size: 0.8125rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 0.4rem; transition: background 0.15s ease;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <line x1="12" y1="1" x2="12" y2="23"></line>
+                                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                            </svg>
+                            Run AI Price Estimate
+                        </button>
+                    </div>
+                </div>
+            `;
+        } else if (data.status === 'AMBIGUOUS_COMPOSITION') {
+            let candidateCards = '';
+            (data.candidates || []).forEach(function(c) {
+                const cMrp = c.mrp ? '₹' + Number(c.mrp).toFixed(2) : 'N/A';
+                candidateCards += `
+                    <div style="background: #ffffff; border: 1px solid #fde68a; border-radius: var(--radius-sm); padding: 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+                        <div>
+                            <div style="font-weight: 700; color: #0f172a; font-size: 0.9375rem;">${escapeHtml(c.name)}</div>
+                            <div style="color: #047857; font-weight: 600; font-size: 0.875rem; margin-top: 0.2rem;">${escapeHtml(c.salt_composition)}</div>
+                            <div style="color: #64748b; font-size: 0.75rem; margin-top: 0.25rem;">
+                                Mfr: ${escapeHtml(c.manufacturer)} | Pack: ${escapeHtml(c.quantity)} | MRP: ${cMrp}
+                            </div>
+                        </div>
+                        <button type="button" class="select-candidate-btn" data-id="${c.id}" style="background: #0f766e; color: #ffffff; border: none; padding: 0.5rem 1rem; border-radius: var(--radius-sm); font-size: 0.8125rem; font-weight: 600; cursor: pointer; transition: background 0.15s;">
+                            Select This Variant
+                        </button>
+                    </div>
+                `;
+            });
+
+            resultsBody.innerHTML = `
+                <div class="result-card-ambiguous" style="border: 1.5px solid #fcd34d; background: #fffbeb; border-radius: var(--radius-md); padding: 1.5rem; animation: fadeIn 0.3s ease-out;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                        <span style="background: #d97706; color: #ffffff; padding: 0.2rem 0.6rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 700;">
+                            MULTIPLE FORMULATIONS FOUND
+                        </span>
+                    </div>
+                    <h3 style="font-size: 1.25rem; font-weight: 700; color: #78350f; margin: 0;">
+                        ${escapeHtml(data.medicine_name || data.query)}
+                    </h3>
+                    <p style="color: #92400e; font-size: 0.875rem; margin: 0.4rem 0 1rem 0;">
+                        ${escapeHtml(data.message)}
+                    </p>
+                    <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                        ${candidateCards}
+                    </div>
+                </div>
+            `;
+
+            // Wire click handlers on dynamic select candidate buttons
+            resultsBody.querySelectorAll('.select-candidate-btn').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    const id = this.getAttribute('data-id');
+                    executeLookup('', id);
+                });
+            });
+        } else if (data.status === 'SUGGESTIONS') {
+            let suggestionChips = '';
+            (data.suggestions || []).forEach(function(s) {
+                suggestionChips += `
+                    <button type="button" class="suggestion-chip" data-query="${escapeHtml(s.name)}" style="background: #ffffff; border: 1px solid #7dd3fc; color: #0284c7; padding: 0.4rem 0.85rem; border-radius: 9999px; font-size: 0.8125rem; font-weight: 600; cursor: pointer; transition: all 0.15s;">
+                        ${escapeHtml(s.name)} <span style="font-size: 0.6875rem; opacity: 0.8;">(${s.score}%)</span>
+                    </button>
+                `;
+            });
+
+            resultsBody.innerHTML = `
+                <div class="result-card-suggestions" style="border: 1.5px solid #bae6fd; background: #f0f9ff; border-radius: var(--radius-md); padding: 1.5rem; animation: fadeIn 0.3s ease-out;">
+                    <div style="font-size: 0.875rem; font-weight: 600; color: #0369a1; margin-bottom: 0.75rem;">
+                        ${escapeHtml(data.message)}
+                    </div>
+                    <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                        ${suggestionChips}
+                    </div>
+                </div>
+            `;
+
+            // Wire click handlers on suggestion chips
+            resultsBody.querySelectorAll('.suggestion-chip').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    const query = this.getAttribute('data-query');
+                    if (queryInput) {
+                        queryInput.value = query;
+                        if (clearBtn) clearBtn.style.display = 'flex';
+                        executeLookup(query);
+                    }
+                });
+            });
+        } else {
+            // NOT_FOUND state
+            resultsBody.innerHTML = `
+                <div style="border: 1px dashed var(--color-border); border-radius: var(--radius-md); padding: 2.5rem 1.5rem; text-align: center; animation: fadeIn 0.3s ease-out;">
+                    <div style="width: 48px; height: 48px; border-radius: 50%; background: #fef2f2; color: #ef4444; margin: 0 auto 0.75rem auto; display: flex; align-items: center; justify-content: center;">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="15" y1="9" x2="9" y2="15"></line>
+                            <line x1="9" y1="9" x2="15" y2="15"></line>
+                        </svg>
+                    </div>
+                    <div style="font-size: 1.05rem; font-weight: 700; color: var(--color-text-main);">${escapeHtml(data.message)}</div>
+                    <div style="font-size: 0.8125rem; color: var(--color-text-muted); margin-top: 0.35rem;">Double check the brand name or try searching generic salt words</div>
+                </div>
+            `;
+        }
+    }
+
+    function renderError(message) {
+        if (!resultsBody) return;
+        resultsBody.innerHTML = `
+            <div style="border: 1px solid #fecaca; background: #fef2f2; border-radius: var(--radius-md); padding: 1.5rem; text-align: center;">
+                <div style="color: #b91c1c; font-weight: 600; font-size: 0.9375rem;">${escapeHtml(message)}</div>
+            </div>
+        `;
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+})();
+
+// ==========================================================
+// Vanilla JavaScript Client for Medicine Price Prediction (v2)
+// ==========================================================
+(function() {
+    const predForm = document.getElementById('price-prediction-form');
+    const nameInput = document.getElementById('pred-medicine-name');
+    const packSizeInput = document.getElementById('pred-pack-size');
+    const qtyInput = document.getElementById('pred-quantity');
+    const mfgInput = document.getElementById('pred-manufacturer');
+    const saltInput = document.getElementById('pred-salt-composition');
+    const autocompleteDropdown = document.getElementById('pred-name-autocomplete');
+    const submitBtn = document.getElementById('pred-submit-btn');
+    const clearBtn = document.getElementById('pred-clear-btn');
+    const loadingState = document.getElementById('pred-loading-state');
+    const errorState = document.getElementById('pred-error-state');
+    const errorMessage = document.getElementById('pred-error-message');
+    const resultCard = document.getElementById('pred-result-card');
+
+    let debounceTimer = null;
+    let selectedIndex = -1;
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    function extractPackSize(str) {
+        if (!str) return null;
+        const match = String(str).match(/(\d+(?:\.\d+)?)/);
+        if (match) {
+            const val = parseFloat(match[1]);
+            return val > 0 ? val : null;
+        }
+        return null;
+    }
+
+    // Autocomplete for Medicine Name
+    if (nameInput && autocompleteDropdown) {
+        nameInput.addEventListener('input', function() {
+            const val = this.value.trim();
+            clearTimeout(debounceTimer);
+            selectedIndex = -1;
+
+            if (val.length < 2) {
+                closeAutocomplete();
+                return;
+            }
+
+            debounceTimer = setTimeout(function() {
+                fetchSuggestions(val);
+            }, 250);
+        });
+
+        nameInput.addEventListener('keydown', function(e) {
+            const items = autocompleteDropdown.querySelectorAll('.pred-autocomplete-item');
+            if (autocompleteDropdown.style.display !== 'block' || items.length === 0) return;
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                selectedIndex = Math.min(selectedIndex + 1, items.length - 1);
+                updateActiveItem(items);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                selectedIndex = Math.max(selectedIndex - 1, 0);
+                updateActiveItem(items);
+            } else if (e.key === 'Enter') {
+                if (selectedIndex >= 0 && selectedIndex < items.length) {
+                    e.preventDefault();
+                    items[selectedIndex].click();
+                }
+            } else if (e.key === 'Escape') {
+                closeAutocomplete();
+            }
+        });
+
+        document.addEventListener('click', function(e) {
+            if (!nameInput.contains(e.target) && !autocompleteDropdown.contains(e.target)) {
+                closeAutocomplete();
+            }
+        });
+    }
+
+    function updateActiveItem(items) {
+        items.forEach(function(item, idx) {
+            if (idx === selectedIndex) {
+                item.classList.add('active');
+                item.scrollIntoView({ block: 'nearest' });
+            } else {
+                item.classList.remove('active');
+            }
+        });
+    }
+
+    function closeAutocomplete() {
+        if (autocompleteDropdown) {
+            autocompleteDropdown.style.display = 'none';
+            autocompleteDropdown.innerHTML = '';
+            selectedIndex = -1;
+        }
+    }
+
+    function fetchSuggestions(query) {
+        const url = "{% url 'pharmacy:composition_autocomplete_api' %}?q=" + encodeURIComponent(query);
+        fetch(url, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+            if (data.status === 'success' && data.suggestions && data.suggestions.length > 0) {
+                renderAutocomplete(data.suggestions);
+            } else {
+                closeAutocomplete();
+            }
+        })
+        .catch(function(err) {
+            console.error('Error fetching autocomplete suggestions:', err);
+            closeAutocomplete();
+        });
+    }
+
+    function renderAutocomplete(suggestions) {
+        if (!autocompleteDropdown) return;
+        autocompleteDropdown.innerHTML = '';
+        suggestions.forEach(function(name) {
+            const item = document.createElement('div');
+            item.className = 'pred-autocomplete-item';
+            item.setAttribute('role', 'option');
+            item.textContent = name;
+            item.addEventListener('click', function() {
+                nameInput.value = name;
+                closeAutocomplete();
+                autoFillFromComposition(name);
+            });
+            autocompleteDropdown.appendChild(item);
+        });
+        autocompleteDropdown.style.display = 'block';
+    }
+
+    function autoFillFromComposition(medName) {
+        const url = "{% url 'pharmacy:composition_lookup_api' %}?q=" + encodeURIComponent(medName);
+        fetch(url, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+            if (data.status === 'VERIFIED_MATCH') {
+                if (data.quantity && qtyInput && !qtyInput.value.trim()) {
+                    qtyInput.value = data.quantity;
+                }
+                if (data.manufacturer && mfgInput && !mfgInput.value.trim()) {
+                    mfgInput.value = data.manufacturer;
+                }
+                if (data.salt_composition && saltInput && !saltInput.value.trim()) {
+                    saltInput.value = data.salt_composition;
+                }
+                if (packSizeInput && (!packSizeInput.value.trim() || parseFloat(packSizeInput.value) <= 0)) {
+                    const parsed = extractPackSize(data.quantity);
+                    if (parsed) {
+                        packSizeInput.value = parsed;
+                    }
+                }
+            }
+        })
+        .catch(function() {
+            // Silently ignore background autofill errors
+        });
+    }
+
+    // Example quick presets click handling
+    document.querySelectorAll('.pred-example-chip').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            if (nameInput) nameInput.value = this.getAttribute('data-name') || '';
+            if (qtyInput) qtyInput.value = this.getAttribute('data-qty') || '';
+            if (packSizeInput) packSizeInput.value = this.getAttribute('data-pack') || '';
+            if (mfgInput) mfgInput.value = this.getAttribute('data-mfg') || '';
+            if (saltInput) saltInput.value = this.getAttribute('data-salt') || '';
+
+            closeAutocomplete();
+            if (predForm) {
+                executePrediction();
+            }
+        });
+    });
+
+    // Reset button
+    if (clearBtn) {
+        clearBtn.addEventListener('click', function() {
+            if (predForm) predForm.reset();
+            closeAutocomplete();
+            hideError();
+            if (resultCard) {
+                resultCard.style.display = 'none';
+                resultCard.innerHTML = '';
+            }
+        });
+    }
+
+    // Global listener for "Run AI Price Estimate" transfer button from composition results
+    document.addEventListener('click', function(e) {
+        const target = e.target.closest('.transfer-to-predictor-btn');
+        if (target) {
+            const name = target.getAttribute('data-name') || '';
+            const mfg = target.getAttribute('data-mfg') || '';
+            const qty = target.getAttribute('data-qty') || '';
+            const salt = target.getAttribute('data-salt') || '';
+
+            if (nameInput) nameInput.value = name;
+            if (mfgInput) mfgInput.value = (mfg !== 'Not specified' ? mfg : '');
+            if (qtyInput) qtyInput.value = (qty !== 'Standard packaging' ? qty : '');
+            if (saltInput) saltInput.value = (salt !== 'Not recorded' ? salt : '');
+
+            const parsedPack = extractPackSize(qty) || 10;
+            if (packSizeInput) packSizeInput.value = parsedPack;
+
+            const predSection = document.getElementById('price-prediction-section');
+            if (predSection) {
+                predSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+
+            executePrediction();
+        }
+    });
+
+    // Form submit
+    if (predForm) {
+        predForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            closeAutocomplete();
+            executePrediction();
+        });
+    }
+
+    function showError(msg) {
+        if (errorMessage) errorMessage.textContent = msg;
+        if (errorState) errorState.style.display = 'block';
+        if (resultCard) resultCard.style.display = 'none';
+    }
+
+    function hideError() {
+        if (errorState) errorState.style.display = 'none';
+        if (errorMessage) errorMessage.textContent = '';
+    }
+
+    function executePrediction() {
+        hideError();
+        const nameVal = nameInput ? nameInput.value.trim() : '';
+        const packVal = packSizeInput ? parseFloat(packSizeInput.value) : NaN;
+        const qtyVal = qtyInput ? qtyInput.value.trim() : '';
+        const mfgVal = mfgInput ? mfgInput.value.trim() : '';
+        const saltVal = saltInput ? saltInput.value.trim() : '';
+
+        // Validation
+        if (!nameVal) {
+            showError('Please enter a Medicine Name.');
+            if (nameInput) nameInput.focus();
+            return;
+        }
+
+        if (isNaN(packVal) || packVal <= 0) {
+            showError('Please enter a valid numeric Pack Size greater than 0 (e.g. 10 tablets).');
+            if (packSizeInput) packSizeInput.focus();
+            return;
+        }
+
+        // Show loading state
+        if (loadingState) loadingState.style.display = 'block';
+        if (resultCard) resultCard.style.display = 'none';
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.style.opacity = '0.7';
+            submitBtn.style.cursor = 'not-allowed';
+        }
+
+        let csrfToken = '';
+        const csrfInput = predForm ? predForm.querySelector('[name=csrfmiddlewaretoken]') : null;
+        if (csrfInput) {
+            csrfToken = csrfInput.value;
+        }
+
+        fetch("{% url 'pharmacy:price_prediction_api' %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({
+                name: nameVal,
+                pack_size: packVal,
+                quantity: qtyVal,
+                manufacturer: mfgVal,
+                salt_composition: saltVal
+            })
+        })
+        .then(function(res) {
+            return res.json().then(function(data) {
+                return { status: res.status, ok: res.ok, data: data };
+            });
+        })
+        .then(function(payload) {
+            if (payload.ok && payload.data.success) {
+                renderPredictionResult(payload.data);
+            } else {
+                const err = (payload.data && payload.data.error) ? payload.data.error : 'Failed to calculate price prediction.';
+                showError(err);
+            }
+        })
+        .catch(function(err) {
+            console.error('Price prediction error:', err);
+            showError('An unexpected network or server error occurred. Please try again.');
+        })
+        .finally(function() {
+            if (loadingState) loadingState.style.display = 'none';
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.style.opacity = '1';
+                submitBtn.style.cursor = 'pointer';
+            }
+        });
+    }
+
+    function renderPredictionResult(data) {
+        if (!resultCard) return;
+
+        const estPrice = Number(data.estimated_mrp).toFixed(2);
+        const nameText = escapeHtml(data.name);
+        const qtyText = escapeHtml(data.quantity || 'Standard packaging');
+        const mfgText = escapeHtml(data.manufacturer || 'Unspecified');
+        const saltText = escapeHtml(data.salt_composition || 'Not recorded');
+        const packSizeText = escapeHtml(data.pack_size);
+
+        let boundedBadge = '';
+        if (data.is_bound_clamped) {
+            boundedBadge = `
+                <span style="font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; background: #fef3c7; color: #b45309; padding: 0.2rem 0.5rem; border-radius: 9999px;">
+                    Boundary Adjusted (Rs 1.00 - Rs 5,000.00)
+                </span>
+            `;
+        }
+
+        resultCard.innerHTML = `
+            <div style="border: 1.5px solid #67e8f9; background: linear-gradient(135deg, #f0fdfa 0%, #ffffff 100%); border-radius: var(--radius-md); padding: 1.75rem; box-shadow: var(--shadow-sm); animation: fadeIn 0.3s ease-out;">
+                
+                <!-- Card Header -->
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; border-bottom: 1px solid #ccfbf1; padding-bottom: 1.25rem; margin-bottom: 1.25rem;">
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.4rem; flex-wrap: wrap;">
+                            <span style="display: inline-flex; align-items: center; gap: 0.35rem; background: #0891b2; color: #ffffff; padding: 0.2rem 0.65rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.03em;">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                                AI PRICE ESTIMATION
+                            </span>
+                            <span style="font-size: 0.8125rem; color: #0e7490; font-weight: 600;">Model v2 &bull; Ridge L2 Regularized</span>
+                            ${boundedBadge}
+                        </div>
+                        <h3 style="font-size: 1.45rem; font-weight: 800; color: #0f172a; margin: 0;">
+                            ${nameText}
+                        </h3>
+                    </div>
+
+                    <!-- Highlighted Estimated MRP Box -->
+                    <div style="background: #ffffff; border: 2px solid #0891b2; border-radius: var(--radius-sm); padding: 0.85rem 1.35rem; text-align: right; box-shadow: 0 4px 6px -1px rgba(8, 145, 178, 0.1);">
+                        <span style="font-size: 0.75rem; color: #0891b2; text-transform: uppercase; font-weight: 700; display: block; letter-spacing: 0.05em;">Estimated MRP</span>
+                        <div style="font-size: 1.85rem; font-weight: 900; color: #0f172a; line-height: 1.1; margin-top: 0.2rem;">
+                            ₹${estPrice}
+                        </div>
+                        <span style="font-size: 0.6875rem; color: #64748b;">Per pack (${packSizeText} units)</span>
+                    </div>
+                </div>
+
+                <!-- Evaluated Features Grid -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1.25rem;">
+                    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: var(--radius-sm); padding: 0.85rem 1rem;">
+                        <span style="font-size: 0.75rem; color: #64748b; text-transform: uppercase; font-weight: 600; display: block;">Pack Size Units</span>
+                        <strong style="color: #0f172a; font-size: 0.9375rem; margin-top: 0.2rem; display: block;">
+                            ${packSizeText} units
+                        </strong>
+                    </div>
+                    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: var(--radius-sm); padding: 0.85rem 1rem;">
+                        <span style="font-size: 0.75rem; color: #64748b; text-transform: uppercase; font-weight: 600; display: block;">Packaging Format</span>
+                        <strong style="color: #0f172a; font-size: 0.9375rem; margin-top: 0.2rem; display: block;">
+                            ${qtyText}
+                        </strong>
+                    </div>
+                    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: var(--radius-sm); padding: 0.85rem 1rem;">
+                        <span style="font-size: 0.75rem; color: #64748b; text-transform: uppercase; font-weight: 600; display: block;">Manufacturer</span>
+                        <strong style="color: #0f172a; font-size: 0.9375rem; margin-top: 0.2rem; display: block;">
+                            ${mfgText}
+                        </strong>
+                    </div>
+                    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: var(--radius-sm); padding: 0.85rem 1rem;">
+                        <span style="font-size: 0.75rem; color: #64748b; text-transform: uppercase; font-weight: 600; display: block;">Chemical Formulation</span>
+                        <strong style="color: #0f172a; font-size: 0.9375rem; margin-top: 0.2rem; display: block;">
+                            ${saltText}
+                        </strong>
+                    </div>
+                </div>
+
+                <!-- Disclaimer & Transparency Alert -->
+                <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: var(--radius-sm); padding: 0.85rem 1rem; display: flex; align-items: flex-start; gap: 0.75rem;">
+                    <span style="color: #64748b; margin-top: 2px;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                        </svg>
+                    </span>
+                    <div style="font-size: 0.75rem; color: #475569; line-height: 1.5;">
+                        <strong style="color: #334155;">Notice:</strong>
+                        This estimate is generated by MedAccess Ridge Regression Model v2 trained on Tata 1mg historical formulations. This forecast is provided for pharmacy inventory valuation, margin planning, and operational comparison. It is <strong>not</strong> an official manufacturer MRP or government-regulated ceiling price.
+                    </div>
+                </div>
+
+            </div>
+        `;
+
+        resultCard.style.display = 'block';
+    }
+
+})();
+</script>
+
+<style>
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.example-chip:hover {
+    border-color: #0f766e !important;
+    background: #f0fdf4 !important;
+    color: #0f766e !important;
+}
+.suggestion-chip:hover {
+    background: #0284c7 !important;
+    color: #ffffff !important;
+}
+.select-candidate-btn:hover {
+    background: #0d5f58 !important;
+}
+#composition-search-btn:hover {
+    background: #0d5f58 !important;
+}
+#composition-query-input:focus {
+    border-color: #0f766e !important;
+    box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.15) !important;
+}
+.autocomplete-item:hover, .autocomplete-item.active {
+    background: #f0fdf4 !important;
+    border-left: 3px solid #0f766e !important;
+}
+#composition-autocomplete-dropdown::-webkit-scrollbar {
+    width: 6px;
+}
+#composition-autocomplete-dropdown::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+
+/* Price Predictor Styles */
+.pred-example-chip:hover {
+    border-color: #0891b2 !important;
+    background: #ecfeff !important;
+    color: #0891b2 !important;
+}
+#pred-submit-btn:hover {
+    background: #0891b2 !important;
+    transform: translateY(-1px);
+}
+#pred-medicine-name:focus,
+#pred-pack-size:focus,
+#pred-quantity:focus,
+#pred-manufacturer:focus,
+#pred-salt-composition:focus {
+    border-color: #0891b2 !important;
+    box-shadow: 0 0 0 3px rgba(8, 145, 178, 0.15) !important;
+}
+.pred-autocomplete-item {
+    padding: 0.6rem 1rem;
+    font-size: 0.875rem;
+    color: var(--color-text-main);
+    cursor: pointer;
+    transition: background 0.15s ease, border-left 0.15s ease;
+    border-bottom: 1px solid #f1f5f9;
+}
+.pred-autocomplete-item:last-child {
+    border-bottom: none;
+}
+.pred-autocomplete-item:hover,
+.pred-autocomplete-item.active {
+    background: #ecfeff !important;
+    border-left: 3px solid #0891b2 !important;
+    color: #0e7490 !important;
+}
+#pred-name-autocomplete::-webkit-scrollbar {
+    width: 6px;
+}
+#pred-name-autocomplete::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+.transfer-to-predictor-btn:hover {
+    background: #0891b2 !important;
+}
+</style>
+{% endblock content %}

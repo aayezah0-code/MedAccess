@@ -1,0 +1,183 @@
+{% extends 'patient/base_patient.html' %}
+
+{% block title %}Upload Prescription | Patient Portal | MedAccess{% endblock title %}
+{% block header_title %}Upload Prescription{% endblock header_title %}
+{% block nav_upload_prescription %}active{% endblock nav_upload_prescription %}
+
+{% block content %}
+<div class="upload-container">
+
+    <!-- Header Card -->
+    <div class="upload-header-card">
+        <div class="upload-header-icon">
+            <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="17 8 12 3 7 8"></polyline>
+                <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+        </div>
+        <div>
+            <h1 class="upload-header-title">Upload Doctor's Prescription</h1>
+            <p class="upload-header-desc">
+                Upload a clear photo or scan of your medical prescription to save it in your account and find medicines at nearby pharmacies.
+            </p>
+        </div>
+    </div>
+
+    <div class="upload-grid">
+
+        <!-- Form Column -->
+        <div class="upload-card">
+            <form method="post" action="{% url 'patient:upload_prescription' %}" enctype="multipart/form-data" id="prescription-upload-form">
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                    <div class="alert alert-error" style="margin-bottom: 1.25rem;">
+                        {% for error in form.non_field_errors %}
+                            <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                <div class="file-dropzone" id="file-dropzone">
+                    <div class="dropzone-icon">
+                        <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                            <polyline points="21 15 16 10 5 21"></polyline>
+                        </svg>
+                    </div>
+
+                    <p class="dropzone-title">Select Prescription Image</p>
+                    <p class="dropzone-subtitle">Click to browse your device for a clear photo or document scan</p>
+
+                    <label for="prescription-image-input" class="btn btn-secondary dropzone-btn">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                        <span>Choose File</span>
+                    </label>
+
+                    {{ form.prescription_image }}
+
+                    <!-- File details preview once selected -->
+                    <div id="file-info" class="file-info" style="display: none;">
+                        <div class="file-info-icon">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                            </svg>
+                        </div>
+                        <div class="file-info-text">
+                            <span class="file-name" id="selected-file-name">filename.jpg</span>
+                            <span class="file-size" id="selected-file-size">0 KB</span>
+                        </div>
+                    </div>
+                </div>
+
+                {% if form.prescription_image.errors %}
+                    <div class="field-error" style="margin-top: 0.75rem;">
+                        {{ form.prescription_image.errors.0 }}
+                    </div>
+                {% endif %}
+
+                <!-- File Specs & Supported formats -->
+                <div class="upload-specs">
+                    <div class="spec-item">
+                        <span class="spec-label">Supported Formats:</span>
+                        <span class="spec-badge">JPG</span>
+                        <span class="spec-badge">JPEG</span>
+                        <span class="spec-badge">PNG</span>
+                        <span class="spec-badge">WEBP</span>
+                        <span class="spec-badge">PDF</span>
+                    </div>
+                    <div class="spec-item">
+                        <span class="spec-label">Maximum File Size:</span>
+                        <span class="spec-value">10 MB</span>
+                    </div>
+                </div>
+
+                <div class="upload-actions">
+                    <button type="submit" class="btn btn-primary btn-upload-submit">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                        <span>Upload Prescription</span>
+                    </button>
+                    <a href="{% url 'patient:dashboard' %}" class="btn btn-outline" style="text-decoration:none;">Cancel</a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Guidelines Column -->
+        <div class="guidelines-card">
+            <div class="guidelines-header">
+                <div class="guidelines-icon">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    </svg>
+                </div>
+                <h2 class="guidelines-title">Tips for Clear Uploads</h2>
+            </div>
+
+            <ul class="guidelines-list">
+                <li>
+                    <strong>Doctor & Clinic Details:</strong> Ensure doctor's name, clinic letterhead, or registration number is visible.
+                </li>
+                <li>
+                    <strong>Legible Medicine Names:</strong> Ensure the handwritten or printed names and dosages are clearly readable.
+                </li>
+                <li>
+                    <strong>Good Lighting:</strong> Place your prescription on a flat surface in daylight or under direct light without heavy shadows.
+                </li>
+                <li>
+                    <strong>Avoid Crop:</strong> Keep all four corners of the prescription paper within the frame.
+                </li>
+            </ul>
+
+            <div class="guidelines-note">
+                <p><strong>Note:</strong> Uploaded prescriptions are securely stored under your account with status <em>UPLOADED</em>. Pharmacists will verify the prescription details before dispensing medications.</p>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+{% endblock content %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const fileInput = document.getElementById('prescription-image-input');
+    const fileInfo = document.getElementById('file-info');
+    const selectedFileName = document.getElementById('selected-file-name');
+    const selectedFileSize = document.getElementById('selected-file-size');
+
+    if (fileInput) {
+        fileInput.addEventListener('change', function() {
+            if (fileInput.files && fileInput.files[0]) {
+                const file = fileInput.files[0];
+                selectedFileName.textContent = file.name;
+                const sizeKb = (file.size / 1024).toFixed(1);
+                if (file.size > 1024 * 1024) {
+                    const sizeMb = (file.size / (1024 * 1024)).toFixed(2);
+                    selectedFileSize.textContent = sizeMb + ' MB';
+                } else {
+                    selectedFileSize.textContent = sizeKb + ' KB';
+                }
+                fileInfo.style.display = 'flex';
+            } else {
+                fileInfo.style.display = 'none';
+            }
+        });
+    }
+});
+</script>
+{% endblock extra_js %}
+

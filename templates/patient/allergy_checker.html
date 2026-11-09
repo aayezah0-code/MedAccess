@@ -1,0 +1,1362 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}AI Medicine Allergy Checker | MedAccess{% endblock title %}
+
+{% block extra_css %}
+<style>
+/* Page Layout */
+.allergy-page-wrapper {
+    max-width: 1040px;
+    margin: 1.5rem auto 3rem auto;
+    padding: 0 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.75rem;
+}
+
+/* Header & Banner */
+.allergy-header-card {
+    background: linear-gradient(135deg, #094770 0%, #0369a1 50%, #0284c7 100%);
+    border-radius: var(--radius-lg, 16px);
+    padding: 2.25rem 2rem;
+    color: #ffffff;
+    box-shadow: 0 10px 25px -5px rgba(2, 132, 199, 0.25);
+    position: relative;
+    overflow: hidden;
+}
+
+.allergy-header-card::after {
+    content: '';
+    position: absolute;
+    top: -40%;
+    right: -10%;
+    width: 320px;
+    height: 320px;
+    background: radial-gradient(circle, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0) 70%);
+    pointer-events: none;
+}
+
+.allergy-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: rgba(255, 255, 255, 0.18);
+    color: #e0f2fe;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    font-size: 0.75rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    margin-bottom: 0.85rem;
+    backdrop-filter: blur(4px);
+}
+
+.allergy-header-title {
+    font-size: 2rem;
+    font-weight: 800;
+    margin: 0 0 0.65rem 0;
+    color: #ffffff;
+    letter-spacing: -0.025em;
+    line-height: 1.2;
+}
+
+.allergy-header-subtitle {
+    color: #e0f2fe;
+    font-size: 0.975rem;
+    line-height: 1.6;
+    margin: 0;
+    max-width: 760px;
+}
+
+/* Red-flag Emergency Notice */
+.emergency-callout-top {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-left: 5px solid #dc2626;
+    border-radius: var(--radius-md, 10px);
+    padding: 1rem 1.25rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.85rem;
+    color: #991b1b;
+}
+
+.emergency-callout-top svg {
+    flex-shrink: 0;
+    width: 22px;
+    height: 22px;
+    stroke: #dc2626;
+    margin-top: 0.1rem;
+}
+
+.emergency-callout-text {
+    font-size: 0.875rem;
+    line-height: 1.5;
+}
+
+.emergency-callout-text strong {
+    font-weight: 700;
+    color: #7f1d1d;
+}
+
+/* Main Form Card */
+.allergy-form-card {
+    background: var(--color-surface, #ffffff);
+    border: 1px solid var(--color-border, #e2e8f0);
+    border-radius: var(--radius-lg, 16px);
+    padding: 2rem;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+}
+
+.form-section-title {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--color-text-main, #0f172a);
+    margin-bottom: 0.35rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.form-section-desc {
+    font-size: 0.875rem;
+    color: var(--color-text-muted, #64748b);
+    margin-bottom: 1.25rem;
+}
+
+/* Two-column Input Grid */
+.input-options-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+    margin-bottom: 1.5rem;
+}
+
+@media (max-width: 768px) {
+    .input-options-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.input-option-card {
+    background: var(--color-surface-card, #f8fafc);
+    border: 1px solid var(--color-border, #e2e8f0);
+    border-radius: var(--radius-md, 10px);
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.input-option-card:focus-within {
+    border-color: var(--color-primary, #0284c7);
+    box-shadow: 0 0 0 3px var(--color-focus-ring, rgba(2, 132, 199, 0.12));
+}
+
+.option-badge {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-primary, #0369a1);
+    background: var(--color-primary-light, #e0f2fe);
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    align-self: flex-start;
+}
+
+.form-label {
+    display: block;
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: var(--color-text-main, #1e293b);
+    margin-bottom: 0.25rem;
+}
+
+.text-input-field {
+    width: 100%;
+    padding: 0.75rem 0.875rem;
+    border: 1px solid var(--color-border, #cbd5e1);
+    border-radius: var(--radius-sm, 6px);
+    font-size: 0.9375rem;
+    background: var(--color-input-bg, #ffffff);
+    color: var(--color-text-main, #0f172a);
+    transition: all 0.2s ease;
+}
+
+.text-input-field:focus {
+    outline: none;
+    background: var(--color-surface, #ffffff);
+    border-color: var(--color-primary, #0284c7);
+    box-shadow: 0 0 0 3px var(--color-focus-ring, rgba(2, 132, 199, 0.15));
+}
+
+/* Image Upload Drag & Drop Area */
+.image-dropzone {
+    border: 2px dashed var(--color-border, #cbd5e1);
+    background: var(--color-input-bg, #ffffff);
+    border-radius: var(--radius-sm, 6px);
+    padding: 1.25rem 1rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 120px;
+}
+
+.image-dropzone.dragover {
+    border-color: var(--color-primary, #0284c7);
+    background: var(--color-surface-hover, #f0f9ff);
+}
+
+.image-dropzone svg {
+    width: 32px;
+    height: 32px;
+    stroke: var(--color-text-muted, #64748b);
+    margin-bottom: 0.5rem;
+}
+
+.dropzone-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-text-main, #334155);
+    margin-bottom: 0.25rem;
+}
+
+.dropzone-hint {
+    font-size: 0.75rem;
+    color: var(--color-text-muted, #64748b);
+}
+
+.file-preview-card {
+    display: none;
+    background: var(--color-surface, #ffffff);
+    border: 1px solid var(--color-border, #cbd5e1);
+    border-radius: var(--radius-sm, 6px);
+    padding: 0.75rem;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.file-preview-thumb {
+    width: 48px;
+    height: 48px;
+    object-fit: cover;
+    border-radius: 4px;
+    border: 1px solid var(--color-border, #e2e8f0);
+}
+
+.file-preview-details {
+    flex: 1;
+    min-width: 0;
+}
+
+.file-preview-name {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--color-text-main, #1e293b);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.file-preview-size {
+    font-size: 0.75rem;
+    color: var(--color-text-muted, #64748b);
+}
+
+.btn-remove-file {
+    background: transparent;
+    border: none;
+    color: #dc2626;
+    cursor: pointer;
+    padding: 0.35rem;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-remove-file:hover {
+    background: var(--color-error-bg, #fee2e2);
+}
+
+/* Symptoms Section */
+.symptoms-section {
+    margin-top: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+}
+
+.symptoms-textarea {
+    width: 100%;
+    min-height: 110px;
+    padding: 0.85rem;
+    border: 1px solid var(--color-border, #cbd5e1);
+    border-radius: var(--radius-sm, 6px);
+    font-size: 0.9375rem;
+    font-family: inherit;
+    color: var(--color-text-main, #0f172a);
+    background: var(--color-input-bg, #ffffff);
+    line-height: 1.5;
+    resize: vertical;
+    transition: all 0.2s ease;
+}
+
+.symptoms-textarea:focus {
+    outline: none;
+    background: var(--color-surface, #ffffff);
+    border-color: var(--color-primary, #0284c7);
+    box-shadow: 0 0 0 3px var(--color-focus-ring, rgba(2, 132, 199, 0.15));
+}
+
+/* Symptom Quick Chips */
+.chips-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    margin-top: 0.4rem;
+}
+
+.symptom-chip {
+    background: var(--color-surface, #f1f5f9);
+    border: 1px solid var(--color-border, #cbd5e1);
+    color: var(--color-text-muted, #334155);
+    font-size: 0.8125rem;
+    padding: 0.3rem 0.65rem;
+    border-radius: 9999px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    user-select: none;
+}
+
+.symptom-chip:hover {
+    background: var(--color-surface-hover, #e2e8f0);
+    border-color: var(--color-border-hover, #94a3b8);
+    color: var(--color-text-main, #0f172a);
+}
+
+.symptom-chip.active {
+    background: var(--color-primary-light, #e0f2fe);
+    border-color: var(--color-primary, #38bdf8);
+    color: var(--color-primary, #0369a1);
+}
+    font-weight: 600;
+}
+
+/* Form Actions */
+.form-actions-bar {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1.75rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid #e2e8f0;
+}
+
+.btn-primary-action {
+    background: #0284c7;
+    color: #ffffff;
+    border: none;
+    padding: 0.85rem 1.75rem;
+    border-radius: var(--radius-md, 10px);
+    font-weight: 600;
+    font-size: 0.9375rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.btn-primary-action:hover {
+    background: #0369a1;
+}
+
+.btn-primary-action:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.btn-secondary-action {
+    background: transparent;
+    color: #64748b;
+    border: 1px solid #cbd5e1;
+    padding: 0.85rem 1.25rem;
+    border-radius: var(--radius-md, 10px);
+    font-weight: 600;
+    font-size: 0.9375rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-secondary-action:hover {
+    background: #f1f5f9;
+    color: #334155;
+}
+
+/* Client & Server Error Alert */
+.error-message-box {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: var(--radius-md, 10px);
+    padding: 1rem 1.25rem;
+    color: #991b1b;
+    font-size: 0.875rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+}
+
+.error-message-box svg {
+    width: 20px;
+    height: 20px;
+    stroke: #dc2626;
+    flex-shrink: 0;
+    margin-top: 0.1rem;
+}
+
+/* Loading Card */
+.loading-card {
+    display: none;
+    background: var(--color-surface, #ffffff);
+    border: 1px solid var(--color-border, #e2e8f0);
+    border-radius: var(--radius-lg, 16px);
+    padding: 2.5rem 1.5rem;
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+}
+
+.spinner {
+    width: 48px;
+    height: 48px;
+    border: 4px solid var(--color-border, #e2e8f0);
+    border-top: 4px solid var(--color-primary, #0284c7);
+    border-radius: 50%;
+    animation: spin 0.9s linear infinite;
+    margin: 0 auto 1.25rem auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loading-title {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--color-text-main, #0f172a);
+    margin-bottom: 0.5rem;
+}
+
+.loading-steps {
+    list-style: none;
+    padding: 0;
+    margin: 1.25rem auto 0 auto;
+    max-width: 380px;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    color: var(--color-text-muted, #64748b);
+}
+
+.loading-step-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.loading-step-item.active {
+    color: var(--color-primary, #0284c7);
+    font-weight: 600;
+}
+
+/* Results Card */
+.results-card {
+    background: var(--color-surface, #ffffff);
+    border: 1px solid var(--color-border, #e2e8f0);
+    border-radius: var(--radius-lg, 16px);
+    padding: 2.25rem;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05);
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+/* Emergency Alert Banner in Result */
+.result-emergency-banner {
+    background: #7f1d1d;
+    color: #ffffff;
+    border-radius: var(--radius-md, 10px);
+    padding: 1.25rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    box-shadow: 0 4px 10px rgba(127, 29, 29, 0.3);
+}
+
+.result-emergency-banner svg {
+    width: 28px;
+    height: 28px;
+    stroke: #fca5a5;
+    flex-shrink: 0;
+    margin-top: 0.15rem;
+}
+
+.result-emergency-title {
+    font-size: 1.125rem;
+    font-weight: 800;
+    margin: 0 0 0.35rem 0;
+    letter-spacing: -0.01em;
+}
+
+.result-emergency-body {
+    font-size: 0.9375rem;
+    line-height: 1.5;
+    margin: 0;
+    color: #fee2e2;
+}
+
+/* Result Header with Risk Level Badge */
+.result-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 1rem;
+    padding-bottom: 1.25rem;
+    border-bottom: 1px solid var(--color-border, #e2e8f0);
+}
+
+.result-med-title {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--color-text-main, #0f172a);
+    margin: 0 0 0.25rem 0;
+}
+
+.result-active-sub {
+    font-size: 0.875rem;
+    color: var(--color-text-muted, #64748b);
+    margin: 0;
+}
+
+.risk-badge {
+    padding: 0.5rem 1rem;
+    border-radius: 9999px;
+    font-weight: 700;
+    font-size: 0.875rem;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+}
+
+/* Risk Badge Themes */
+.risk-badge-emergency {
+    background: var(--color-error-bg, #fef2f2);
+    color: var(--color-error-text, #991b1b);
+    border: 1px solid var(--color-error-border, #f87171);
+}
+
+.risk-badge-potential {
+    background: var(--color-warning-bg, #fff7ed);
+    color: var(--color-warning-text, #9a3412);
+    border: 1px solid var(--color-warning-border, #fdba74);
+}
+
+.risk-badge-side-effect {
+    background: var(--color-info-bg, #f0f9ff);
+    color: var(--color-info-text, #0369a1);
+    border: 1px solid var(--color-info-border, #7dd3fc);
+}
+
+.risk-badge-unlikely {
+    background: var(--color-success-bg, #f0fdf4);
+    color: var(--color-success-text, #15803d);
+    border: 1px solid var(--color-success-border, #86efac);
+}
+
+.risk-badge-insufficient {
+    background: var(--color-surface-hover, #f8fafc);
+    color: var(--color-text-muted, #475569);
+    border: 1px solid var(--color-border, #cbd5e1);
+}
+
+/* Content Sections */
+.result-section-box {
+    background: var(--color-surface-card, #f8fafc);
+    border: 1px solid var(--color-border, #e2e8f0);
+    border-radius: var(--radius-md, 10px);
+    padding: 1.25rem;
+}
+
+.result-section-box h4 {
+    font-size: 0.9375rem;
+    font-weight: 700;
+    color: var(--color-text-main, #1e293b);
+    margin: 0 0 0.5rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.result-section-box p {
+    font-size: 0.875rem;
+    line-height: 1.6;
+    color: var(--color-text-main, #334155);
+    margin: 0;
+}
+
+/* Warning Signs & Recommendations Lists */
+.styled-list {
+    margin: 0.5rem 0 0 0;
+    padding-left: 1.25rem;
+    font-size: 0.875rem;
+    color: var(--color-text-main, #334155);
+    line-height: 1.6;
+}
+
+.styled-list li {
+    margin-bottom: 0.35rem;
+}
+
+/* Medical Disclaimer */
+.disclaimer-card {
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    border-radius: var(--radius-md, 10px);
+    padding: 1rem 1.25rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    color: #475569;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+}
+
+.disclaimer-card svg {
+    width: 20px;
+    height: 20px;
+    stroke: #64748b;
+    flex-shrink: 0;
+    margin-top: 0.1rem;
+}
+
+/* Results Actions */
+.result-footer-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e2e8f0;
+}
+</style>
+{% endblock extra_css %}
+
+{% block content %}
+<div class="allergy-page-wrapper">
+    <!-- Header Banner -->
+    <section class="allergy-header-card">
+        <span class="allergy-badge">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                <path d="M12 8v4"></path>
+                <path d="M12 16h.01"></path>
+            </svg>
+            Public AI Health Screening
+        </span>
+        <h1 class="allergy-header-title">Medicine Allergy & Adverse Reaction Checker</h1>
+        <p class="allergy-header-subtitle">
+            Screen your medication and symptoms for drug hypersensitivity risk using Groq AI pharmacological models.
+            Supports English, Hindi, and Hinglish descriptions.
+        </p>
+    </section>
+
+    <!-- Critical Emergency Callout -->
+    <div class="emergency-callout-top">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+        <div class="emergency-callout-text">
+            <strong>Emergency Advisory:</strong> If you or someone else is experiencing difficulty breathing,
+            swelling of the face, tongue, or throat, dizziness, or collapse, do not wait for this screening.
+            Seek immediate medical attention at the nearest emergency room or call <strong>112 / 108 / 911</strong> right away.
+        </div>
+    </div>
+
+    <!-- Error Alert Banner (Server Rendered or JS) -->
+    <div id="error-banner" class="error-message-box" style="{% if not error_message %}display: none;{% endif %}">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"></polygon>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+        <div id="error-banner-text">{{ error_message|default:"" }}</div>
+    </div>
+
+    <!-- Input Form Card -->
+    <section class="allergy-form-card" id="input-card">
+        <form id="allergy-form" method="POST" action="{% url 'allergy_checker' %}" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <div class="form-section-title">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#0284c7" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                    <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                </svg>
+                Step 1: Identify Medicine
+            </div>
+            <p class="form-section-desc">Provide either the name of the medicine, upload an image of the box/strip, or both.</p>
+
+            <div class="input-options-grid">
+                <!-- Option A: Text Name -->
+                <div class="input-option-card">
+                    <span class="option-badge">Option A &bull; Name</span>
+                    <label for="medicine-name-input" class="form-label">Medicine Brand or Generic Name</label>
+                    <input
+                        type="text"
+                        name="medicine_name"
+                        id="medicine-name-input"
+                        class="text-input-field"
+                        placeholder="e.g. Amoxicillin, Augmentin, Paracetamol..."
+                        value="{{ initial_medicine }}"
+                        autocomplete="off"
+                    >
+                    <span style="font-size: 0.75rem; color: #64748b;">Type the name written on your medicine strip or prescription.</span>
+                </div>
+
+                <!-- Option B: Image Upload -->
+                <div class="input-option-card">
+                    <span class="option-badge">Option B &bull; Photo</span>
+                    <label class="form-label">Upload Medicine Strip / Packaging</label>
+                    
+                    <input
+                        type="file"
+                        name="medicine_image"
+                        id="medicine-image-input"
+                        accept="image/jpeg,image/png,image/webp"
+                        style="display: none;"
+                    >
+
+                    <div class="image-dropzone" id="image-dropzone">
+                        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                            <polyline points="21 15 16 10 5 21"></polyline>
+                        </svg>
+                        <span class="dropzone-label">Click or Drag & Drop Medicine Photo</span>
+                        <span class="dropzone-hint">JPG, PNG, or WEBP up to 5 MB</span>
+                    </div>
+
+                    <div class="file-preview-card" id="file-preview-card">
+                        <img id="file-preview-thumb" class="file-preview-thumb" src="" alt="Medicine Preview">
+                        <div class="file-preview-details">
+                            <div id="file-preview-name" class="file-preview-name">medicine.jpg</div>
+                            <div id="file-preview-size" class="file-preview-size">1.2 MB</div>
+                        </div>
+                        <button type="button" id="btn-remove-file" class="btn-remove-file" title="Remove image">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: Symptoms -->
+            <div class="symptoms-section">
+                <div class="form-section-title">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#0284c7" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <activity></activity>
+                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                    </svg>
+                    Step 2: Describe Symptoms / लक्षण बताएं *
+                </div>
+                <p class="form-section-desc">
+                    Tell us what happened after taking the medication. You can write in English, Hindi (हिन्दी), or Hinglish.
+                </p>
+
+                <textarea
+                    name="symptoms"
+                    id="symptoms-input"
+                    class="symptoms-textarea"
+                    placeholder="e.g. Red itchy hives appeared on my arms 30 minutes after taking the medicine. Mild swelling around lips..."
+                    required
+                >{{ initial_symptoms }}</textarea>
+
+                <!-- Quick Symptom Chips -->
+                <div>
+                    <span style="font-size: 0.75rem; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.04em;">
+                        Quick Add Symptoms:
+                    </span>
+                    <div class="chips-container" id="chips-container">
+                        <button type="button" class="symptom-chip" data-symptom="Skin itching (खुजली)">Itching (खुजली)</button>
+                        <button type="button" class="symptom-chip" data-symptom="Red hives / rash (चकत्ते / पित्ती)">Hives / Rash (चकत्ते)</button>
+                        <button type="button" class="symptom-chip" data-symptom="Facial or lip swelling (चेहरे या होंठ पर सूजन)">Facial / Lip Swelling (सूजन)</button>
+                        <button type="button" class="symptom-chip" data-symptom="Difficulty breathing (सांस लेने में दिक्कत)">Breathing Trouble (सांस की दिक्कत)</button>
+                        <button type="button" class="symptom-chip" data-symptom="Nausea and vomiting (मतली या उल्टी)">Nausea / Vomiting (उल्टी)</button>
+                        <button type="button" class="symptom-chip" data-symptom="Dizziness or fainting (चक्कर आना)">Dizziness (चक्कर आना)</button>
+                        <button type="button" class="symptom-chip" data-symptom="Stomach cramps or pain (पेट में मरोड़)">Stomach Pain (पेट दर्द)</button>
+                        <button type="button" class="symptom-chip" data-symptom="Throat tightness (गले में कसाव)">Throat Tightness (गले में कसाव)</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Action Buttons -->
+            <div class="form-actions-bar">
+                <button type="button" id="btn-clear-form" class="btn-secondary-action">
+                    Clear Form
+                </button>
+                <button type="submit" id="btn-submit-analysis" class="btn-primary-action">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                    <span>Analyze Allergy Risk</span>
+                </button>
+            </div>
+        </form>
+    </section>
+
+    <!-- Loading State Card -->
+    <section class="loading-card" id="loading-card">
+        <div class="spinner"></div>
+        <div class="loading-title">Analyzing Medication & Reaction...</div>
+        <p style="font-size: 0.875rem; color: #64748b; margin: 0;">
+            Please wait while our Groq AI pharmacological models process your query.
+        </p>
+        <ul class="loading-steps">
+            <li class="loading-step-item active" id="step-1">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#0284c7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
+                Validating medicine name and image...
+            </li>
+            <li class="loading-step-item" id="step-2">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle></svg>
+                Screening for red-flag airway / anaphylactic symptoms...
+            </li>
+            <li class="loading-step-item" id="step-3">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle></svg>
+                Consulting Groq Llama pharmacological knowledge...
+            </li>
+            <li class="loading-step-item" id="step-4">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle></svg>
+                Formatting clinical hypersensitivity assessment...
+            </li>
+        </ul>
+    </section>
+
+    <!-- Results Section (Dynamic via JS or Server Rendered) -->
+    <section class="results-card" id="results-card" style="{% if not result %}display: none;{% endif %}">
+        <!-- Emergency Alert Banner -->
+        <div class="result-emergency-banner" id="res-emergency-banner" style="{% if not result.is_emergency %}display: none;{% endif %}">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                <line x1="12" y1="9" x2="12" y2="13"></line>
+                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+            </svg>
+            <div>
+                <h3 class="result-emergency-title">EMERGENCY ACTION RECOMMENDED</h3>
+                <p class="result-emergency-body" id="res-emergency-guidance">
+                    {{ result.emergency_guidance|default:"Critical symptoms detected. Seek emergency medical evaluation immediately or call 112 / 108 / 911." }}
+                </p>
+            </div>
+        </div>
+
+        <!-- Header Row: Medicine & Risk Badge -->
+        <div class="result-header-row">
+            <div>
+                <h2 class="result-med-title" id="res-med-name">
+                    {{ result.identified_medicine|default:"Identified Medication" }}
+                </h2>
+                <p class="result-active-sub" id="res-active-sub">
+                    Active Ingredient: <strong>{{ result.active_ingredient|default:"Not specified" }}</strong>
+                    &bull; Confidence: <span id="res-confidence">{{ result.identification_confidence|default:"N/A" }}</span>
+                </p>
+            </div>
+            <div>
+                <span id="res-risk-badge" class="risk-badge {% if result.risk_level == 'EMERGENCY' %}risk-badge-emergency{% elif result.risk_level == 'POTENTIAL_ALLERGY' %}risk-badge-potential{% elif result.risk_level == 'COMMON_SIDE_EFFECT' %}risk-badge-side-effect{% elif result.risk_level == 'UNLIKELY_ALLERGY' %}risk-badge-unlikely{% else %}risk-badge-insufficient{% endif %}">
+                    {{ result.risk_level|default:"SCREENING RESULT" }}
+                </span>
+            </div>
+        </div>
+
+        <!-- Summary Box -->
+        <div class="result-section-box">
+            <h4>
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#0284c7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                </svg>
+                Analysis Summary
+            </h4>
+            <p id="res-summary">{{ result.analysis_summary }}</p>
+        </div>
+
+        <!-- Allergy Assessment -->
+        <div class="result-section-box">
+            <h4>
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#0284c7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                </svg>
+                Allergy Assessment
+            </h4>
+            <p id="res-assessment">{{ result.allergy_assessment }}</p>
+        </div>
+
+        <!-- Allergy vs Side Effect Differentiation -->
+        <div class="result-section-box">
+            <h4>
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#0284c7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                    <polyline points="17 6 23 6 23 12"></polyline>
+                </svg>
+                Allergy vs. Side Effect Differentiation
+            </h4>
+            <p id="res-differentiation">{{ result.side_effect_differentiation }}</p>
+        </div>
+
+        <!-- Known Reaction Info -->
+        <div class="result-section-box" id="res-reaction-box" style="{% if not result.known_reaction_info %}display: none;{% endif %}">
+            <h4>
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#0284c7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                    <line x1="8" y1="21" x2="16" y2="21"></line>
+                    <line x1="12" y1="17" x2="12" y2="21"></line>
+                </svg>
+                Established Reaction Profile & Cross-Reactivity
+            </h4>
+            <p id="res-reaction-info">{{ result.known_reaction_info }}</p>
+        </div>
+
+        <!-- Red-Flag Warning Signs -->
+        <div class="result-section-box" style="border-left: 4px solid #f97316;">
+            <h4 style="color: #c2410c;">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#f97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                    <line x1="12" y1="9" x2="12" y2="13"></line>
+                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+                Warning Signs to Watch For
+            </h4>
+            <ul class="styled-list" id="res-warning-signs">
+                {% for sign in result.warning_signs %}
+                    <li>{{ sign }}</li>
+                {% empty %}
+                    <li>Difficulty breathing, wheezing, or tightness in the chest</li>
+                    <li>Swelling of lips, tongue, or throat</li>
+                    <li>Severe dizziness, confusion, or fainting</li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <!-- Recommended Actions -->
+        <div class="result-section-box" style="border-left: 4px solid #0284c7;">
+            <h4 style="color: #0369a1;">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#0284c7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="9 11 12 14 22 4"></polyline>
+                    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                </svg>
+                Recommended Actions
+            </h4>
+            <ul class="styled-list" id="res-recommended-actions">
+                {% for action in result.recommended_actions %}
+                    <li>{{ action }}</li>
+                {% empty %}
+                    <li>Stop taking the medication if an allergic reaction is suspected.</li>
+                    <li>Consult your prescribing doctor or a pharmacist right away.</li>
+                    <li>Never take an additional dose to test for allergy.</li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <!-- Medical Disclaimer -->
+        <div class="disclaimer-card">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="16" x2="12" y2="12"></line>
+                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+            </svg>
+            <div>
+                <strong>Medical Disclaimer:</strong>
+                <span id="res-disclaimer">
+                    {{ result.disclaimer|default:"This tool provides informational screening only and does not provide a definitive medical diagnosis. Consult a qualified physician or pharmacist for medical advice." }}
+                </span>
+            </div>
+        </div>
+
+        <!-- Footer Action -->
+        <div class="result-footer-actions">
+            <button type="button" id="btn-check-another" class="btn-primary-action">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="1 4 1 10 7 10"></polyline>
+                    <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+                </svg>
+                <span>Check Another Medicine</span>
+            </button>
+        </div>
+    </section>
+</div>
+{% endblock content %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const allergyForm = document.getElementById('allergy-form');
+    const medicineNameInput = document.getElementById('medicine-name-input');
+    const medicineImageInput = document.getElementById('medicine-image-input');
+    const symptomsInput = document.getElementById('symptoms-input');
+    const imageDropzone = document.getElementById('image-dropzone');
+    const filePreviewCard = document.getElementById('file-preview-card');
+    const filePreviewThumb = document.getElementById('file-preview-thumb');
+    const filePreviewName = document.getElementById('file-preview-name');
+    const filePreviewSize = document.getElementById('file-preview-size');
+    const btnRemoveFile = document.getElementById('btn-remove-file');
+    const btnClearForm = document.getElementById('btn-clear-form');
+    const btnSubmit = document.getElementById('btn-submit-analysis');
+    const errorBanner = document.getElementById('error-banner');
+    const errorBannerText = document.getElementById('error-banner-text');
+    const loadingCard = document.getElementById('loading-card');
+    const resultsCard = document.getElementById('results-card');
+    const btnCheckAnother = document.getElementById('btn-check-another');
+    const chipsContainer = document.getElementById('chips-container');
+
+    // Drag and Drop Image Handlers
+    imageDropzone.addEventListener('click', () => medicineImageInput.click());
+
+    imageDropzone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        imageDropzone.classList.add('dragover');
+    });
+
+    imageDropzone.addEventListener('dragleave', () => {
+        imageDropzone.classList.remove('dragover');
+    });
+
+    imageDropzone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        imageDropzone.classList.remove('dragover');
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+            medicineImageInput.files = e.dataTransfer.files;
+            handleFileSelect(medicineImageInput.files[0]);
+        }
+    });
+
+    medicineImageInput.addEventListener('change', () => {
+        if (medicineImageInput.files && medicineImageInput.files[0]) {
+            handleFileSelect(medicineImageInput.files[0]);
+        }
+    });
+
+    function handleFileSelect(file) {
+        if (!file) return;
+
+        // Size check: 5MB
+        if (file.size > 5 * 1024 * 1024) {
+            showError('Selected file exceeds the 5 MB limit. Please select a smaller photo.');
+            medicineImageInput.value = '';
+            return;
+        }
+
+        // Format check
+        const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
+        if (!validTypes.includes(file.type)) {
+            showError('Invalid file type. Please upload a JPG, PNG, or WEBP image.');
+            medicineImageInput.value = '';
+            return;
+        }
+
+        hideError();
+        filePreviewName.textContent = file.name;
+        filePreviewSize.textContent = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            filePreviewThumb.src = e.target.result;
+            imageDropzone.style.display = 'none';
+            filePreviewCard.style.display = 'flex';
+        };
+        reader.readAsDataURL(file);
+    }
+
+    btnRemoveFile.addEventListener('click', (e) => {
+        e.stopPropagation();
+        medicineImageInput.value = '';
+        filePreviewThumb.src = '';
+        filePreviewCard.style.display = 'none';
+        imageDropzone.style.display = 'flex';
+    });
+
+    // Symptom Chips One-Click Append
+    if (chipsContainer) {
+        chipsContainer.addEventListener('click', (e) => {
+            const chip = e.target.closest('.symptom-chip');
+            if (!chip) return;
+
+            const symptom = chip.getAttribute('data-symptom');
+            chip.classList.toggle('active');
+
+            let currentVal = symptomsInput.value.trim();
+            if (chip.classList.contains('active')) {
+                if (currentVal) {
+                    symptomsInput.value = currentVal + ', ' + symptom;
+                } else {
+                    symptomsInput.value = symptom;
+                }
+            } else {
+                // Remove symptom cleanly
+                const regex = new RegExp('(,\\s*)?' + escapeRegExp(symptom), 'gi');
+                symptomsInput.value = currentVal.replace(regex, '').replace(/^,\s*/, '').trim();
+            }
+        });
+    }
+
+    function escapeRegExp(string) {
+        return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    // Clear Form
+    btnClearForm.addEventListener('click', () => {
+        medicineNameInput.value = '';
+        medicineImageInput.value = '';
+        filePreviewThumb.src = '';
+        filePreviewCard.style.display = 'none';
+        imageDropzone.style.display = 'flex';
+        symptomsInput.value = '';
+        document.querySelectorAll('.symptom-chip').forEach(c => c.classList.remove('active'));
+        hideError();
+    });
+
+    // Check Another Medicine
+    if (btnCheckAnother) {
+        btnCheckAnother.addEventListener('click', () => {
+            resultsCard.style.display = 'none';
+            document.getElementById('input-card').scrollIntoView({ behavior: 'smooth' });
+            btnClearForm.click();
+        });
+    }
+
+    function showError(msg) {
+        errorBannerText.textContent = msg;
+        errorBanner.style.display = 'flex';
+        errorBanner.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function hideError() {
+        errorBanner.style.display = 'none';
+        errorBannerText.textContent = '';
+    }
+
+    // Simulated Step Progress for Loading State
+    let stepTimer = null;
+    function startStepProgress() {
+        const step1 = document.getElementById('step-1');
+        const step2 = document.getElementById('step-2');
+        const step3 = document.getElementById('step-3');
+        const step4 = document.getElementById('step-4');
+
+        step1.classList.add('active');
+        step2.classList.remove('active');
+        step3.classList.remove('active');
+        step4.classList.remove('active');
+
+        stepTimer = setTimeout(() => {
+            step2.classList.add('active');
+            stepTimer = setTimeout(() => {
+                step3.classList.add('active');
+                stepTimer = setTimeout(() => {
+                    step4.classList.add('active');
+                }, 1800);
+            }, 1200);
+        }, 600);
+    }
+
+    function stopStepProgress() {
+        if (stepTimer) clearTimeout(stepTimer);
+    }
+
+    // Asynchronous Submission via Fetch
+    allergyForm.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        hideError();
+
+        const medName = medicineNameInput.value.trim();
+        const hasFile = medicineImageInput.files && medicineImageInput.files.length > 0;
+        const symptoms = symptomsInput.value.trim();
+
+        if (!medName && !hasFile) {
+            showError('Please provide a medicine name or upload a photo of the medicine packaging.');
+            return;
+        }
+
+        if (!symptoms) {
+            showError('Please describe the symptoms you experienced after taking the medicine.');
+            symptomsInput.focus();
+            return;
+        }
+
+        // Prepare FormData
+        const formData = new FormData(allergyForm);
+
+        // UI Transition to Loading
+        loadingCard.style.display = 'block';
+        resultsCard.style.display = 'none';
+        btnSubmit.disabled = true;
+        startStepProgress();
+        loadingCard.scrollIntoView({ behavior: 'smooth' });
+
+        try {
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            const response = await fetch('/allergy-checker/api/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                },
+                body: formData,
+            });
+
+            const data = await response.json();
+            stopStepProgress();
+            loadingCard.style.display = 'none';
+            btnSubmit.disabled = false;
+
+            if (!response.ok || !data.success) {
+                const errMsg = data.error || 'Failed to complete allergy screening. Please check inputs and try again.';
+                showError(errMsg);
+                return;
+            }
+
+            renderResults(data.data);
+
+        } catch (err) {
+            stopStepProgress();
+            loadingCard.style.display = 'none';
+            btnSubmit.disabled = false;
+            console.error('Allergy Checker fetch error:', err);
+            showError('Network error connecting to the screening server. Please verify your connection and try again.');
+        }
+    });
+
+    function renderResults(res) {
+        if (!res) return;
+
+        // Emergency banner
+        const emBanner = document.getElementById('res-emergency-banner');
+        const emGuidance = document.getElementById('res-emergency-guidance');
+        if (res.is_emergency) {
+            emGuidance.textContent = res.emergency_guidance || 'Critical symptoms detected. Seek emergency medical evaluation immediately or call 112 / 108 / 911.';
+            emBanner.style.display = 'flex';
+        } else {
+            emBanner.style.display = 'none';
+        }
+
+        // Header info
+        document.getElementById('res-med-name').textContent = res.identified_medicine || 'Identified Medication';
+        document.getElementById('res-active-sub').innerHTML = `Active Ingredient: <strong>${escapeHtml(res.active_ingredient || 'Not specified')}</strong> &bull; Confidence: <span id="res-confidence">${escapeHtml(res.identification_confidence || 'N/A')}</span>`;
+
+        // Risk badge
+        const badge = document.getElementById('res-risk-badge');
+        badge.className = 'risk-badge';
+        const level = (res.risk_level || 'INSUFFICIENT_DATA').toUpperCase();
+
+        if (level === 'EMERGENCY') {
+            badge.classList.add('risk-badge-emergency');
+            badge.textContent = 'Emergency Level';
+        } else if (level === 'POTENTIAL_ALLERGY') {
+            badge.classList.add('risk-badge-potential');
+            badge.textContent = 'Potential Allergy';
+        } else if (level === 'COMMON_SIDE_EFFECT') {
+            badge.classList.add('risk-badge-side-effect');
+            badge.textContent = 'Likely Side Effect';
+        } else if (level === 'UNLIKELY_ALLERGY') {
+            badge.classList.add('risk-badge-unlikely');
+            badge.textContent = 'Unlikely Allergy';
+        } else {
+            badge.classList.add('risk-badge-insufficient');
+            badge.textContent = 'Insufficient Data';
+        }
+
+        // Analysis sections
+        document.getElementById('res-summary').textContent = res.analysis_summary || 'No summary available.';
+        document.getElementById('res-assessment').textContent = res.allergy_assessment || 'No assessment available.';
+        document.getElementById('res-differentiation').textContent = res.side_effect_differentiation || 'No differentiation available.';
+
+        // Reaction info
+        const reactionBox = document.getElementById('res-reaction-box');
+        const reactionText = document.getElementById('res-reaction-info');
+        if (res.known_reaction_info) {
+            reactionText.textContent = res.known_reaction_info;
+            reactionBox.style.display = 'block';
+        } else {
+            reactionBox.style.display = 'none';
+        }
+
+        // Warning signs list
+        const warningsList = document.getElementById('res-warning-signs');
+        warningsList.innerHTML = '';
+        const signs = res.warning_signs && res.warning_signs.length ? res.warning_signs : [
+            'Difficulty breathing or shortness of breath',
+            'Swelling of face, tongue, or throat',
+            'Severe dizziness or loss of consciousness'
+        ];
+        signs.forEach(s => {
+            const li = document.createElement('li');
+            li.textContent = s;
+            warningsList.appendChild(li);
+        });
+
+        // Recommended actions list
+        const actionsList = document.getElementById('res-recommended-actions');
+        actionsList.innerHTML = '';
+        const actions = res.recommended_actions && res.recommended_actions.length ? res.recommended_actions : [
+            'Stop taking this medication if an allergic reaction is suspected.',
+            'Contact your doctor or a licensed pharmacist promptly.',
+            'Never take another dose to test for an allergy.'
+        ];
+        actions.forEach(a => {
+            const li = document.createElement('li');
+            li.textContent = a;
+            actionsList.appendChild(li);
+        });
+
+        // Disclaimer
+        document.getElementById('res-disclaimer').textContent = res.disclaimer || 'This tool provides informational screening only. Consult a physician for medical advice.';
+
+        // Reveal and scroll
+        resultsCard.style.display = 'flex';
+        resultsCard.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+});
+</script>
+{% endblock extra_js %}
+

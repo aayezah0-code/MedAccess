@@ -1,0 +1,959 @@
+{% extends 'patient/base_patient.html' %}
+{% load static %}
+
+{% block title %}Feedback & Ratings | Patient Portal | MedAccess{% endblock title %}
+{% block header_title %}Feedback & Ratings{% endblock header_title %}
+{% block nav_feedback %}active{% endblock nav_feedback %}
+
+{% block extra_css %}
+<style>
+/* Feedback & Ratings Page Styles */
+.feedback-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.feedback-header-card {
+    background-color: var(--color-surface, #ffffff);
+    border: 1px solid var(--color-border, #e2e8f0);
+    border-radius: var(--radius-lg, 0.75rem);
+    padding: 1.5rem 1.75rem;
+    box-shadow: var(--shadow-subtle, 0 1px 3px rgba(0, 0, 0, 0.05));
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.feedback-header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.feedback-header-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--color-text-main, #0f172a);
+    margin: 0 0 0.35rem 0;
+    line-height: 1.25;
+}
+
+.feedback-header-desc {
+    color: var(--color-text-muted, #64748b);
+    font-size: 0.9rem;
+    margin: 0;
+    line-height: 1.5;
+}
+
+/* Pharmacy Search Controls */
+.pharmacy-search-form {
+    display: flex;
+    gap: 0.75rem;
+    width: 100%;
+    max-width: 600px;
+}
+
+.search-input-group {
+    position: relative;
+    flex: 1;
+}
+
+.search-icon-svg {
+    position: absolute;
+    left: 0.875rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--color-text-muted, #94a3b8);
+    pointer-events: none;
+}
+
+.search-input-field {
+    width: 100%;
+    padding: 0.65rem 0.875rem 0.65rem 2.6rem;
+    border: 1px solid var(--color-border, #cbd5e1);
+    border-radius: var(--radius-md, 0.5rem);
+    font-size: 0.875rem;
+    background-color: #f8fafc;
+    transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.search-input-field:focus {
+    outline: none;
+    background-color: #ffffff;
+    border-color: var(--color-primary, #0284c7);
+    box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+}
+
+.btn-search-clear {
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
+    font-size: 0.84rem;
+    color: var(--color-text-muted, #64748b);
+    padding: 0 0.5rem;
+    align-self: center;
+}
+
+.btn-search-clear:hover {
+    color: var(--color-text-main, #0f172a);
+    text-decoration: underline;
+}
+
+/* Pharmacy Selection Grid */
+.pharmacy-picker-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.section-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.section-heading {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--color-text-main, #0f172a);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.count-pill {
+    display: inline-block;
+    padding: 0.2rem 0.6rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 9999px;
+    background-color: #e0f2fe;
+    color: #0369a1;
+}
+
+.pharmacy-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.25rem;
+}
+
+.pharma-card {
+    background-color: var(--color-surface, #ffffff);
+    border: 1px solid var(--color-border, #e2e8f0);
+    border-radius: var(--radius-lg, 0.75rem);
+    padding: 1.25rem;
+    box-shadow: var(--shadow-subtle, 0 1px 3px rgba(0, 0, 0, 0.05));
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+    position: relative;
+}
+
+.pharma-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-card, 0 4px 6px -1px rgba(0, 0, 0, 0.1));
+    border-color: #93c5fd;
+}
+
+.pharma-card.is-selected {
+    border-color: var(--color-primary, #0284c7);
+    border-width: 2px;
+    background-color: #f0f9ff;
+    box-shadow: 0 4px 12px rgba(2, 132, 199, 0.15);
+}
+
+.pharma-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.75rem;
+}
+
+.pharma-verified-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.2rem 0.55rem;
+    border-radius: 9999px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    background-color: #dcfce7;
+    color: #15803d;
+}
+
+.pharma-reviewed-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.2rem 0.55rem;
+    border-radius: 9999px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    background-color: #fef3c7;
+    color: #92400e;
+}
+
+.pharma-name {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--color-text-main, #0f172a);
+    margin: 0 0 0.5rem 0;
+    line-height: 1.35;
+}
+
+.pharma-meta-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin-bottom: 1.25rem;
+    font-size: 0.825rem;
+    color: var(--color-text-muted, #64748b);
+}
+
+.pharma-meta-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.45rem;
+    line-height: 1.4;
+}
+
+.pharma-meta-row svg {
+    flex-shrink: 0;
+    margin-top: 0.15rem;
+    color: var(--color-primary, #0284c7);
+}
+
+.pharma-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-top: auto;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--color-border, #f1f5f9);
+}
+
+/* Form Section */
+.feedback-form-wrapper {
+    background-color: var(--color-surface, #ffffff);
+    border: 1px solid var(--color-border, #e2e8f0);
+    border-radius: var(--radius-lg, 0.75rem);
+    padding: 1.75rem;
+    box-shadow: var(--shadow-subtle, 0 1px 3px rgba(0, 0, 0, 0.05));
+    scroll-margin-top: 2rem;
+}
+
+.selected-pharma-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+    background: linear-gradient(135deg, #f0fdf4 0%, #e0f2fe 100%);
+    border: 1px solid #bbf7d0;
+    border-radius: var(--radius-md, 0.5rem);
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.5rem;
+}
+
+.selected-pharma-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.selected-pharma-name {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.selected-pharma-loc {
+    font-size: 0.825rem;
+    color: #475569;
+}
+
+/* Star Rating Selector */
+.rating-field-group {
+    margin-bottom: 1.5rem;
+}
+
+.rating-label {
+    display: block;
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--color-text-main, #0f172a);
+    margin-bottom: 0.5rem;
+}
+
+.star-rating-widget {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    direction: ltr;
+}
+
+.star-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.35rem;
+    color: #cbd5e1;
+    transition: color 0.15s ease, transform 0.1s ease;
+    border-radius: 4px;
+}
+
+.star-btn:focus-visible {
+    outline: 2px solid var(--color-primary, #0284c7);
+}
+
+.star-btn:hover {
+    transform: scale(1.15);
+}
+
+.star-btn.is-active,
+.star-btn.is-hover {
+    color: #f59e0b;
+}
+
+.rating-descriptor {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #b45309;
+    margin-left: 0.75rem;
+    min-width: 110px;
+}
+
+/* Comment Textarea & Counter */
+.comment-field-group {
+    margin-bottom: 1.5rem;
+}
+
+.comment-label-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.4rem;
+}
+
+.comment-label {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--color-text-main, #0f172a);
+}
+
+.char-counter {
+    font-size: 0.775rem;
+    color: var(--color-text-muted, #94a3b8);
+}
+
+.char-counter.is-near-limit {
+    color: #e11d48;
+    font-weight: 600;
+}
+
+.feedback-textarea {
+    width: 100%;
+    min-height: 120px;
+    padding: 0.75rem;
+    border: 1px solid var(--color-border, #cbd5e1);
+    border-radius: var(--radius-md, 0.5rem);
+    font-size: 0.9rem;
+    font-family: inherit;
+    line-height: 1.5;
+    background-color: #ffffff;
+    resize: vertical;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.feedback-textarea:focus {
+    outline: none;
+    border-color: var(--color-primary, #0284c7);
+    box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+}
+
+/* Submitted Feedbacks List */
+.submitted-feedbacks-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.feedback-history-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 1.25rem;
+}
+
+.feedback-item-card {
+    background-color: var(--color-surface, #ffffff);
+    border: 1px solid var(--color-border, #e2e8f0);
+    border-radius: var(--radius-lg, 0.75rem);
+    padding: 1.35rem;
+    box-shadow: var(--shadow-subtle, 0 1px 3px rgba(0, 0, 0, 0.05));
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.feedback-item-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-card, 0 4px 6px -1px rgba(0, 0, 0, 0.1));
+}
+
+.feedback-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.65rem;
+}
+
+.feedback-pharma-name {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--color-text-main, #0f172a);
+    margin: 0;
+}
+
+.feedback-date {
+    font-size: 0.75rem;
+    color: var(--color-text-muted, #94a3b8);
+    font-weight: 500;
+}
+
+.feedback-stars-row {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    margin-bottom: 0.75rem;
+}
+
+.feedback-star-icon {
+    color: #f59e0b;
+}
+
+.feedback-star-icon.inactive {
+    color: #e2e8f0;
+}
+
+.feedback-numeric-score {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #92400e;
+    margin-left: 0.4rem;
+}
+
+.feedback-comment-box {
+    background-color: #f8fafc;
+    border-left: 3px solid var(--color-primary, #0284c7);
+    border-radius: 0 var(--radius-sm, 0.25rem) var(--radius-sm, 0.25rem) 0;
+    padding: 0.75rem 0.875rem;
+    font-size: 0.875rem;
+    color: #334155;
+    line-height: 1.5;
+    margin-bottom: 1rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+    flex: 1;
+}
+
+/* Empty States */
+.empty-state-box {
+    background-color: var(--color-surface, #ffffff);
+    border: 2px dashed var(--color-border, #cbd5e1);
+    border-radius: var(--radius-lg, 0.75rem);
+    padding: 3rem 1.5rem;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+}
+
+.empty-state-icon {
+    color: #94a3b8;
+    background-color: #f1f5f9;
+    padding: 1rem;
+    border-radius: 9999px;
+}
+
+.empty-state-title {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--color-text-main, #0f172a);
+    margin: 0;
+}
+
+.empty-state-desc {
+    font-size: 0.875rem;
+    color: var(--color-text-muted, #64748b);
+    max-width: 440px;
+    margin: 0;
+    line-height: 1.5;
+}
+</style>
+{% endblock extra_css %}
+
+{% block content %}
+<div class="feedback-container">
+
+    <!-- Header Section -->
+    <div class="feedback-header-card">
+        <div class="feedback-header-top">
+            <div>
+                <h1 class="feedback-header-title">Feedback & Ratings</h1>
+                <p class="feedback-header-desc">
+                    Share your experience with verified MedAccess pharmacies. Your ratings help improve community healthcare quality.
+                </p>
+            </div>
+            {% if selected_pharmacy %}
+                <a href="{% url 'patient:feedback' %}" class="btn btn-secondary btn-sm" style="display:inline-flex; align-items:center; gap:0.4rem; text-decoration:none;">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                    <span>Clear Selected Pharmacy</span>
+                </a>
+            {% endif %}
+        </div>
+
+        <!-- Pharmacy Search Form -->
+        <form method="get" action="{% url 'patient:feedback' %}" class="pharmacy-search-form">
+            {% if selected_pharmacy %}
+                <input type="hidden" name="pharmacy_id" value="{{ selected_pharmacy.id }}">
+            {% endif %}
+            <div class="search-input-group">
+                <svg class="search-icon-svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <input type="text"
+                       name="q"
+                       value="{{ search_query }}"
+                       class="search-input-field"
+                       placeholder="Search approved pharmacies by name, city, or address..."
+                       aria-label="Search approved pharmacies">
+            </div>
+            <button type="submit" class="btn btn-primary" style="display:inline-flex; align-items:center; gap:0.4rem;">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <span>Search</span>
+            </button>
+            {% if search_query %}
+                <a href="{% url 'patient:feedback' %}{% if selected_pharmacy %}?pharmacy_id={{ selected_pharmacy.id }}{% endif %}" class="btn-search-clear">
+                    Reset
+                </a>
+            {% endif %}
+        </form>
+    </div>
+
+    <!-- Section 1: Approved Pharmacy Selector -->
+    <section class="pharmacy-picker-section">
+        <div class="section-title-row">
+            <h2 class="section-heading">
+                <span>Approved Pharmacies</span>
+                <span class="count-pill">{{ pharmacies|length }} available</span>
+            </h2>
+            {% if search_query %}
+                <span style="font-size:0.825rem; color:var(--color-text-muted);">
+                    Showing results for "<strong>{{ search_query }}</strong>"
+                </span>
+            {% endif %}
+        </div>
+
+        {% if pharmacies %}
+            <div class="pharmacy-grid">
+                {% for pharma in pharmacies %}
+                    <div class="pharma-card {% if selected_pharmacy and selected_pharmacy.id == pharma.id %}is-selected{% endif %}">
+                        <div>
+                            <div class="pharma-top">
+                                <span class="pharma-verified-badge">
+                                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                    Approved Partner
+                                </span>
+                                {% if pharma.id in reviewed_pharmacy_ids %}
+                                    <span class="pharma-reviewed-badge">
+                                        <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
+                                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                                        </svg>
+                                        Reviewed
+                                    </span>
+                                {% endif %}
+                            </div>
+
+                            <h3 class="pharma-name">{{ pharma.pharmacy_name }}</h3>
+
+                            <div class="pharma-meta-list">
+                                <div class="pharma-meta-row">
+                                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                        <circle cx="12" cy="10" r="3"></circle>
+                                    </svg>
+                                    <span>{{ pharma.address }}, {{ pharma.city }}{% if pharma.pincode %} - {{ pharma.pincode }}{% endif %}</span>
+                                </div>
+                                {% if pharma.phone_number %}
+                                    <div class="pharma-meta-row">
+                                        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                                        </svg>
+                                        <span>Phone: {{ pharma.phone_number }}</span>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="pharma-actions">
+                            {% if selected_pharmacy and selected_pharmacy.id == pharma.id %}
+                                <span style="font-size:0.8rem; font-weight:700; color:var(--color-primary);">Currently Selected</span>
+                            {% else %}
+                                <span style="font-size:0.8rem; color:var(--color-text-muted);">
+                                    {% if pharma.id in reviewed_pharmacy_ids %}Update review{% else %}Leave a rating{% endif %}
+                                </span>
+                            {% endif %}
+
+                            <a href="{% url 'patient:feedback' %}?pharmacy_id={{ pharma.id }}{% if search_query %}&q={{ search_query }}{% endif %}#feedback-form-section"
+                               class="btn {% if selected_pharmacy and selected_pharmacy.id == pharma.id %}btn-primary{% else %}btn-secondary{% endif %} btn-sm"
+                               style="text-decoration:none; display:inline-flex; align-items:center; gap:0.35rem;">
+                                {% if pharma.id in reviewed_pharmacy_ids %}
+                                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                    </svg>
+                                    <span>Edit Review</span>
+                                {% else %}
+                                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                                    </svg>
+                                    <span>Rate Pharmacy</span>
+                                {% endif %}
+                            </a>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state-box">
+                <div class="empty-state-icon">
+                    <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                </div>
+                <h3 class="empty-state-title">No approved pharmacies found</h3>
+                <p class="empty-state-desc">
+                    {% if search_query %}
+                        No approved pharmacies matched your search term "<strong>{{ search_query }}</strong>". Try searching with another city or keyword.
+                    {% else %}
+                        There are currently no approved pharmacies available for reviews.
+                    {% endif %}
+                </p>
+                {% if search_query %}
+                    <a href="{% url 'patient:feedback' %}" class="btn btn-secondary btn-sm" style="margin-top:0.5rem; text-decoration:none;">
+                        Show All Approved Pharmacies
+                    </a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </section>
+
+    <!-- Section 2: Feedback & Rating Form -->
+    <section class="feedback-form-wrapper" id="feedback-form-section">
+        {% if selected_pharmacy %}
+            <div class="selected-pharma-banner">
+                <div class="selected-pharma-details">
+                    <span style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.05em; font-weight:700; color:#15803d;">
+                        {% if existing_feedback %}Editing Existing Review{% else %}Writing New Review{% endif %}
+                    </span>
+                    <span class="selected-pharma-name">{{ selected_pharmacy.pharmacy_name }}</span>
+                    <span class="selected-pharma-loc">
+                        {{ selected_pharmacy.address }}, {{ selected_pharmacy.city }}{% if selected_pharmacy.phone_number %} • Tel: {{ selected_pharmacy.phone_number }}{% endif %}
+                    </span>
+                </div>
+                <a href="{% url 'patient:feedback' %}{% if search_query %}?q={{ search_query }}{% endif %}" class="btn btn-secondary btn-sm" style="text-decoration:none;">
+                    Choose Another Pharmacy
+                </a>
+            </div>
+
+            <form method="post" action="{% url 'patient:feedback' %}" id="pharmacy-feedback-form">
+                {% csrf_token %}
+                <input type="hidden" name="pharmacy_id" value="{{ selected_pharmacy.id }}">
+
+                <!-- Star Rating Field -->
+                <div class="rating-field-group">
+                    <label class="rating-label" id="star-rating-label">
+                        Service Rating <span style="color:#e11d48;">*</span>
+                    </label>
+                    <div class="star-rating-widget" role="radiogroup" aria-labelledby="star-rating-label">
+                        <input type="hidden" name="rating" id="rating-input" value="{{ form.rating.value|default:'' }}">
+
+                        {% for star_val in "12345" %}
+                            <button type="button"
+                                    class="star-btn"
+                                    data-val="{{ star_val }}"
+                                    aria-label="{{ star_val }} stars"
+                                    role="radio"
+                                    aria-checked="false">
+                                <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor">
+                                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                                </svg>
+                            </button>
+                        {% endfor %}
+
+                        <span class="rating-descriptor" id="rating-descriptor">Select 1-5 stars</span>
+                    </div>
+                    {% if form.rating.errors %}
+                        <div style="color:#e11d48; font-size:0.8rem; margin-top:0.35rem;">
+                            {{ form.rating.errors.0 }}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Comment Textarea -->
+                <div class="comment-field-group">
+                    <div class="comment-label-row">
+                        <label for="id_comment" class="comment-label">
+                            Your Comments & Experience <span style="color:#e11d48;">*</span>
+                        </label>
+                        <span class="char-counter" id="comment-char-counter">0 / 1000 characters</span>
+                    </div>
+                    <textarea name="comment"
+                              id="id_comment"
+                              class="feedback-textarea"
+                              placeholder="Describe your experience with this pharmacy (e.g. medicine availability, prompt dispensing, staff courtesy, billing accuracy)..."
+                              maxlength="1000"
+                              required>{{ form.comment.value|default:'' }}</textarea>
+                    {% if form.comment.errors %}
+                        <div style="color:#e11d48; font-size:0.8rem; margin-top:0.35rem;">
+                            {{ form.comment.errors.0 }}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div style="display:flex; align-items:center; gap:0.75rem;">
+                    <button type="submit" class="btn btn-primary" id="btn-submit-feedback" style="display:inline-flex; align-items:center; gap:0.45rem;">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                        </svg>
+                        <span>{% if existing_feedback %}Update Feedback{% else %}Submit Feedback{% endif %}</span>
+                    </button>
+                    <a href="{% url 'patient:feedback' %}" class="btn btn-secondary" style="text-decoration:none;">
+                        Cancel
+                    </a>
+                </div>
+            </form>
+        {% else %}
+            <div class="empty-state-box" style="padding:2.5rem 1.5rem; background-color:#f8fafc; border-style:solid;">
+                <div class="empty-state-icon" style="background-color:#e0f2fe; color:var(--color-primary);">
+                    <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                    </svg>
+                </div>
+                <h3 class="empty-state-title">Select an approved pharmacy to rate</h3>
+                <p class="empty-state-desc">
+                    Choose any approved pharmacy from the list above by clicking "Rate Pharmacy" or "Edit Review" to open the rating form.
+                </p>
+            </div>
+        {% endif %}
+    </section>
+
+    <!-- Section 3: My Submitted Feedback -->
+    <section class="submitted-feedbacks-section">
+        <div class="section-title-row">
+            <h2 class="section-heading">
+                <span>My Submitted Feedback</span>
+                <span class="count-pill">{{ submitted_feedbacks|length }}</span>
+            </h2>
+        </div>
+
+        {% if submitted_feedbacks %}
+            <div class="feedback-history-grid">
+                {% for item in submitted_feedbacks %}
+                    <div class="feedback-item-card">
+                        <div>
+                            <div class="feedback-card-top">
+                                <h3 class="feedback-pharma-name">{{ item.pharmacy.pharmacy_name }}</h3>
+                                <span class="feedback-date">{{ item.created_at|date:"M d, Y" }}</span>
+                            </div>
+
+                            <div class="feedback-stars-row">
+                                {% for s in "12345" %}
+                                    <svg class="feedback-star-icon {% if forloop.counter > item.rating %}inactive{% endif %}" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                                    </svg>
+                                {% endfor %}
+                                <span class="feedback-numeric-score">{{ item.rating }} / 5</span>
+                            </div>
+
+                            <div class="feedback-comment-box">{{ item.comment }}</div>
+                        </div>
+
+                        <div style="display:flex; justify-content:space-between; align-items:center; padding-top:0.5rem; border-top:1px solid #f1f5f9;">
+                            <span style="font-size:0.775rem; color:var(--color-text-muted);">
+                                {{ item.pharmacy.city }}
+                            </span>
+                            <a href="{% url 'patient:feedback' %}?pharmacy_id={{ item.pharmacy.id }}#feedback-form-section"
+                               class="btn btn-secondary btn-sm"
+                               style="text-decoration:none; display:inline-flex; align-items:center; gap:0.35rem;">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                </svg>
+                                <span>Edit Review</span>
+                            </a>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state-box">
+                <div class="empty-state-icon">
+                    <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                    </svg>
+                </div>
+                <h3 class="empty-state-title">No reviews submitted yet</h3>
+                <p class="empty-state-desc">
+                    You haven't submitted any feedback for pharmacies yet. Select an approved pharmacy above to leave your first rating.
+                </p>
+            </div>
+        {% endif %}
+    </section>
+
+</div>
+{% endblock content %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const starButtons = document.querySelectorAll('.star-btn');
+    const ratingInput = document.getElementById('rating-input');
+    const ratingDescriptor = document.getElementById('rating-descriptor');
+    const commentInput = document.getElementById('id_comment');
+    const charCounter = document.getElementById('comment-char-counter');
+    const feedbackForm = document.getElementById('pharmacy-feedback-form');
+    const btnSubmit = document.getElementById('btn-submit-feedback');
+
+    const descriptors = {
+        '1': '1 - Poor',
+        '2': '2 - Fair',
+        '3': '3 - Good',
+        '4': '4 - Very Good',
+        '5': '5 - Excellent'
+    };
+
+    function updateStarsDisplay(val) {
+        starButtons.forEach(btn => {
+            const btnVal = parseInt(btn.getAttribute('data-val'), 10);
+            if (val && btnVal <= val) {
+                btn.classList.add('is-active');
+                btn.setAttribute('aria-checked', btnVal === val ? 'true' : 'false');
+            } else {
+                btn.classList.remove('is-active');
+                btn.setAttribute('aria-checked', 'false');
+            }
+        });
+
+        if (ratingDescriptor) {
+            if (val && descriptors[val]) {
+                ratingDescriptor.textContent = descriptors[val];
+            } else {
+                ratingDescriptor.textContent = 'Select 1-5 stars';
+            }
+        }
+    }
+
+    function setHoverStars(val) {
+        starButtons.forEach(btn => {
+            const btnVal = parseInt(btn.getAttribute('data-val'), 10);
+            if (val && btnVal <= val) {
+                btn.classList.add('is-hover');
+            } else {
+                btn.classList.remove('is-hover');
+            }
+        });
+        if (val && descriptors[val] && ratingDescriptor) {
+            ratingDescriptor.textContent = descriptors[val];
+        }
+    }
+
+    function clearHoverStars() {
+        starButtons.forEach(btn => btn.classList.remove('is-hover'));
+        const currentVal = parseInt(ratingInput ? ratingInput.value : 0, 10);
+        if (ratingDescriptor) {
+            if (currentVal && descriptors[currentVal]) {
+                ratingDescriptor.textContent = descriptors[currentVal];
+            } else {
+                ratingDescriptor.textContent = 'Select 1-5 stars';
+            }
+        }
+    }
+
+    if (starButtons.length > 0 && ratingInput) {
+        // Initial setup from input value
+        const initialRating = parseInt(ratingInput.value, 10);
+        if (initialRating && initialRating >= 1 && initialRating <= 5) {
+            updateStarsDisplay(initialRating);
+        }
+
+        starButtons.forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const val = parseInt(this.getAttribute('data-val'), 10);
+                ratingInput.value = val;
+                updateStarsDisplay(val);
+            });
+
+            btn.addEventListener('mouseenter', function() {
+                const val = parseInt(this.getAttribute('data-val'), 10);
+                setHoverStars(val);
+            });
+        });
+
+        const starWidget = document.querySelector('.star-rating-widget');
+        if (starWidget) {
+            starWidget.addEventListener('mouseleave', clearHoverStars);
+        }
+    }
+
+    // Comment character counter
+    function updateCounter() {
+        if (!commentInput || !charCounter) return;
+        const len = commentInput.value.length;
+        charCounter.textContent = `${len} / 1000 characters`;
+        if (len > 900) {
+            charCounter.classList.add('is-near-limit');
+        } else {
+            charCounter.classList.remove('is-near-limit');
+        }
+    }
+
+    if (commentInput) {
+        commentInput.addEventListener('input', updateCounter);
+        updateCounter();
+    }
+
+    // Smooth scroll to form if hash or pharmacy_id is present
+    if (window.location.hash === '#feedback-form-section') {
+        const target = document.getElementById('feedback-form-section');
+        if (target) {
+            target.scrollIntoView({ behavior: 'smooth' });
+        }
+    }
+});
+</script>
+{% endblock extra_js %}
+

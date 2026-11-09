@@ -1,0 +1,192 @@
+{% extends 'admin_portal/base_admin.html' %}
+
+{% block title %}
+    {% if is_edit %}Edit Patient: {{ patient_user.username }}{% else %}Provision New Patient{% endif %} | Admin Portal | MedAccess
+{% endblock title %}
+
+{% block header_title %}
+    {% if is_edit %}Edit Patient: {{ patient_user.username }}{% else %}Provision Patient Account{% endif %}
+{% endblock header_title %}
+
+{% block nav_patients %}active{% endblock nav_patients %}
+
+{% block content %}
+<div style="max-width: 860px; margin: 0 auto;">
+
+    <!-- Back Button -->
+    <div style="margin-bottom: 1.25rem;">
+        <a href="{% if is_edit %}{% url 'admin_portal:patient_detail' patient_user.pk %}{% else %}{% url 'admin_portal:patient_list' %}{% endif %}"
+           style="display: inline-flex; align-items: center; gap: 0.35rem; color: #2563eb; text-decoration: none; font-size: 0.875rem; font-weight: 600;">
+            &larr; Cancel and Return
+        </a>
+    </div>
+
+    <!-- Form Card -->
+    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.75rem 2rem; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+        <div style="border-bottom: 1px solid #e2e8f0; padding-bottom: 1rem; margin-bottom: 1.5rem;">
+            <h1 style="font-size: 1.25rem; font-weight: 700; color: #0f172a; margin: 0 0 0.25rem 0;">
+                {% if is_edit %}Update Patient Profile{% else %}Administrative Patient Provisioning{% endif %}
+            </h1>
+            <p style="margin: 0; font-size: 0.875rem; color: #64748b;">
+                {% if is_edit %}
+                    Modify identity credentials, account status, and medical records for @{{ patient_user.username }}.
+                {% else %}
+                    Create a verified patient account with immediate platform access.
+                {% endif %}
+            </p>
+        </div>
+
+        <form method="post" novalidate>
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+                <div class="alert alert-error" style="background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; padding: 0.75rem 1rem; border-radius: 8px; margin-bottom: 1.25rem;">
+                    {% for error in form.non_field_errors %}
+                        <div>{{ error }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <!-- Section 1: Account & Contact -->
+            <div style="margin-bottom: 1.75rem;">
+                <h2 style="font-size: 0.95rem; font-weight: 700; color: #2563eb; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 1rem; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.4rem;">
+                    1. Account &amp; Identity Credentials
+                </h2>
+
+                <div class="form-grid-2" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;">
+                    {% if not is_edit %}
+                        <div class="form-group">
+                            <label class="form-label" for="{{ form.username.id_for_label }}">Username *</label>
+                            {{ form.username }}
+                            {% if form.username.errors %}
+                                {% for error in form.username.errors %}<span class="field-error" style="color: #dc2626; font-size: 0.8125rem;">{{ error }}</span>{% endfor %}
+                            {% endif %}
+                        </div>
+                    {% endif %}
+
+                    <div class="form-group">
+                        <label class="form-label" for="{{ form.email.id_for_label }}">Email Address *</label>
+                        {{ form.email }}
+                        {% if form.email.errors %}
+                            {% for error in form.email.errors %}<span class="field-error" style="color: #dc2626; font-size: 0.8125rem;">{{ error }}</span>{% endfor %}
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="{{ form.first_name.id_for_label }}">First Name *</label>
+                        {{ form.first_name }}
+                        {% if form.first_name.errors %}
+                            {% for error in form.first_name.errors %}<span class="field-error" style="color: #dc2626; font-size: 0.8125rem;">{{ error }}</span>{% endfor %}
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="{{ form.last_name.id_for_label }}">Last Name</label>
+                        {{ form.last_name }}
+                        {% if form.last_name.errors %}
+                            {% for error in form.last_name.errors %}<span class="field-error" style="color: #dc2626; font-size: 0.8125rem;">{{ error }}</span>{% endfor %}
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="{{ form.phone_number.id_for_label }}">Phone Number</label>
+                        {{ form.phone_number }}
+                        {% if form.phone_number.errors %}
+                            {% for error in form.phone_number.errors %}<span class="field-error" style="color: #dc2626; font-size: 0.8125rem;">{{ error }}</span>{% endfor %}
+                        {% endif %}
+                    </div>
+
+                    {% if is_edit %}
+                        <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem; margin-top: 1.8rem;">
+                            {{ form.is_active }}
+                            <label for="{{ form.is_active.id_for_label }}" style="font-weight: 600; font-size: 0.875rem; color: #0f172a; margin: 0; cursor: pointer;">
+                                Account is Active &amp; Can Log In
+                            </label>
+                        </div>
+                    {% endif %}
+                </div>
+
+                {% if not is_edit %}
+                    <div class="form-grid-2" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-top: 1rem;">
+                        <div class="form-group">
+                            <label class="form-label" for="{{ form.password.id_for_label }}">Password *</label>
+                            {{ form.password }}
+                            {% if form.password.errors %}
+                                {% for error in form.password.errors %}<span class="field-error" style="color: #dc2626; font-size: 0.8125rem;">{{ error }}</span>{% endfor %}
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="{{ form.confirm_password.id_for_label }}">Confirm Password *</label>
+                            {{ form.confirm_password }}
+                            {% if form.confirm_password.errors %}
+                                {% for error in form.confirm_password.errors %}<span class="field-error" style="color: #dc2626; font-size: 0.8125rem;">{{ error }}</span>{% endfor %}
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Section 2: Clinical Details -->
+            <div style="margin-bottom: 1.75rem;">
+                <h2 style="font-size: 0.95rem; font-weight: 700; color: #2563eb; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 1rem; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.4rem;">
+                    2. Clinical &amp; Demographic Profile
+                </h2>
+
+                <div class="form-grid-3" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                    <div class="form-group">
+                        <label class="form-label" for="{{ form.gender.id_for_label }}">Gender</label>
+                        {{ form.gender }}
+                        {% if form.gender.errors %}
+                            {% for error in form.gender.errors %}<span class="field-error" style="color: #dc2626; font-size: 0.8125rem;">{{ error }}</span>{% endfor %}
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="{{ form.blood_group.id_for_label }}">Blood Group</label>
+                        {{ form.blood_group }}
+                        {% if form.blood_group.errors %}
+                            {% for error in form.blood_group.errors %}<span class="field-error" style="color: #dc2626; font-size: 0.8125rem;">{{ error }}</span>{% endfor %}
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="{{ form.date_of_birth.id_for_label }}">Date of Birth</label>
+                        {{ form.date_of_birth }}
+                        {% if form.date_of_birth.errors %}
+                            {% for error in form.date_of_birth.errors %}<span class="field-error" style="color: #dc2626; font-size: 0.8125rem;">{{ error }}</span>{% endfor %}
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-top: 1rem;">
+                    <label class="form-label" for="{{ form.address.id_for_label }}">Residential Address</label>
+                    {{ form.address }}
+                    {% if form.address.errors %}
+                        {% for error in form.address.errors %}<span class="field-error" style="color: #dc2626; font-size: 0.8125rem;">{{ error }}</span>{% endfor %}
+                    {% endif %}
+                </div>
+
+                <div class="form-group" style="margin-top: 1rem;">
+                    <label class="form-label" for="{{ form.allergies.id_for_label }}">Known Allergies / Clinical Notes</label>
+                    {{ form.allergies }}
+                    {% if form.allergies.errors %}
+                        {% for error in form.allergies.errors %}<span class="field-error" style="color: #dc2626; font-size: 0.8125rem;">{{ error }}</span>{% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 0.75rem; border-top: 1px solid #e2e8f0; padding-top: 1.25rem;">
+                <a href="{% if is_edit %}{% url 'admin_portal:patient_detail' patient_user.pk %}{% else %}{% url 'admin_portal:patient_list' %}{% endif %}" class="btn btn-secondary">
+                    Cancel
+                </a>
+                <button type="submit" class="btn btn-primary" style="padding: 0.6rem 1.5rem; font-weight: 600;">
+                    {% if is_edit %}Save Changes{% else %}Provision Patient{% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+
+</div>
+{% endblock content %}
+

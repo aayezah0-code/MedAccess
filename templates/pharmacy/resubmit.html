@@ -1,0 +1,211 @@
+{% extends 'base.html' %}
+
+{% block title %}Pharmacy Registration Resubmission | MedAccess{% endblock title %}
+
+{% block content %}
+<div class="auth-card auth-card-wide" style="max-width: 840px; margin: 2rem auto;">
+    <div class="auth-header" style="text-align: left; border-bottom: 1px solid #e2e8f0; padding-bottom: 1.25rem; margin-bottom: 1.5rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+            <div>
+                <h1 class="auth-title" style="font-size: 1.5rem; margin-bottom: 0.25rem;">Pharmacy Verification &amp; Resubmission</h1>
+                <p class="auth-subtitle" style="margin: 0; color: #64748b; font-size: 0.9rem;">Review administrative status and update your pharmacy regulatory credentials.</p>
+            </div>
+            <div>
+                {% if is_rejected %}
+                    <span class="status-pill status-pill-rejected" style="background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; padding: 0.35rem 0.75rem; border-radius: 9999px; font-weight: 600; font-size: 0.8125rem;">
+                        Status: Rejected
+                    </span>
+                {% elif is_pending %}
+                    <span class="status-pill status-pill-pending" style="background: #fffbeb; color: #d97706; border: 1px solid #fde68a; padding: 0.35rem 0.75rem; border-radius: 9999px; font-weight: 600; font-size: 0.8125rem;">
+                        Status: Pending Admin Review
+                    </span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {% if is_rejected %}
+        <div class="alert alert-error" style="background: #fef2f2; border: 1px solid #f87171; border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 1.5rem; color: #991b1b;">
+            <div style="display: flex; gap: 0.75rem; align-items: flex-start;">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 0.1rem;">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+                <div style="flex: 1;">
+                    <strong style="display: block; font-size: 0.95rem; margin-bottom: 0.25rem;">Application Review Notice</strong>
+                    <p style="margin: 0 0 0.5rem 0; font-size: 0.875rem; line-height: 1.45;">
+                        Your pharmacy verification was reviewed by the MedAccess administration team and requires updates before it can be activated.
+                    </p>
+                    {% if rejection_reason %}
+                        <div style="background: #ffffff; border: 1px solid #fca5a5; border-radius: 6px; padding: 0.75rem; margin-top: 0.5rem;">
+                            <span style="display: block; font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: #b91c1c; margin-bottom: 0.25rem;">Administrator Feedback</span>
+                            <p style="margin: 0; font-size: 0.875rem; color: #1e293b; white-space: pre-wrap;">{{ rejection_reason }}</p>
+                        </div>
+                    {% else %}
+                        <p style="margin: 0; font-size: 0.875rem; color: #7f1d1d; font-style: italic;">
+                            No specific reason was noted. Please ensure all legal license numbers, GST details, and contact coordinates strictly match your state drug control documentation.
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    {% elif is_pending %}
+        <div class="alert alert-info" style="background: #eff6ff; border: 1px solid #93c5fd; border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 1.5rem; color: #1e40af;">
+            <div style="display: flex; gap: 0.75rem; align-items: flex-start;">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 0.1rem;">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                </svg>
+                <div style="flex: 1;">
+                    <strong style="display: block; font-size: 0.95rem; margin-bottom: 0.25rem;">Verification Pending</strong>
+                    <p style="margin: 0; font-size: 0.875rem; line-height: 1.45;">
+                        Your pharmacy profile is currently in queue for administrator review. If you need to revise any license or store details, you can update and save them below.
+                    </p>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    <form method="post" action="{% url 'pharmacy:resubmit' %}" novalidate>
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+            <div class="alert alert-error" style="margin-bottom: 1rem;">
+                {% for error in form.non_field_errors %}
+                    <div>{{ error }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <div style="margin-bottom: 1.5rem;">
+            <h2 style="font-size: 1.05rem; font-weight: 700; color: #0284c7; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.5rem; margin-bottom: 1rem;">
+                1. Pharmacy Store Information
+            </h2>
+            <div class="form-grid-2">
+                <div class="form-group">
+                    <label class="form-label" for="{{ form.pharmacy_name.id_for_label }}">Pharmacy Name *</label>
+                    {{ form.pharmacy_name }}
+                    {% if form.pharmacy_name.errors %}
+                        {% for error in form.pharmacy_name.errors %}
+                            <span class="field-error" style="color: #dc2626; font-size: 0.8125rem;">{{ error }}</span>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="{{ form.phone_number.id_for_label }}">Store Contact Number *</label>
+                    {{ form.phone_number }}
+                    {% if form.phone_number.errors %}
+                        {% for error in form.phone_number.errors %}
+                            <span class="field-error" style="color: #dc2626; font-size: 0.8125rem;">{{ error }}</span>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="{{ form.owner_name.id_for_label }}">Business Owner Name *</label>
+                    {{ form.owner_name }}
+                    {% if form.owner_name.errors %}
+                        {% for error in form.owner_name.errors %}
+                            <span class="field-error" style="color: #dc2626; font-size: 0.8125rem;">{{ error }}</span>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="{{ form.pharmacist_name.id_for_label }}">Registered Pharmacist Name *</label>
+                    {{ form.pharmacist_name }}
+                    {% if form.pharmacist_name.errors %}
+                        {% for error in form.pharmacist_name.errors %}
+                            <span class="field-error" style="color: #dc2626; font-size: 0.8125rem;">{{ error }}</span>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div style="margin-bottom: 1.5rem;">
+            <h2 style="font-size: 1.05rem; font-weight: 700; color: #0284c7; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.5rem; margin-bottom: 1rem;">
+                2. Regulatory &amp; Compliance Details
+            </h2>
+            <div class="form-grid-2">
+                <div class="form-group">
+                    <label class="form-label" for="{{ form.pharmacy_license_number.id_for_label }}">Drug License Number *</label>
+                    {{ form.pharmacy_license_number }}
+                    {% if form.pharmacy_license_number.errors %}
+                        {% for error in form.pharmacy_license_number.errors %}
+                            <span class="field-error" style="color: #dc2626; font-size: 0.8125rem;">{{ error }}</span>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="{{ form.gst_number.id_for_label }}">GST Identification Number *</label>
+                    {{ form.gst_number }}
+                    {% if form.gst_number.errors %}
+                        {% for error in form.gst_number.errors %}
+                            <span class="field-error" style="color: #dc2626; font-size: 0.8125rem;">{{ error }}</span>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div style="margin-bottom: 1.5rem;">
+            <h2 style="font-size: 1.05rem; font-weight: 700; color: #0284c7; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.5rem; margin-bottom: 1rem;">
+                3. Physical Location &amp; Address
+            </h2>
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label class="form-label" for="{{ form.address.id_for_label }}">Street Address *</label>
+                {{ form.address }}
+                {% if form.address.errors %}
+                    {% for error in form.address.errors %}
+                        <span class="field-error" style="color: #dc2626; font-size: 0.8125rem;">{{ error }}</span>
+                    {% endfor %}
+                {% endif %}
+            </div>
+
+            <div class="form-grid-3" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                <div class="form-group">
+                    <label class="form-label" for="{{ form.city.id_for_label }}">City *</label>
+                    {{ form.city }}
+                    {% if form.city.errors %}
+                        {% for error in form.city.errors %}
+                            <span class="field-error" style="color: #dc2626; font-size: 0.8125rem;">{{ error }}</span>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="{{ form.state.id_for_label }}">State *</label>
+                    {{ form.state }}
+                    {% if form.state.errors %}
+                        {% for error in form.state.errors %}
+                            <span class="field-error" style="color: #dc2626; font-size: 0.8125rem;">{{ error }}</span>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="{{ form.pincode.id_for_label }}">PIN Code *</label>
+                    {{ form.pincode }}
+                    {% if form.pincode.errors %}
+                        {% for error in form.pincode.errors %}
+                            <span class="field-error" style="color: #dc2626; font-size: 0.8125rem;">{{ error }}</span>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #e2e8f0;">
+            <button type="submit" class="btn btn-primary" style="padding: 0.65rem 1.75rem; font-weight: 600;">
+                Resubmit Application for Verification
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock content %}
+

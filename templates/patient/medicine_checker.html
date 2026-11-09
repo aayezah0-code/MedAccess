@@ -1,0 +1,1292 @@
+{% extends 'patient/base_patient.html' %}
+{% load static %}
+
+{% block title %}Medicine Uses & Side Effects | Patient Portal | MedAccess{% endblock title %}
+{% block header_title %}Medicine Uses & Side Effects{% endblock header_title %}
+{% block nav_medicine_checker %}active{% endblock nav_medicine_checker %}
+
+{% block extra_css %}
+<style>
+/* Page Layout */
+.checker-container {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1.75rem;
+}
+
+/* Header & Banner */
+.checker-header-card {
+    background: linear-gradient(135deg, #042f2e 0%, #0f766e 100%);
+    border-radius: var(--radius-lg, 0.75rem);
+    padding: 2rem;
+    color: #ffffff;
+    box-shadow: var(--shadow-md, 0 4px 6px -1px rgba(0, 0, 0, 0.1));
+}
+
+.checker-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: rgba(220, 252, 231, 0.2);
+    color: #86efac;
+    border: 1px solid rgba(134, 239, 172, 0.4);
+    font-size: 0.75rem;
+    padding: 0.25rem 0.65rem;
+    border-radius: 9999px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin-bottom: 0.75rem;
+}
+
+.checker-title {
+    font-size: 1.75rem;
+    font-weight: 800;
+    margin: 0 0 0.5rem 0;
+    color: #ffffff;
+    letter-spacing: -0.02em;
+    line-height: 1.25;
+}
+
+.checker-subtitle {
+    color: #ccfbf1;
+    font-size: 0.9375rem;
+    line-height: 1.55;
+    margin: 0;
+    max-width: 720px;
+}
+
+/* Search Box Container */
+.checker-search-card {
+    background: var(--color-surface, #ffffff);
+    border: 1px solid var(--color-border, #e2e8f0);
+    border-radius: var(--radius-lg, 0.75rem);
+    padding: 1.75rem;
+    box-shadow: var(--shadow-subtle, 0 1px 3px rgba(0, 0, 0, 0.05));
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.checker-search-form {
+    display: flex;
+    gap: 0.75rem;
+    align-items: stretch;
+    flex-wrap: wrap;
+}
+
+.search-input-wrapper {
+    position: relative;
+    flex: 1;
+    min-width: 280px;
+}
+
+.search-input-icon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--color-text-muted, #64748b);
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+}
+
+.checker-input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0.85rem 2.75rem 0.85rem 2.6rem;
+    font-size: 1rem;
+    border: 1.5px solid var(--color-border, #cbd5e1);
+    border-radius: var(--radius-sm, 0.375rem);
+    background: var(--color-bg, #f8fafc);
+    color: var(--color-text-main, #0f172a);
+    outline: none;
+    transition: all 0.15s ease;
+}
+
+.checker-input:focus {
+    border-color: #0f766e;
+    background: #ffffff;
+    box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.15);
+}
+
+.clear-btn {
+    position: absolute;
+    right: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    color: var(--color-text-muted, #64748b);
+    cursor: pointer;
+    padding: 0.25rem;
+    display: none;
+    align-items: center;
+    border-radius: 50%;
+}
+
+.clear-btn:hover {
+    color: var(--color-text-main, #0f172a);
+}
+
+/* Autocomplete Dropdown Styles */
+.autocomplete-dropdown {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 100%;
+    margin-top: 5px;
+    background: #ffffff;
+    border: 1.5px solid var(--color-border, #cbd5e1);
+    border-radius: var(--radius-sm, 0.375rem);
+    box-shadow: 0 10px 20px -3px rgba(0, 0, 0, 0.12), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    max-height: 280px;
+    overflow-y: auto;
+    z-index: 60;
+}
+
+.autocomplete-dropdown::-webkit-scrollbar {
+    width: 6px;
+}
+
+.autocomplete-dropdown::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+
+.autocomplete-item {
+    padding: 0.7rem 1rem;
+    cursor: pointer;
+    border-bottom: 1px solid #f1f5f9;
+    transition: background 0.12s ease, border-left 0.12s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    text-align: left;
+}
+
+.autocomplete-item:last-child {
+    border-bottom: none;
+}
+
+.autocomplete-item:hover,
+.autocomplete-item.active {
+    background: #ecfdf5 !important;
+    border-left: 3px solid #0f766e !important;
+}
+
+.autocomplete-item-name {
+    font-size: 0.9375rem;
+    font-weight: 700;
+    color: var(--color-text-main, #0f172a);
+}
+
+.autocomplete-item-comp {
+    font-size: 0.75rem;
+    color: #0f766e;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.autocomplete-empty {
+    padding: 1.25rem 1rem;
+    text-align: center;
+    color: var(--color-text-muted, #64748b);
+    font-size: 0.875rem;
+}
+
+.autocomplete-mini-spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(15, 118, 110, 0.2);
+    border-radius: 50%;
+    border-top-color: #0f766e;
+    animation: spin 0.7s linear infinite;
+}
+
+.checker-submit-btn {
+    background: #0f766e;
+    color: #ffffff;
+    border: none;
+    padding: 0.85rem 1.75rem;
+    border-radius: var(--radius-sm, 0.375rem);
+    font-size: 0.9375rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: background 0.15s ease, transform 0.1s ease;
+    box-shadow: var(--shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.05));
+}
+
+.checker-submit-btn:hover {
+    background: #0d5f58;
+    transform: translateY(-1px);
+}
+
+.checker-submit-btn:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Quick Example Chips */
+.quick-examples-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.quick-example-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--color-text-muted, #64748b);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.quick-chip {
+    background: var(--color-bg, #f1f5f9);
+    border: 1px solid var(--color-border, #cbd5e1);
+    border-radius: 9999px;
+    padding: 0.25rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-text-muted, #475569);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.quick-chip:hover {
+    background: #ecfdf5;
+    border-color: #0f766e;
+    color: #0f766e;
+}
+
+/* Result Cards & States */
+.checker-results-area {
+    min-height: 200px;
+}
+
+/* Loading State */
+.loading-box {
+    display: none;
+    padding: 3rem 1.5rem;
+    text-align: center;
+    background: var(--color-surface, #ffffff);
+    border: 1px solid var(--color-border, #e2e8f0);
+    border-radius: var(--radius-lg, 0.75rem);
+}
+
+.loading-spinner {
+    display: inline-block;
+    width: 40px;
+    height: 40px;
+    border: 3.5px solid rgba(15, 118, 110, 0.2);
+    border-radius: 50%;
+    border-top-color: #0f766e;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* High Confidence Match Card */
+.card-high-match {
+    background: #ffffff;
+    border: 1.5px solid #86efac;
+    border-radius: var(--radius-lg, 0.75rem);
+    padding: 1.75rem;
+    box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.08);
+    animation: fadeIn 0.3s ease-out;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.match-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 1rem;
+    border-bottom: 1px solid #dcfce7;
+    padding-bottom: 1.25rem;
+}
+
+.match-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    background: #15803d;
+    color: #ffffff;
+    padding: 0.25rem 0.7rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.medicine-heading {
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 0.35rem 0 0.15rem 0;
+    letter-spacing: -0.01em;
+}
+
+.medicine-mfg {
+    font-size: 0.875rem;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.sim-score-badge {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    padding: 0.6rem 1rem;
+    border-radius: var(--radius-sm, 0.375rem);
+    text-align: right;
+}
+
+.sim-score-val {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: #166534;
+}
+
+.sim-score-label {
+    font-size: 0.6875rem;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: #15803d;
+    display: block;
+}
+
+/* Composition Highlight Box */
+.composition-box {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: var(--radius-sm, 0.375rem);
+    padding: 1rem 1.25rem;
+}
+
+.composition-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.composition-text {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin-top: 0.3rem;
+    line-height: 1.4;
+}
+
+/* Clinical Uses & Side Effects Grid */
+.details-sections-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1.25rem;
+}
+
+.section-box {
+    border-radius: var(--radius-sm, 0.375rem);
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.uses-box {
+    background: #f0fdfa;
+    border: 1.5px solid #99f6e4;
+}
+
+.uses-box-title {
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: #0f766e;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.uses-list {
+    margin: 0;
+    padding-left: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.uses-list li {
+    font-size: 0.9375rem;
+    color: #134e4a;
+    line-height: 1.45;
+}
+
+.side-effects-box {
+    background: #fffbeb;
+    border: 1.5px solid #fde68a;
+}
+
+.side-effects-title {
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: #b45309;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.side-effects-text {
+    font-size: 0.9375rem;
+    color: #78350f;
+    line-height: 1.5;
+    margin: 0;
+}
+
+/* Medium Confidence Confirmation Card */
+.card-medium-match {
+    background: #fffbeb;
+    border: 1.5px solid #fcd34d;
+    border-radius: var(--radius-lg, 0.75rem);
+    padding: 1.75rem;
+    box-shadow: 0 4px 6px -1px rgba(217, 119, 6, 0.08);
+    animation: fadeIn 0.3s ease-out;
+}
+
+.medium-badge {
+    background: #d97706;
+    color: #ffffff;
+    padding: 0.25rem 0.7rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.candidate-confirmation-box {
+    background: #ffffff;
+    border: 1.5px solid #fde68a;
+    border-radius: var(--radius-sm, 0.375rem);
+    padding: 1.25rem;
+    margin: 1.25rem 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.candidate-name {
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: #0f172a;
+}
+
+.candidate-comp {
+    font-size: 0.875rem;
+    color: #0f766e;
+    font-weight: 600;
+    margin-top: 0.2rem;
+}
+
+.candidate-mfg {
+    font-size: 0.8125rem;
+    color: #64748b;
+    margin-top: 0.2rem;
+}
+
+.confirm-btn-primary {
+    background: #0f766e;
+    color: #ffffff;
+    border: none;
+    padding: 0.65rem 1.35rem;
+    border-radius: var(--radius-sm, 0.375rem);
+    font-size: 0.875rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    transition: background 0.15s ease;
+}
+
+.confirm-btn-primary:hover {
+    background: #0d5f58;
+}
+
+/* No Match Card */
+.card-no-match {
+    background: #ffffff;
+    border: 1px dashed var(--color-border, #cbd5e1);
+    border-radius: var(--radius-lg, 0.75rem);
+    padding: 2.5rem 1.5rem;
+    text-align: center;
+    animation: fadeIn 0.3s ease-out;
+}
+
+.no-match-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: #fef2f2;
+    color: #ef4444;
+    margin: 0 auto 0.85rem auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Disclaimer Box */
+.disclaimer-card {
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    border-radius: var(--radius-sm, 0.375rem);
+    padding: 1rem 1.25rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    font-size: 0.8125rem;
+    color: #475569;
+    line-height: 1.5;
+}
+
+.disclaimer-card strong {
+    color: #334155;
+}
+</style>
+{% endblock extra_css %}
+
+{% block content %}
+<div class="checker-container">
+
+    <!-- 1. Header Banner -->
+    <div class="checker-header-card">
+        <div class="checker-badge">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            Clinical Formulations Database
+        </div>
+        <h1 class="checker-title">Medicine Uses & Side Effects Checker</h1>
+        <p class="checker-subtitle">
+            Search any commercial or generic medicine to verify its approved clinical indications, active salt formulation, and documented patient side effects.
+        </p>
+    </div>
+
+    <!-- 2. Search Box Card -->
+    <div class="checker-search-card">
+        <form id="checker-search-form" method="GET" action="." class="checker-search-form">
+            <div class="search-input-wrapper" id="checker-search-wrapper">
+                <span class="search-input-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                </span>
+                <input
+                    type="text"
+                    id="checker-query-input"
+                    name="q"
+                    class="checker-input"
+                    value="{{ initial_query|default:'' }}"
+                    placeholder="Enter medicine name (e.g. Augmentin 625, Azithral 500, Dolo, Aciloc 150)..."
+                    autocomplete="off"
+                    role="combobox"
+                    aria-autocomplete="list"
+                    aria-expanded="false"
+                    aria-controls="checker-autocomplete-dropdown"
+                    required
+                >
+                <span id="checker-autocomplete-spinner" style="display: none; position: absolute; right: 2.35rem; top: 50%; transform: translateY(-50%); pointer-events: none;">
+                    <span class="autocomplete-mini-spinner"></span>
+                </span>
+                <button type="button" id="checker-clear-btn" class="clear-btn" title="Clear search">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+                <div id="checker-autocomplete-dropdown" class="autocomplete-dropdown" role="listbox" style="display: none;"></div>
+            </div>
+            <button type="submit" id="checker-submit-btn" class="checker-submit-btn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <span id="btn-text">Check Medicine</span>
+            </button>
+        </form>
+
+        <!-- Quick Test Chips -->
+        <div class="quick-examples-row">
+            <span class="quick-example-label">Quick Search:</span>
+            <button type="button" class="quick-chip" data-query="Augmentin 625">Augmentin 625</button>
+            <button type="button" class="quick-chip" data-query="Azithral 500 tab">Azithral 500 tab</button>
+            <button type="button" class="quick-chip" data-query="Dolo">Dolo</button>
+            <button type="button" class="quick-chip" data-query="Aciloc 150">Aciloc 150</button>
+            <button type="button" class="quick-chip" data-query="Avastin 400mg Injection">Avastin 400mg Injection</button>
+        </div>
+    </div>
+
+    <!-- 3. Results Container -->
+    <div class="checker-results-area">
+
+        <!-- Loading Spinner -->
+        <div id="checker-loading" class="loading-box">
+            <div class="loading-spinner"></div>
+            <div style="margin-top: 0.85rem; font-weight: 700; color: var(--color-text-main); font-size: 1rem;">
+                Searching Clinical Formulations Repository...
+            </div>
+            <div style="font-size: 0.8125rem; color: var(--color-text-muted); margin-top: 0.25rem;">
+                Comparing character n-grams and calculating text alignment score
+            </div>
+        </div>
+
+        <!-- Dynamic Results Body -->
+        <div id="checker-results-body">
+            {% if initial_result %}
+                {% if initial_result.match_status == 'HIGH' and initial_result.best_match %}
+                    <!-- Server Rendered High Confidence -->
+                    <div class="card-high-match">
+                        <div class="match-header">
+                            <div>
+                                <span class="match-status-badge">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                    High Confidence Match
+                                </span>
+                                <h2 class="medicine-heading">{{ initial_result.best_match.medicine_name }}</h2>
+                                <div class="medicine-mfg">Manufacturer: {{ initial_result.best_match.manufacturer|default:"Pharmaceutical Manufacturer" }}</div>
+                            </div>
+                            <div class="sim-score-badge">
+                                <span class="sim-score-label">Text Similarity</span>
+                                <div class="sim-score-val">{% widthratio initial_result.similarity_score 1 100 %}%</div>
+                            </div>
+                        </div>
+
+                        <div class="composition-box">
+                            <div class="composition-label">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                                </svg>
+                                Active Chemical Composition
+                            </div>
+                            <div class="composition-text">{{ initial_result.best_match.composition }}</div>
+                        </div>
+
+                        <div class="details-sections-grid">
+                            <div class="section-box uses-box">
+                                <div class="uses-box-title">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                        <polyline points="9 11 12 14 22 4"></polyline>
+                                        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                                    </svg>
+                                    Approved Clinical Uses
+                                </div>
+                                <ul class="uses-list">
+                                    {% for u in initial_result.best_match.uses_list %}
+                                        <li>{{ u }}</li>
+                                    {% empty %}
+                                        <li>{{ initial_result.best_match.uses_cleaned|default:"Clinical use information available." }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+
+                            <div class="section-box side-effects-box">
+                                <div class="side-effects-title">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                                        <line x1="12" y1="9" x2="12" y2="13"></line>
+                                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                                    </svg>
+                                    Reported Side Effects
+                                </div>
+                                <p class="side-effects-text">{{ initial_result.best_match.side_effects_merged }}</p>
+                            </div>
+                        </div>
+
+                        <div class="disclaimer-card">
+                            <span style="color: #64748b; margin-top: 2px;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                </svg>
+                            </span>
+                            <div>
+                                <strong>Safety Notice:</strong> {{ initial_result.disclaimer }}
+                            </div>
+                        </div>
+                    </div>
+
+                {% elif initial_result.match_status == 'MEDIUM' %}
+                    <!-- Server Rendered Medium Confidence (Ask Patient to Confirm) -->
+                    <div class="card-medium-match">
+                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                            <span class="medium-badge">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                                </svg>
+                                Please Confirm Medicine
+                            </span>
+                            <span style="font-size: 0.8125rem; color: #92400e; font-weight: 600;">Text Similarity: {% widthratio initial_result.similarity_score 1 100 %}%</span>
+                        </div>
+                        <h3 style="font-size: 1.25rem; font-weight: 800; color: #78350f; margin: 0 0 0.4rem 0;">
+                            Did you mean: {{ initial_result.suggested_confirmation.medicine_name }}?
+                        </h3>
+                        <p style="color: #92400e; font-size: 0.875rem; margin: 0 0 1rem 0; line-height: 1.5;">
+                            Because medicine names can have similar spellings or distinct dosage forms, please confirm if this is the exact medication you intended to inspect before viewing clinical details:
+                        </p>
+
+                        <div class="candidate-confirmation-box">
+                            <div>
+                                <div class="candidate-name">{{ initial_result.suggested_confirmation.medicine_name }}</div>
+                                <div class="candidate-comp">{{ initial_result.suggested_confirmation.composition }}</div>
+                                <div class="candidate-mfg">Manufacturer: {{ initial_result.suggested_confirmation.manufacturer }}</div>
+                            </div>
+                            <button type="button" class="confirm-btn-primary execute-confirm-btn" data-confirmed-name="{{ initial_result.suggested_confirmation.medicine_name }}">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                                Yes, View Details
+                            </button>
+                        </div>
+                    </div>
+
+                {% elif initial_result.match_status == 'NO_MATCH' %}
+                    <!-- Server Rendered No Match -->
+                    <div class="card-no-match">
+                        <div class="no-match-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="15" y1="9" x2="9" y2="15"></line>
+                                <line x1="9" y1="9" x2="15" y2="15"></line>
+                            </svg>
+                        </div>
+                        <h3 style="font-size: 1.2rem; font-weight: 800; color: #0f172a; margin: 0 0 0.35rem 0;">
+                            Medicine Not Found in Repository
+                        </h3>
+                        <p style="font-size: 0.875rem; color: #64748b; max-width: 520px; margin: 0 auto; line-height: 1.5;">
+                            No matching formulation with reliable confidence was found for "<strong>{{ initial_query }}</strong>".
+                            Please verify the spelling or consult with your licensed pharmacist.
+                        </p>
+                    </div>
+                {% endif %}
+
+            {% else %}
+                <!-- Idle Welcome State -->
+                <div style="background: var(--color-surface, #ffffff); border: 1px dashed var(--color-border, #cbd5e1); border-radius: var(--radius-lg, 0.75rem); padding: 3rem 1.5rem; text-align: center;">
+                    <div style="width: 54px; height: 54px; border-radius: 50%; background: #ecfdf5; color: #059669; margin: 0 auto 1rem auto; display: flex; align-items: center; justify-content: center;">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M10.5 20.5l10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7z"></path>
+                            <line x1="8.5" y1="8.5" x2="15.5" y2="15.5"></line>
+                        </svg>
+                    </div>
+                    <h3 style="font-size: 1.2rem; font-weight: 800; color: #0f172a; margin: 0 0 0.4rem 0;">
+                        Ready to Check Medicine Information
+                    </h3>
+                    <p style="font-size: 0.9rem; color: #64748b; max-width: 560px; margin: 0 auto 1.5rem auto; line-height: 1.55;">
+                        Type a medicine brand name or click one of the quick test chips above to view its clinical uses and reported side effects from the MedAccess pharmaceutical database.
+                    </p>
+                </div>
+            {% endif %}
+        </div>
+
+    </div>
+
+</div>
+
+<!-- Vanilla JavaScript Client -->
+<script>
+(function() {
+    const searchForm = document.getElementById('checker-search-form');
+    const queryInput = document.getElementById('checker-query-input');
+    const clearBtn = document.getElementById('checker-clear-btn');
+    const submitBtn = document.getElementById('checker-submit-btn');
+    const loadingBox = document.getElementById('checker-loading');
+    const resultsBody = document.getElementById('checker-results-body');
+    const searchWrapper = document.getElementById('checker-search-wrapper');
+    const dropdown = document.getElementById('checker-autocomplete-dropdown');
+    const autocompleteSpinner = document.getElementById('checker-autocomplete-spinner');
+
+    let debounceTimer = null;
+    let selectedIndex = -1;
+    let currentSuggestions = [];
+
+    // Toggle clear button visibility
+    function updateClearBtn() {
+        if (!clearBtn || !queryInput) return;
+        clearBtn.style.display = queryInput.value.trim().length > 0 ? 'flex' : 'none';
+    }
+
+    function closeDropdown() {
+        if (dropdown) {
+            dropdown.style.display = 'none';
+            dropdown.innerHTML = '';
+        }
+        if (queryInput) {
+            queryInput.setAttribute('aria-expanded', 'false');
+        }
+        selectedIndex = -1;
+        currentSuggestions = [];
+    }
+
+    function updateActiveItem(items) {
+        items.forEach(function(item, idx) {
+            if (idx === selectedIndex) {
+                item.classList.add('active');
+                item.setAttribute('aria-selected', 'true');
+                item.scrollIntoView({ block: 'nearest' });
+            } else {
+                item.classList.remove('active');
+                item.setAttribute('aria-selected', 'false');
+            }
+        });
+    }
+
+    function fetchAutocomplete(query) {
+        if (!dropdown) return;
+        if (autocompleteSpinner) autocompleteSpinner.style.display = 'block';
+
+        const url = "{% url 'patient:medicine_checker_autocomplete_api' %}?q=" + encodeURIComponent(query);
+        fetch(url, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(function(res) {
+            return res.json();
+        })
+        .then(function(data) {
+            // Ignore response if user has altered input in the meantime
+            if (queryInput && queryInput.value.trim() !== query) {
+                return;
+            }
+            if (data.status === 'success' && data.suggestions) {
+                renderSuggestions(data.suggestions, query);
+            } else {
+                closeDropdown();
+            }
+        })
+        .catch(function(err) {
+            console.error('Autocomplete fetch error:', err);
+            closeDropdown();
+        })
+        .finally(function() {
+            if (autocompleteSpinner) autocompleteSpinner.style.display = 'none';
+        });
+    }
+
+    function renderSuggestions(suggestions, query) {
+        if (!dropdown) return;
+        dropdown.innerHTML = '';
+        currentSuggestions = suggestions || [];
+        selectedIndex = -1;
+
+        if (currentSuggestions.length === 0) {
+            dropdown.innerHTML = '<div class="autocomplete-empty">No matching medicines found</div>';
+            dropdown.style.display = 'block';
+            if (queryInput) queryInput.setAttribute('aria-expanded', 'true');
+            return;
+        }
+
+        currentSuggestions.forEach(function(item, idx) {
+            const itemEl = document.createElement('div');
+            itemEl.className = 'autocomplete-item';
+            itemEl.setAttribute('role', 'option');
+            itemEl.setAttribute('data-index', idx);
+
+            const nameEl = document.createElement('div');
+            nameEl.className = 'autocomplete-item-name';
+            nameEl.textContent = item.medicine_name;
+
+            const compEl = document.createElement('div');
+            compEl.className = 'autocomplete-item-comp';
+            compEl.textContent = item.composition ? item.composition : 'Clinical formulation';
+
+            itemEl.appendChild(nameEl);
+            itemEl.appendChild(compEl);
+
+            itemEl.addEventListener('click', function() {
+                selectSuggestion(item.medicine_name);
+            });
+
+            dropdown.appendChild(itemEl);
+        });
+
+        dropdown.style.display = 'block';
+        if (queryInput) queryInput.setAttribute('aria-expanded', 'true');
+    }
+
+    function selectSuggestion(medicineName) {
+        if (queryInput) {
+            queryInput.value = medicineName;
+            updateClearBtn();
+        }
+        closeDropdown();
+        executeSearch(medicineName);
+    }
+
+    if (queryInput) {
+        queryInput.addEventListener('input', function() {
+            updateClearBtn();
+            const val = this.value.trim();
+            clearTimeout(debounceTimer);
+            selectedIndex = -1;
+
+            if (val.length < 2) {
+                closeDropdown();
+                return;
+            }
+
+            debounceTimer = setTimeout(function() {
+                fetchAutocomplete(val);
+            }, 280);
+        });
+
+        queryInput.addEventListener('keydown', function(e) {
+            const items = dropdown ? dropdown.querySelectorAll('.autocomplete-item') : [];
+            const isOpen = dropdown && dropdown.style.display === 'block';
+
+            if (e.key === 'ArrowDown') {
+                if (isOpen && items.length > 0) {
+                    e.preventDefault();
+                    selectedIndex = Math.min(selectedIndex + 1, items.length - 1);
+                    updateActiveItem(items);
+                }
+            } else if (e.key === 'ArrowUp') {
+                if (isOpen && items.length > 0) {
+                    e.preventDefault();
+                    selectedIndex = Math.max(selectedIndex - 1, 0);
+                    updateActiveItem(items);
+                }
+            } else if (e.key === 'Enter') {
+                if (isOpen && selectedIndex >= 0 && selectedIndex < items.length) {
+                    e.preventDefault();
+                    const chosen = currentSuggestions[selectedIndex];
+                    if (chosen) {
+                        selectSuggestion(chosen.medicine_name);
+                    }
+                }
+            } else if (e.key === 'Escape') {
+                closeDropdown();
+            }
+        });
+
+        updateClearBtn();
+    }
+
+    if (clearBtn) {
+        clearBtn.addEventListener('click', function() {
+            if (queryInput) {
+                queryInput.value = '';
+                queryInput.focus();
+                updateClearBtn();
+                closeDropdown();
+            }
+        });
+    }
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+        if (searchWrapper && !searchWrapper.contains(e.target)) {
+            closeDropdown();
+        }
+    });
+
+    // Attach click events to quick chips
+    document.querySelectorAll('.quick-chip').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            const query = this.getAttribute('data-query');
+            if (queryInput) {
+                queryInput.value = query;
+                updateClearBtn();
+                closeDropdown();
+                executeSearch(query);
+            }
+        });
+    });
+
+    // Form submission
+    if (searchForm) {
+        searchForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            closeDropdown();
+            const q = queryInput ? queryInput.value.trim() : '';
+            if (q) {
+                executeSearch(q);
+            }
+        });
+    }
+
+    // Execute live search via API
+    function executeSearch(query, confirmedName) {
+        closeDropdown();
+        if (!query && !confirmedName) return;
+
+        // Show loading state
+        if (loadingBox) loadingBox.style.display = 'block';
+        if (resultsBody) resultsBody.style.display = 'none';
+        if (submitBtn) submitBtn.disabled = true;
+
+        let url = "{% url 'patient:medicine_checker_api' %}?";
+        if (confirmedName) {
+            url += 'confirmed_name=' + encodeURIComponent(confirmedName);
+        } else {
+            url += 'q=' + encodeURIComponent(query);
+        }
+
+        fetch(url, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(function(res) {
+            return res.json().then(function(data) {
+                return { status: res.status, data: data };
+            });
+        })
+        .then(function(payload) {
+            renderResults(payload.data);
+        })
+        .catch(function(err) {
+            console.error('Medicine check error:', err);
+            renderError('A network or server error occurred. Please try again.');
+        })
+        .finally(function() {
+            if (loadingBox) loadingBox.style.display = 'none';
+            if (resultsBody) resultsBody.style.display = 'block';
+            if (submitBtn) submitBtn.disabled = false;
+        });
+    }
+
+    // Render results based on confidence classification
+    function renderResults(data) {
+        if (!resultsBody) return;
+
+        if (data.match_status === 'HIGH' && data.best_match) {
+            const m = data.best_match;
+            const simPercent = Math.round((data.similarity_score || 1.0) * 100);
+            
+            let usesHtml = '';
+            if (m.uses_list && m.uses_list.length > 0) {
+                m.uses_list.forEach(function(u) {
+                    usesHtml += `<li>${escapeHtml(u)}</li>`;
+                });
+            } else {
+                usesHtml = `<li>${escapeHtml(m.uses_cleaned || 'Clinical indication available.')}</li>`;
+            }
+
+            resultsBody.innerHTML = `
+                <div class="card-high-match">
+                    <div class="match-header">
+                        <div>
+                            <span class="match-status-badge">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                                High Confidence Match
+                            </span>
+                            <h2 class="medicine-heading">${escapeHtml(m.medicine_name)}</h2>
+                            <div class="medicine-mfg">Manufacturer: ${escapeHtml(m.manufacturer || 'Pharmaceutical Manufacturer')}</div>
+                        </div>
+                        <div class="sim-score-badge">
+                            <span class="sim-score-label">Text Similarity</span>
+                            <div class="sim-score-val">${simPercent}%</div>
+                        </div>
+                    </div>
+
+                    <div class="composition-box">
+                        <div class="composition-label">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                            </svg>
+                            Active Chemical Composition
+                        </div>
+                        <div class="composition-text">${escapeHtml(m.composition)}</div>
+                    </div>
+
+                    <div class="details-sections-grid">
+                        <div class="section-box uses-box">
+                            <div class="uses-box-title">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                    <polyline points="9 11 12 14 22 4"></polyline>
+                                    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                                </svg>
+                                Approved Clinical Uses
+                            </div>
+                            <ul class="uses-list">
+                                ${usesHtml}
+                            </ul>
+                        </div>
+
+                        <div class="section-box side-effects-box">
+                            <div class="side-effects-title">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                                    <line x1="12" y1="9" x2="12" y2="13"></line>
+                                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                                </svg>
+                                Reported Side Effects
+                            </div>
+                            <p class="side-effects-text">${escapeHtml(m.side_effects_merged || m.side_effects_raw)}</p>
+                        </div>
+                    </div>
+
+                    <div class="disclaimer-card">
+                        <span style="color: #64748b; margin-top: 2px;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="16" x2="12" y2="12"></line>
+                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                            </svg>
+                        </span>
+                        <div>
+                            <strong>Safety Notice:</strong> ${escapeHtml(data.disclaimer || 'Clinical information is for patient reference only. Always consult a healthcare professional.')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        } else if (data.match_status === 'MEDIUM') {
+            const cand = data.suggested_confirmation || (data.candidates && data.candidates[0]);
+            const candName = cand ? cand.medicine_name : '';
+            const candComp = cand ? cand.composition : '';
+            const candMfg = cand ? cand.manufacturer : '';
+            const simPercent = Math.round((data.similarity_score || 0.6) * 100);
+
+            resultsBody.innerHTML = `
+                <div class="card-medium-match">
+                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                        <span class="medium-badge">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="8" x2="12" y2="12"></line>
+                                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                            </svg>
+                            Please Confirm Medicine
+                        </span>
+                        <span style="font-size: 0.8125rem; color: #92400e; font-weight: 600;">Text Similarity: ${simPercent}%</span>
+                    </div>
+                    <h3 style="font-size: 1.25rem; font-weight: 800; color: #78350f; margin: 0 0 0.4rem 0;">
+                        Did you mean: ${escapeHtml(candName)}?
+                    </h3>
+                    <p style="color: #92400e; font-size: 0.875rem; margin: 0 0 1rem 0; line-height: 1.5;">
+                        Because medicine names can have similar spellings or distinct dosage forms, please confirm if this is the exact medication you intended to inspect before viewing clinical details:
+                    </p>
+
+                    <div class="candidate-confirmation-box">
+                        <div>
+                            <div class="candidate-name">${escapeHtml(candName)}</div>
+                            <div class="candidate-comp">${escapeHtml(candComp)}</div>
+                            <div class="candidate-mfg">Manufacturer: ${escapeHtml(candMfg)}</div>
+                        </div>
+                        <button type="button" class="confirm-btn-primary dynamic-confirm-btn" data-name="${escapeHtml(candName)}">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                            Yes, View Details
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            // Wire dynamic confirm button
+            const confirmBtn = resultsBody.querySelector('.dynamic-confirm-btn');
+            if (confirmBtn) {
+                confirmBtn.addEventListener('click', function() {
+                    const cName = this.getAttribute('data-name');
+                    executeSearch('', cName);
+                });
+            }
+        } else {
+            // NO_MATCH state
+            resultsBody.innerHTML = `
+                <div class="card-no-match">
+                    <div class="no-match-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="15" y1="9" x2="9" y2="15"></line>
+                            <line x1="9" y1="9" x2="15" y2="15"></line>
+                        </svg>
+                    </div>
+                    <h3 style="font-size: 1.2rem; font-weight: 800; color: #0f172a; margin: 0 0 0.35rem 0;">
+                        Medicine Not Found in Repository
+                    </h3>
+                    <p style="font-size: 0.875rem; color: #64748b; max-width: 520px; margin: 0 auto; line-height: 1.5;">
+                        No matching formulation with reliable confidence was found for "<strong>${escapeHtml(data.query || '')}</strong>".
+                        Please verify the spelling or consult with your licensed pharmacist.
+                    </p>
+                </div>
+            `;
+        }
+    }
+
+    function renderError(message) {
+        if (!resultsBody) return;
+        resultsBody.innerHTML = `
+            <div style="border: 1px solid #fecaca; background: #fef2f2; border-radius: var(--radius-lg, 0.75rem); padding: 1.5rem; text-align: center;">
+                <div style="color: #b91c1c; font-weight: 700; font-size: 0.9375rem;">${escapeHtml(message)}</div>
+            </div>
+        `;
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    // Attach click events on any initial server-rendered confirm buttons
+    document.querySelectorAll('.execute-confirm-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            const cName = this.getAttribute('data-confirmed-name');
+            executeSearch('', cName);
+        });
+    });
+
+})();
+</script>
+{% endblock content %}
+

@@ -1,0 +1,128 @@
+{% extends 'admin_portal/base_admin.html' %}
+
+{% block title %}Help &amp; Support | Admin Portal | MedAccess{% endblock title %}
+{% block header_title %}Administrator Operations Guide &amp; Support Center{% endblock header_title %}
+{% block nav_help %}active{% endblock nav_help %}
+
+{% block content %}
+<div style="max-width: 1100px; margin: 0 auto;">
+
+    <!-- Top Header -->
+    <div style="margin-bottom: 1.5rem;">
+        <h1 style="font-size: 1.35rem; font-weight: 700; color: var(--color-text-main, #0f172a); margin: 0 0 0.25rem 0;">
+            Help &amp; Operational Knowledge Base
+        </h1>
+        <p style="margin: 0; font-size: 0.875rem; color: var(--color-text-muted, #64748b);">
+            Standard operating procedures, verification protocols, security policies, and technical support references for MedAccess administrators.
+        </p>
+    </div>
+
+    <!-- Quick Reference Grid -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.25rem; margin-bottom: 2rem;">
+
+        <!-- Guide 1: Pharmacy Verification -->
+        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+            <div style="display: flex; gap: 0.75rem; align-items: center; margin-bottom: 0.75rem;">
+                <div class="admin-stat-icon icon-green" style="width: 36px; height: 36px;">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                </div>
+                <h2 style="font-size: 1.05rem; font-weight: 700; color: #0f172a; margin: 0;">Pharmacy Verification Protocol</h2>
+            </div>
+            <p style="font-size: 0.85rem; color: #64748b; line-height: 1.5; margin-bottom: 0.75rem;">
+                Every partner pharmacy must be verified against state drug regulatory records before gaining access to patient prescription fulfillment:
+            </p>
+            <ul style="margin: 0; padding-left: 1.25rem; font-size: 0.85rem; color: #334155; line-height: 1.6;">
+                <li>Verify drug license number matches the registered state jurisdiction.</li>
+                <li>Ensure GSTIN format adheres to Indian GST structure (15 alphanumeric characters).</li>
+                <li>If rejected, provide specific corrective feedback so the pharmacy can update and resubmit.</li>
+            </ul>
+        </div>
+
+        <!-- Guide 2: Patient Lifecycle -->
+        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+            <div style="display: flex; gap: 0.75rem; align-items: center; margin-bottom: 0.75rem;">
+                <div class="admin-stat-icon icon-blue" style="width: 36px; height: 36px;">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg>
+                </div>
+                <h2 style="font-size: 1.05rem; font-weight: 700; color: #0f172a; margin: 0;">Patient Account Management</h2>
+            </div>
+            <p style="font-size: 0.85rem; color: #64748b; line-height: 1.5; margin-bottom: 0.75rem;">
+                Policies governing patient account provisioning, deactivation, and medical record retention:
+            </p>
+            <ul style="margin: 0; padding-left: 1.25rem; font-size: 0.85rem; color: #334155; line-height: 1.6;">
+                <li>Administrative provisioning creates verified accounts with immediate access.</li>
+                <li>Deleting accounts with linked medical records automatically safely deactivates them.</li>
+                <li>Deactivated accounts are immediately blocked from logging in.</li>
+            </ul>
+        </div>
+
+        <!-- Guide 3: Security & Access Control -->
+        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+            <div style="display: flex; gap: 0.75rem; align-items: center; margin-bottom: 0.75rem;">
+                <div class="admin-stat-icon icon-purple" style="width: 36px; height: 36px;">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                </div>
+                <h2 style="font-size: 1.05rem; font-weight: 700; color: #0f172a; margin: 0;">Two-Admin Security Model</h2>
+            </div>
+            <p style="font-size: 0.85rem; color: #64748b; line-height: 1.5; margin-bottom: 0.75rem;">
+                The platform enforces a strict predefined administrative identity whitelist:
+            </p>
+            <ul style="margin: 0; padding-left: 1.25rem; font-size: 0.85rem; color: #334155; line-height: 1.6;">
+                <li>Only authorized email identities can access the custom Admin Portal.</li>
+                <li>Unlisted staff, superusers, or altered roles receive HTTP 403 Forbidden.</li>
+                <li>Public registration forms reject any attempt to use predefined admin emails.</li>
+            </ul>
+        </div>
+
+    </div>
+
+    <!-- Frequently Asked Questions -->
+    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.75rem; box-shadow: 0 1px 3px rgba(0,0,0,0.02); margin-bottom: 2rem;">
+        <h2 style="font-size: 1.15rem; font-weight: 700; color: #0f172a; margin: 0 0 1.25rem 0; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.75rem;">
+            Frequently Asked Administrative Questions
+        </h2>
+
+        <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+            <div>
+                <strong style="color: #0f172a; font-size: 0.95rem; display: block; margin-bottom: 0.25rem;">
+                    Q: Can a rejected pharmacy appeal or correct their details?
+                </strong>
+                <p style="margin: 0; font-size: 0.875rem; color: #64748b; line-height: 1.5;">
+                    Yes. When a rejected pharmacy logs in, they are redirected to a secure resubmission portal where they can view the rejection feedback, correct license or store information, and resubmit for verification. Their status returns to PENDING upon submission.
+                </p>
+            </div>
+
+            <div>
+                <strong style="color: #0f172a; font-size: 0.95rem; display: block; margin-bottom: 0.25rem;">
+                    Q: Why are medicines stock counts separated by unit instead of summed together?
+                </strong>
+                <p style="margin: 0; font-size: 0.875rem; color: #64748b; line-height: 1.5;">
+                    Healthcare inventory items are packaged in fundamentally incompatible units (e.g. Tablets, Bottles, Strips, Vials). Summing 100 Tablets with 2 Bottles yields an invalid number (102). MedAccess groups inventory quantities strictly by unit to ensure clinical and audit accuracy.
+                </p>
+            </div>
+
+            <div>
+                <strong style="color: #0f172a; font-size: 0.95rem; display: block; margin-bottom: 0.25rem;">
+                    Q: What should I do if an admin password needs to be rotated?
+                </strong>
+                <p style="margin: 0; font-size: 0.875rem; color: #64748b; line-height: 1.5;">
+                    Admins can reset their password via the standard secure password reset workflow or run the management command <code>python manage.py provision_admins --reset-passwords</code> in a secure shell.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contact Escalation Support -->
+    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.25rem 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <div>
+            <strong style="display: block; font-size: 0.95rem; color: #0f172a; margin-bottom: 0.2rem;">Need Direct Technical Escalation?</strong>
+            <span style="font-size: 0.8125rem; color: #64748b;">For server infrastructure, database integrity, or emergency incident handling.</span>
+        </div>
+        <div style="font-size: 0.875rem; color: #1e40af; font-weight: 600;">
+            Email: <a href="mailto:support@medaccess.com" style="color: inherit;">support@medaccess.com</a>
+        </div>
+    </div>
+
+</div>
+{% endblock content %}
+

@@ -1,0 +1,650 @@
+{% extends 'pharmacy/base_pharmacy.html' %}
+{% load static %}
+
+{% block title %}Request #{{ prescription_request.id }} | Pharmacy Portal | MedAccess{% endblock title %}
+{% block header_title %}Prescription Request #{{ prescription_request.id }}{% endblock header_title %}
+{% block nav_requests %}active{% endblock nav_requests %}
+
+{% block content %}
+<div class="request-detail-wrapper" style="display: flex; flex-direction: column; gap: 1.5rem; width: 100%;">
+
+    <!-- Top Navigation / Breadcrumb -->
+    <div>
+        <a href="{% url 'pharmacy:requests_inbox' %}" style="display: inline-flex; align-items: center; gap: 0.5rem; text-decoration: none; color: var(--color-primary); font-size: 0.875rem; font-weight: 600;">
+            <svg style="width: 16px; height: 16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            <span>Back to Requests Inbox</span>
+        </a>
+    </div>
+
+    <!-- Header Summary Card -->
+    <div style="background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 1.5rem; box-shadow: var(--shadow-subtle);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+            <div>
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <h1 style="font-size: 1.5rem; font-weight: 700; color: var(--color-text-main); margin: 0;">
+                        Fulfillment Request #{{ prescription_request.id }}
+                    </h1>
+                </div>
+                <p style="color: var(--color-text-muted); font-size: 0.875rem; margin-top: 0.35rem; margin-bottom: 0;">
+                    Submitted by <strong>{{ prescription_request.patient.user.get_full_name|default:prescription_request.patient.user.username }}</strong> on {{ prescription_request.created_at|date:"F d, Y \a\t h:i A" }}
+                </p>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+                {% if prescription_request.status == 'PENDING' %}
+                    <span style="background: #fef3c7; color: #92400e; font-size: 0.8125rem; font-weight: 700; padding: 0.35rem 0.8rem; border-radius: 9999px; text-transform: uppercase;">Pending Review</span>
+                {% elif prescription_request.status == 'ACCEPTED' %}
+                    <span style="background: #dbeafe; color: #1e40af; font-size: 0.8125rem; font-weight: 700; padding: 0.35rem 0.8rem; border-radius: 9999px; text-transform: uppercase;">Accepted</span>
+                {% elif prescription_request.status == 'PROCESSING' %}
+                    <span style="background: #ede9fe; color: #5b21b6; font-size: 0.8125rem; font-weight: 700; padding: 0.35rem 0.8rem; border-radius: 9999px; text-transform: uppercase;">Preparing Medicines</span>
+                {% elif prescription_request.status == 'READY_FOR_PICKUP' %}
+                    <span style="background: #ccfbf1; color: #115e59; font-size: 0.8125rem; font-weight: 700; padding: 0.35rem 0.8rem; border-radius: 9999px; text-transform: uppercase;">Ready for Pickup</span>
+                {% elif prescription_request.status == 'COMPLETED' %}
+                    <span style="background: #dcfce7; color: #166534; font-size: 0.8125rem; font-weight: 700; padding: 0.35rem 0.8rem; border-radius: 9999px; text-transform: uppercase;">Completed</span>
+                {% elif prescription_request.status == 'REJECTED' %}
+                    <span style="background: #fee2e2; color: #991b1b; font-size: 0.8125rem; font-weight: 700; padding: 0.35rem 0.8rem; border-radius: 9999px; text-transform: uppercase;">Rejected</span>
+                {% elif prescription_request.status == 'CANCELLED' %}
+                    <span style="background: #f1f5f9; color: #475569; font-size: 0.8125rem; font-weight: 700; padding: 0.35rem 0.8rem; border-radius: 9999px; text-transform: uppercase;">Cancelled by Patient</span>
+                {% endif %}
+
+                {% if prescription_request.initial_availability_status == 'FULLY_AVAILABLE' %}
+                    <span style="background: #dcfce7; color: #15803d; font-size: 0.8125rem; font-weight: 600; padding: 0.35rem 0.75rem; border-radius: 9999px;">
+                        Snapshot: Fully Available
+                    </span>
+                {% elif prescription_request.initial_availability_status == 'PARTIALLY_AVAILABLE' %}
+                    <span style="background: #fef3c7; color: #b45309; font-size: 0.8125rem; font-weight: 600; padding: 0.35rem 0.75rem; border-radius: 9999px;">
+                        Snapshot: Partially Available
+                    </span>
+                {% else %}
+                    <span style="background: #fee2e2; color: #b91c1c; font-size: 0.8125rem; font-weight: 600; padding: 0.35rem 0.75rem; border-radius: 9999px;">
+                        Snapshot: Out of Stock
+                    </span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Progress Bar -->
+    <div style="background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 1.5rem 1.25rem; box-shadow: var(--shadow-subtle);">
+        <div style="display: flex; align-items: center; justify-content: space-between; position: relative;">
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 0.35rem; z-index: 2; min-width: 65px;">
+                <div style="width: 32px; height: 32px; border-radius: 50%; background: #16a34a; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 700;">1</div>
+                <div style="font-size: 0.75rem; color: #16a34a; font-weight: 600;">Submitted</div>
+            </div>
+            <div style="flex: 1; height: 3px; background: {% if prescription_request.status in 'ACCEPTED PROCESSING READY_FOR_PICKUP COMPLETED' %}#16a34a{% else %}#e2e8f0{% endif %}; margin: 0 0.5rem 1.25rem 0.5rem;"></div>
+
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 0.35rem; z-index: 2; min-width: 65px;">
+                <div style="width: 32px; height: 32px; border-radius: 50%; background: {% if prescription_request.status in 'ACCEPTED PROCESSING READY_FOR_PICKUP COMPLETED' %}#16a34a{% elif prescription_request.status == 'PENDING' %}#2563eb{% else %}#f1f5f9{% endif %}; color: {% if prescription_request.status in 'ACCEPTED PROCESSING READY_FOR_PICKUP COMPLETED PENDING' %}#ffffff{% else %}#94a3b8{% endif %}; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 700;">2</div>
+                <div style="font-size: 0.75rem; color: {% if prescription_request.status in 'ACCEPTED PROCESSING READY_FOR_PICKUP COMPLETED' %}#16a34a{% elif prescription_request.status == 'PENDING' %}#2563eb{% else %}#64748b{% endif %}; font-weight: 600;">Accepted</div>
+            </div>
+            <div style="flex: 1; height: 3px; background: {% if prescription_request.status in 'PROCESSING READY_FOR_PICKUP COMPLETED' %}#16a34a{% else %}#e2e8f0{% endif %}; margin: 0 0.5rem 1.25rem 0.5rem;"></div>
+
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 0.35rem; z-index: 2; min-width: 65px;">
+                <div style="width: 32px; height: 32px; border-radius: 50%; background: {% if prescription_request.status in 'PROCESSING READY_FOR_PICKUP COMPLETED' %}#16a34a{% elif prescription_request.status == 'ACCEPTED' %}#2563eb{% else %}#f1f5f9{% endif %}; color: {% if prescription_request.status in 'PROCESSING READY_FOR_PICKUP COMPLETED ACCEPTED' %}#ffffff{% else %}#94a3b8{% endif %}; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 700;">3</div>
+                <div style="font-size: 0.75rem; color: {% if prescription_request.status in 'PROCESSING READY_FOR_PICKUP COMPLETED' %}#16a34a{% elif prescription_request.status == 'ACCEPTED' %}#2563eb{% else %}#64748b{% endif %}; font-weight: 600;">Preparing</div>
+            </div>
+            <div style="flex: 1; height: 3px; background: {% if prescription_request.status in 'READY_FOR_PICKUP COMPLETED' %}#16a34a{% else %}#e2e8f0{% endif %}; margin: 0 0.5rem 1.25rem 0.5rem;"></div>
+
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 0.35rem; z-index: 2; min-width: 65px;">
+                <div style="width: 32px; height: 32px; border-radius: 50%; background: {% if prescription_request.status in 'READY_FOR_PICKUP COMPLETED' %}#16a34a{% elif prescription_request.status == 'PROCESSING' %}#2563eb{% else %}#f1f5f9{% endif %}; color: {% if prescription_request.status in 'READY_FOR_PICKUP COMPLETED PROCESSING' %}#ffffff{% else %}#94a3b8{% endif %}; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 700;">4</div>
+                <div style="font-size: 0.75rem; color: {% if prescription_request.status in 'READY_FOR_PICKUP COMPLETED' %}#16a34a{% elif prescription_request.status == 'PROCESSING' %}#2563eb{% else %}#64748b{% endif %}; font-weight: 600;">Ready</div>
+            </div>
+            <div style="flex: 1; height: 3px; background: {% if prescription_request.status == 'COMPLETED' %}#16a34a{% else %}#e2e8f0{% endif %}; margin: 0 0.5rem 1.25rem 0.5rem;"></div>
+
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 0.35rem; z-index: 2; min-width: 65px;">
+                <div style="width: 32px; height: 32px; border-radius: 50%; background: {% if prescription_request.status == 'COMPLETED' %}#16a34a{% else %}#f1f5f9{% endif %}; color: {% if prescription_request.status == 'COMPLETED' %}#ffffff{% else %}#94a3b8{% endif %}; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 700;">5</div>
+                <div style="font-size: 0.75rem; color: {% if prescription_request.status == 'COMPLETED' %}#16a34a{% else %}#64748b{% endif %}; font-weight: 600;">Completed</div>
+            </div>
+        </div>
+
+        {% if prescription_request.status == 'CANCELLED' %}
+            <div style="margin-top: 1.25rem; padding: 0.85rem 1rem; border-radius: 8px; background: #f1f5f9; color: #334155; border-left: 4px solid #64748b; font-size: 0.875rem;">
+                <strong>Order Cancelled by Patient:</strong> The patient cancelled this request on {{ prescription_request.updated_at|date:"M d, Y \a\t h:i A" }}. No further fulfillment action is required.
+            </div>
+        {% elif prescription_request.status == 'REJECTED' %}
+            <div style="margin-top: 1.25rem; padding: 0.85rem 1rem; border-radius: 8px; background: #fef2f2; color: #991b1b; border-left: 4px solid #ef4444; font-size: 0.875rem;">
+                <strong>Order Rejected by Pharmacy:</strong> This request was declined on {{ prescription_request.updated_at|date:"M d, Y" }}.<br>
+                <strong>Reason:</strong> {{ prescription_request.pharmacy_notes|default:"Not specified" }}
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Main Workspace Layout (2 Columns) -->
+    <div style="display: grid; grid-template-columns: minmax(320px, 1fr) minmax(450px, 2fr); gap: 1.5rem; align-items: start;">
+
+        <!-- LEFT COLUMN: Patient Info, Prescription Document & Existing Notes -->
+        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+
+            <!-- Patient Fulfillment Information Card -->
+            <div style="background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 1.25rem; box-shadow: var(--shadow-subtle);">
+                <div style="border-bottom: 1px solid var(--color-border); padding-bottom: 0.75rem; margin-bottom: 1rem;">
+                    <h2 style="font-size: 1rem; font-weight: 700; color: var(--color-text-main); margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+                        <svg style="width: 18px; height: 18px; color: var(--color-primary);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                        Patient Fulfillment Information
+                    </h2>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 0.75rem; font-size: 0.875rem;">
+                    <div>
+                        <span style="font-size: 0.75rem; color: var(--color-text-muted); display: block; text-transform: uppercase;">Patient Name</span>
+                        <strong style="color: var(--color-text-main);">
+                            {{ prescription_request.patient.user.get_full_name|default:prescription_request.patient.user.username }}
+                        </strong>
+                    </div>
+
+                    <div>
+                        <span style="font-size: 0.75rem; color: var(--color-text-muted); display: block; text-transform: uppercase;">Contact Phone</span>
+                        {% if prescription_request.patient.user.phone_number %}
+                            <a href="tel:{{ prescription_request.patient.user.phone_number }}" style="color: var(--color-primary); font-weight: 600; text-decoration: none;">
+                                {{ prescription_request.patient.user.phone_number }}
+                            </a>
+                        {% else %}
+                            <span style="color: var(--color-text-muted);">Not provided</span>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <span style="font-size: 0.75rem; color: var(--color-text-muted); display: block; text-transform: uppercase;">Delivery / Residential Address</span>
+                        <span style="color: var(--color-text-main);">
+                            {{ prescription_request.patient.address|default:"Not specified on profile" }}
+                        </span>
+                    </div>
+
+                    <!-- Clinical Safety Alert: Allergies -->
+                    <div style="margin-top: 0.25rem;">
+                        <span style="font-size: 0.75rem; color: var(--color-text-muted); display: block; text-transform: uppercase;">Known Allergies</span>
+                        {% if prescription_request.patient.allergies and prescription_request.patient.allergies.strip %}
+                            <div style="background: #fffbeb; border: 1px solid #fde68a; color: #92400e; padding: 0.5rem 0.75rem; border-radius: 6px; font-weight: 600; font-size: 0.8125rem; margin-top: 0.25rem;">
+                                &bull; {{ prescription_request.patient.allergies }}
+                            </div>
+                        {% else %}
+                            <span style="color: #64748b; font-size: 0.8125rem;">No drug allergies recorded</span>
+                        {% endif %}
+                    </div>
+
+                    {% if prescription_request.patient_notes %}
+                        <div style="margin-top: 0.5rem; background: #f8fafc; border-left: 3px solid #0284c7; padding: 0.65rem 0.85rem; border-radius: 4px;">
+                            <span style="font-size: 0.75rem; font-weight: 700; color: #0284c7; text-transform: uppercase; display: block;">Patient's Special Instructions:</span>
+                            <p style="margin: 0.25rem 0 0 0; color: #334155; font-size: 0.8125rem; line-height: 1.4;">
+                                {{ prescription_request.patient_notes }}
+                            </p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Direct Pharmacy-Patient Chat Card -->
+            <div class="rx-section-card rx-chat-card" style="background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); box-shadow: var(--shadow-subtle); overflow: hidden; display: flex; flex-direction: column;">
+                <div class="rx-chat-header" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.25rem; border-bottom: 1px solid var(--color-border); background: #ffffff;">
+                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                        <div class="rx-chat-header-icon" style="width: 36px; height: 36px; border-radius: 8px; background: #e0f2fe; color: #0284c7; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <h2 style="font-size: 0.95rem; font-weight: 700; color: var(--color-text-main); margin: 0;">Chat with Patient</h2>
+                            <p style="margin: 0.15rem 0 0 0; font-size: 0.75rem; color: #64748b;">
+                                {{ prescription_request.patient.user.get_full_name|default:prescription_request.patient.user.username }}
+                            </p>
+                        </div>
+                    </div>
+                    <div>
+                        {% if prescription_request.status in 'COMPLETED REJECTED CANCELLED' %}
+                            <span class="chat-status-pill chat-status-archived" title="This conversation is preserved as a permanent historical record.">
+                                Archived
+                            </span>
+                        {% else %}
+                            <span class="chat-status-pill chat-status-active" title="Messaging is live between you and the patient.">
+                                <span class="chat-pulse-dot"></span> Live Chat
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Messages Container -->
+                <div id="chat-messages-container"
+                     class="rx-chat-messages"
+                     data-messages-url="{% url 'pharmacy:request_messages' prescription_request.id %}"
+                     data-is-writable="{% if prescription_request.status in 'COMPLETED REJECTED CANCELLED' %}false{% else %}true{% endif %}">
+                    <div class="chat-loading-state" id="chat-loading-state">
+                        <div class="chat-spinner"></div>
+                        <span>Loading messages...</span>
+                    </div>
+                </div>
+
+                <!-- Input Area or Archived Notice -->
+                {% if prescription_request.status in 'COMPLETED REJECTED CANCELLED' %}
+                    <div class="chat-archived-notice">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                        </svg>
+                        <span>This request is <strong>{{ prescription_request.get_status_display }}</strong>. Messaging is archived and read-only.</span>
+                    </div>
+                {% else %}
+                    <form id="chat-send-form" class="rx-chat-form">
+                        {% csrf_token %}
+                        <div class="chat-input-wrapper">
+                            <textarea id="chat-input-text"
+                                      class="chat-textarea"
+                                      rows="2"
+                                      maxlength="1000"
+                                      placeholder="Type a message to the patient (Enter to send, Shift+Enter for new line)..."
+                                      required></textarea>
+                            <div class="chat-form-footer">
+                                <span id="chat-char-counter" class="chat-char-counter">0 / 1000</span>
+                                <button type="submit" id="chat-send-btn" class="chat-send-btn" disabled>
+                                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                                    </svg>
+                                    <span>Send</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div id="chat-error-message" class="chat-inline-error" style="display: none;"></div>
+                    </form>
+                {% endif %}
+            </div>
+
+            <!-- Original Prescription Document Card -->
+            <div style="background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 1.25rem; box-shadow: var(--shadow-subtle);">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--color-border); padding-bottom: 0.75rem; margin-bottom: 1rem;">
+                    <h2 style="font-size: 1rem; font-weight: 700; color: var(--color-text-main); margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+                        <svg style="width: 18px; height: 18px; color: var(--color-primary);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                        </svg>
+                        Prescription Document
+                    </h2>
+                    <a href="{% url 'patient:prescription_secure_image' prescription_request.prescription_id %}" target="_blank" rel="noopener noreferrer" style="font-size: 0.8125rem; color: var(--color-primary); font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 0.35rem;">
+                        <span>Open Full Size</span>
+                        <svg style="width: 13px; height: 13px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                            <polyline points="15 3 21 3 21 9"></polyline>
+                            <line x1="10" y1="14" x2="21" y2="3"></line>
+                        </svg>
+                    </a>
+                </div>
+
+                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; text-align: center;">
+                    {% if prescription_request.prescription.prescription_image.name|lower|slice:"-4:" == ".pdf" %}
+                        <div style="padding: 2.5rem 1rem;">
+                            <svg style="width: 48px; height: 48px; color: var(--color-primary); margin-bottom: 0.75rem;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                            </svg>
+                            <p style="font-weight: 600; margin-bottom: 0.75rem; color: var(--color-text-main); font-size: 0.875rem;">PDF Prescription Document</p>
+                            <a href="{% url 'patient:prescription_secure_image' prescription_request.prescription_id %}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm" style="display: inline-flex; align-items: center; gap: 0.4rem;">
+                                <span>View Authenticated PDF</span>
+                                <svg style="width: 14px; height: 14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                            </a>
+                        </div>
+                    {% else %}
+                        <a href="{% url 'patient:prescription_secure_image' prescription_request.prescription_id %}" target="_blank" rel="noopener noreferrer" title="Click to view full image in new tab">
+                            <img src="{% url 'patient:prescription_secure_image' prescription_request.prescription_id %}"
+                                 alt="Prescription #{{ prescription_request.prescription_id }}"
+                                 style="max-width: 100%; max-height: 420px; object-fit: contain; display: block; margin: 0 auto;">
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Existing Pharmacy Notes (if any) -->
+            {% if prescription_request.pharmacy_notes %}
+                <div style="background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 1.25rem; box-shadow: var(--shadow-subtle);">
+                    <h2 style="font-size: 1rem; font-weight: 700; color: var(--color-text-main); margin: 0 0 0.5rem 0;">
+                        Saved Pharmacy Note:
+                    </h2>
+                    <div style="background: #f0fdf4; border-left: 3px solid #16a34a; padding: 0.75rem; border-radius: 4px; font-size: 0.875rem; color: #166534;">
+                        {{ prescription_request.pharmacy_notes }}
+                    </div>
+                </div>
+            {% endif %}
+
+        </div>
+
+        <!-- RIGHT COLUMN: Prescribed Medicines Snapshot & Live Stock Comparison + Action Controls -->
+        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+
+            <!-- Prescribed Medicines & Stock Comparison Card -->
+            <div style="background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 1.25rem; box-shadow: var(--shadow-subtle);">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--color-border); padding-bottom: 0.75rem; margin-bottom: 1rem;">
+                    <div>
+                        <h2 style="font-size: 1.125rem; font-weight: 700; color: var(--color-text-main); margin: 0;">
+                            Prescribed Medicines & Stock Comparison
+                        </h2>
+                        <p style="color: var(--color-text-muted); font-size: 0.8125rem; margin: 0.2rem 0 0 0;">
+                            Comparing immutable request-time snapshot against current unexpired live store stock.
+                        </p>
+                    </div>
+                    <span style="background: #f1f5f9; color: #475569; font-weight: 600; font-size: 0.75rem; padding: 0.25rem 0.6rem; border-radius: 9999px;">
+                        {{ items|length }} Medicine{{ items|length|pluralize }}
+                    </span>
+                </div>
+
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.8125rem;">
+                        <thead>
+                            <tr style="background: #f8fafc; border-bottom: 1px solid var(--color-border); color: var(--color-text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">
+                                <th style="padding: 0.75rem; text-align: left;">Medicine Details</th>
+                                <th style="padding: 0.75rem; text-align: left;">Prescribed Regimen</th>
+                                <th style="padding: 0.75rem; text-align: left; background: #fefce8;">Snapshot at Request Time</th>
+                                <th style="padding: 0.75rem; text-align: left; background: #f0fdf4;">Current Live Stock</th>
+                                <th style="padding: 0.75rem; text-align: left;">Status / Diagnostic</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in items %}
+                                <tr style="border-bottom: 1px solid #f1f5f9;">
+                                    <!-- 1. Prescribed Medicine Details -->
+                                    <td style="padding: 0.75rem; vertical-align: top;">
+                                        <strong style="color: var(--color-text-main); font-size: 0.875rem;">
+                                            {{ item.prescribed_name_snapshot }}
+                                        </strong>
+                                        {% if item.prescribed_strength_snapshot %}
+                                            <div style="font-size: 0.75rem; color: #64748b;">
+                                                Strength: {{ item.prescribed_strength_snapshot }}
+                                            </div>
+                                        {% endif %}
+                                        {% if item.matched_catalogue_medicine %}
+                                            <div style="font-size: 0.7rem; color: #0284c7; margin-top: 0.2rem;">
+                                                Matched: {{ item.matched_catalogue_medicine.medicine_name }}
+                                            </div>
+                                        {% endif %}
+                                    </td>
+
+                                    <!-- 2. Prescribed Regimen -->
+                                    <td style="padding: 0.75rem; vertical-align: top; color: #475569; line-height: 1.35;">
+                                        {% if item.prescribed_dosage_snapshot %}<div>Dose: {{ item.prescribed_dosage_snapshot }}</div>{% endif %}
+                                        {% if item.prescribed_frequency_snapshot %}<div>Freq: {{ item.prescribed_frequency_snapshot }}</div>{% endif %}
+                                        {% if item.prescribed_duration_snapshot %}<div>Duration: {{ item.prescribed_duration_snapshot }}</div>{% endif %}
+                                        {% if item.prescribed_instructions_snapshot %}<div style="color: #64748b; font-style: italic;">"{{ item.prescribed_instructions_snapshot }}"</div>{% endif %}
+                                    </td>
+
+                                    <!-- 3. Stock at Patient Request Time -->
+                                    <td style="padding: 0.75rem; vertical-align: top; background: #fffbeb;">
+                                        <div style="font-weight: 700; color: #854d0e;">
+                                            {{ item.available_quantity_snapshot }} units available
+                                        </div>
+                                        {% if item.required_quantity is not None %}
+                                            <div style="font-size: 0.75rem; color: #78350f;">
+                                                Required: {{ item.required_quantity }} units
+                                            </div>
+                                        {% else %}
+                                            <div style="font-size: 0.75rem; color: #78350f; font-style: italic;">
+                                                Indeterminate duration
+                                            </div>
+                                        {% endif %}
+                                    </td>
+
+                                    <!-- 4. Current Live Pharmacy Stock -->
+                                    <td style="padding: 0.75rem; vertical-align: top; background: #f0fdf4;">
+                                        {% if item.has_catalogue_match %}
+                                            <div style="font-weight: 700; font-size: 0.9375rem; color: {% if item.current_live_stock > 0 %}#166534{% else %}#dc2626{% endif %};">
+                                                {{ item.current_live_stock }} units in store
+                                            </div>
+                                            <div style="font-size: 0.75rem; color: #15803d;">
+                                                Active non-expired batches
+                                            </div>
+                                        {% else %}
+                                            <span style="color: #64748b; font-size: 0.75rem; font-style: italic;">
+                                                Catalogue match unavailable
+                                            </span>
+                                        {% endif %}
+                                    </td>
+
+                                    <!-- 5. Status / Diagnostic -->
+                                    <td style="padding: 0.75rem; vertical-align: top;">
+                                        {% if item.availability_status == 'FULLY_AVAILABLE' %}
+                                            <span style="background: #dcfce7; color: #166534; font-size: 0.7rem; font-weight: 700; padding: 2px 6px; border-radius: 4px;">Fully Available</span>
+                                        {% elif item.availability_status == 'IN_STOCK' %}
+                                            <span style="background: #dcfce7; color: #166534; font-size: 0.7rem; font-weight: 700; padding: 2px 6px; border-radius: 4px;">In Stock</span>
+                                        {% elif item.availability_status == 'PARTIALLY_AVAILABLE' %}
+                                            <span style="background: #fef3c7; color: #854d0e; font-size: 0.7rem; font-weight: 700; padding: 2px 6px; border-radius: 4px;">Partially Available</span>
+                                        {% elif item.availability_status == 'OUT_OF_STOCK' %}
+                                            <span style="background: #fee2e2; color: #991b1b; font-size: 0.7rem; font-weight: 700; padding: 2px 6px; border-radius: 4px;">Out of Stock</span>
+                                        {% elif item.availability_status == 'NOT_STOCKED' %}
+                                            <span style="background: #fee2e2; color: #991b1b; font-size: 0.7rem; font-weight: 700; padding: 2px 6px; border-radius: 4px;">Not Stocked</span>
+                                        {% elif item.availability_status == 'AMBIGUOUS' %}
+                                            <span style="background: #f1f5f9; color: #475569; font-size: 0.7rem; font-weight: 700; padding: 2px 6px; border-radius: 4px;">Ambiguous</span>
+                                        {% endif %}
+
+                                        <div style="font-size: 0.72rem; color: #64748b; margin-top: 0.25rem; line-height: 1.35;">
+                                            {{ item.explanation }}
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="5" style="text-align: center; padding: 1.5rem; color: var(--color-text-muted);">
+                                        No item snapshots recorded for this prescription request.
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div style="margin-top: 1rem; font-size: 0.75rem; color: #64748b; font-style: italic;">
+                    * Stock quantities are informational to assist dispensing decisions. No inventory is automatically deducted or reserved.
+                </div>
+            </div>
+
+            <!-- Pharmacy Fulfillment Actions Card -->
+            <div style="background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 1.5rem; box-shadow: var(--shadow-subtle);">
+                <h2 style="font-size: 1.125rem; font-weight: 700; color: var(--color-text-main); margin: 0 0 1rem 0;">
+                    Fulfillment Workflow Actions
+                </h2>
+
+                <!-- 1. PENDING STAGE ACTIONS -->
+                {% if prescription_request.status == 'PENDING' %}
+                    <div style="display: flex; flex-direction: column; gap: 1rem;">
+                        <p style="font-size: 0.875rem; color: #475569; margin: 0;">
+                            This request is awaiting your review. Verify that you have sufficient stock and can fulfill the prescribed medicines before accepting.
+                        </p>
+
+                        <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                            <!-- Accept Form -->
+                            <form method="post" action="{% url 'pharmacy:request_update_status' prescription_request.id %}" onsubmit="return confirm('Accept this prescription request? This will notify the patient that you are preparing their order.');" style="margin: 0;">
+                                {% csrf_token %}
+                                <input type="hidden" name="status" value="ACCEPTED">
+                                <button type="submit" class="btn btn-primary" style="background: #2563eb; border-color: #2563eb; padding: 0.65rem 1.25rem;">
+                                    <svg style="width: 16px; height: 16px; margin-right: 0.35rem;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                    <span>Accept Request</span>
+                                </button>
+                            </form>
+
+                            <!-- Reject Toggle Button -->
+                            <button type="button" id="btn-toggle-reject-form" class="btn btn-secondary" style="color: #dc2626; border-color: #fca5a5; padding: 0.65rem 1.25rem;">
+                                <svg style="width: 16px; height: 16px; margin-right: 0.35rem;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                                <span>Reject Request...</span>
+                            </button>
+                        </div>
+
+                        <!-- Reject Form (Collapsible / Toggleable) -->
+                        <div id="reject-form-panel" style="display: none; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 1.25rem; margin-top: 0.5rem;">
+                            <h3 style="font-size: 0.9375rem; font-weight: 700; color: #991b1b; margin: 0 0 0.5rem 0;">
+                                Decline Fulfillment Request
+                            </h3>
+                            <p style="font-size: 0.8125rem; color: #7f1d1d; margin: 0 0 0.75rem 0;">
+                                A meaningful rejection reason is required. The patient will see this reason on their tracker.
+                            </p>
+
+                            <form method="post" action="{% url 'pharmacy:request_update_status' prescription_request.id %}" id="form-reject-request">
+                                {% csrf_token %}
+                                <input type="hidden" name="status" value="REJECTED">
+
+                                <div style="margin-bottom: 0.75rem;">
+                                    <label for="reject-pharmacy-notes" style="display: block; font-size: 0.8125rem; font-weight: 600; color: #991b1b; margin-bottom: 0.35rem;">
+                                        Rejection Reason <span style="color: #dc2626;">* (Minimum 5 characters)</span>:
+                                    </label>
+                                    <textarea name="pharmacy_notes"
+                                              id="reject-pharmacy-notes"
+                                              rows="2"
+                                              required
+                                              minlength="5"
+                                              placeholder="e.g. Currently out of stock and unavailable from distributor until next week."
+                                              class="form-input"
+                                              style="width: 100%; border-color: #fca5a5; background: #ffffff;"></textarea>
+                                </div>
+
+                                <div style="display: flex; gap: 0.75rem; justify-content: flex-end;">
+                                    <button type="button" id="btn-cancel-reject" class="btn btn-secondary btn-sm">
+                                        Cancel
+                                    </button>
+                                    <button type="submit" class="btn btn-primary btn-sm" style="background: #dc2626; border-color: #dc2626;">
+                                        Confirm Rejection
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                <!-- 2. ACCEPTED STAGE ACTIONS -->
+                {% elif prescription_request.status == 'ACCEPTED' %}
+                    <form method="post" action="{% url 'pharmacy:request_update_status' prescription_request.id %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="status" value="PROCESSING">
+
+                        <p style="font-size: 0.875rem; color: #475569; margin: 0 0 1rem 0;">
+                            You have accepted this request. When your staff begins dispensing and packaging medicines, update the status to <strong>Preparing</strong>.
+                        </p>
+
+                        <div style="margin-bottom: 1rem;">
+                            <label for="accepted-notes" style="display: block; font-size: 0.8125rem; font-weight: 600; color: #475569; margin-bottom: 0.35rem;">
+                                Optional note for patient (e.g. estimated time):
+                            </label>
+                            <input type="text" name="pharmacy_notes" id="accepted-notes" value="{{ prescription_request.pharmacy_notes|default:'' }}" class="form-input" style="width: 100%;" placeholder="e.g. Dispensing now. Will be ready in approximately 30 minutes.">
+                        </div>
+
+                        <button type="submit" class="btn btn-primary" style="background: #7c3aed; border-color: #7c3aed;">
+                            <span>Start Preparing Medicines &rarr;</span>
+                        </button>
+                    </form>
+
+                <!-- 3. PROCESSING STAGE ACTIONS -->
+                {% elif prescription_request.status == 'PROCESSING' %}
+                    <form method="post" action="{% url 'pharmacy:request_update_status' prescription_request.id %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="status" value="READY_FOR_PICKUP">
+
+                        <p style="font-size: 0.875rem; color: #475569; margin: 0 0 1rem 0;">
+                            Medicines are currently being packed. Once packaged, labeled, and placed at the counter, mark the order as <strong>Ready for Pickup</strong>.
+                        </p>
+
+                        <div style="margin-bottom: 1rem;">
+                            <label for="processing-notes" style="display: block; font-size: 0.8125rem; font-weight: 600; color: #475569; margin-bottom: 0.35rem;">
+                                Counter Pickup Instructions (Optional):
+                            </label>
+                            <input type="text" name="pharmacy_notes" id="processing-notes" value="{{ prescription_request.pharmacy_notes|default:'' }}" class="form-input" style="width: 100%;" placeholder="e.g. Package #42 ready at billing counter 2. Please bring original physical prescription.">
+                        </div>
+
+                        <button type="submit" class="btn btn-primary" style="background: #0d9488; border-color: #0d9488;">
+                            <span>Mark as Ready for Pickup &rarr;</span>
+                        </button>
+                    </form>
+
+                <!-- 4. READY FOR PICKUP STAGE ACTIONS -->
+                {% elif prescription_request.status == 'READY_FOR_PICKUP' %}
+                    <form method="post" action="{% url 'pharmacy:request_update_status' prescription_request.id %}" onsubmit="return confirm('Complete this order? Confirm that the patient has verified and collected all dispensed medicines.');">
+                        {% csrf_token %}
+                        <input type="hidden" name="status" value="COMPLETED">
+
+                        <p style="font-size: 0.875rem; color: #475569; margin: 0 0 1rem 0;">
+                            The order is waiting at the counter. Once the patient arrives, verifies physical prescription, pays, and collects medicines, mark the order as <strong>Completed</strong>.
+                        </p>
+
+                        <div style="margin-bottom: 1rem;">
+                            <label for="ready-notes" style="display: block; font-size: 0.8125rem; font-weight: 600; color: #475569; margin-bottom: 0.35rem;">
+                                Completion Note (Optional):
+                            </label>
+                            <input type="text" name="pharmacy_notes" id="ready-notes" value="{{ prescription_request.pharmacy_notes|default:'' }}" class="form-input" style="width: 100%;" placeholder="e.g. Collected by patient in person. Bill #8892.">
+                        </div>
+
+                        <button type="submit" class="btn btn-primary" style="background: #16a34a; border-color: #16a34a;">
+                            <svg style="width: 16px; height: 16px; margin-right: 0.35rem;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                            <span>Complete & Dispense Order</span>
+                        </button>
+                    </form>
+
+                <!-- 5. TERMINAL STATES -->
+                {% elif prescription_request.status == 'COMPLETED' %}
+                    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 1rem; color: #166534; font-size: 0.875rem;">
+                        <strong>Order Completed:</strong> This prescription fulfillment was fulfilled on {{ prescription_request.updated_at|date:"M d, Y \a\t h:i A" }}. No further actions can be taken.
+                    </div>
+                {% elif prescription_request.status == 'REJECTED' %}
+                    <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 1rem; color: #991b1b; font-size: 0.875rem;">
+                        <strong>Order Rejected:</strong> This request was declined. Terminal status.
+                    </div>
+                {% elif prescription_request.status == 'CANCELLED' %}
+                    <div style="background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem; color: #475569; font-size: 0.875rem;">
+                        <strong>Order Cancelled:</strong> The patient cancelled this request. Terminal status.
+                    </div>
+                {% endif %}
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+(function() {
+    'use strict';
+    const btnToggleReject = document.getElementById('btn-toggle-reject-form');
+    const rejectPanel = document.getElementById('reject-form-panel');
+    const btnCancelReject = document.getElementById('btn-cancel-reject');
+    const formReject = document.getElementById('form-reject-request');
+    const textareaRejectNotes = document.getElementById('reject-pharmacy-notes');
+
+    if (btnToggleReject && rejectPanel) {
+        btnToggleReject.addEventListener('click', function() {
+            rejectPanel.style.display = 'block';
+            btnToggleReject.style.display = 'none';
+            if (textareaRejectNotes) textareaRejectNotes.focus();
+        });
+    }
+
+    if (btnCancelReject && rejectPanel && btnToggleReject) {
+        btnCancelReject.addEventListener('click', function() {
+            rejectPanel.style.display = 'none';
+            btnToggleReject.style.display = 'inline-flex';
+        });
+    }
+
+    if (formReject && textareaRejectNotes) {
+        formReject.addEventListener('submit', function(e) {
+            const val = textareaRejectNotes.value.trim();
+            if (val.length < 5) {
+                e.preventDefault();
+                alert('Please enter a meaningful rejection reason of at least 5 characters.');
+                textareaRejectNotes.focus();
+            }
+        });
+    }
+})();
+</script>
+{% endblock content %}
+
+{% block extra_js %}
+<script src="{% static 'js/request_chat.js' %}"></script>
+{% endblock extra_js %}
+

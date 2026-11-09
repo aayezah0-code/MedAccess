@@ -1,0 +1,356 @@
+{% extends 'pharmacy/base_pharmacy.html' %}
+
+{% block title %}Business Settings | Pharmacy Portal | MedAccess{% endblock title %}
+{% block header_title %}Pharmacy Settings{% endblock header_title %}
+{% block nav_settings %}active{% endblock nav_settings %}
+
+{% block content %}
+<div class="settings-container" style="display: flex; flex-direction: column; gap: 1.5rem; max-width: 1000px; margin: 0 auto; width: 100%;">
+
+    <!-- Page Header & Overview -->
+    <div style="background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 1.5rem; box-shadow: var(--shadow-subtle);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+            <div>
+                <h1 style="font-size: 1.5rem; font-weight: 700; color: var(--color-text-main); margin: 0;">
+                    Pharmacy Profile & Settings
+                </h1>
+                <p style="color: var(--color-text-muted); font-size: 0.875rem; margin-top: 0.375rem; margin-bottom: 0;">
+                    Update your registered store information, contact points, and GPS map coordinates for patient discovery.
+                </p>
+            </div>
+            <span class="status-badge status-completed">
+                Account Status: {{ pharmacy_profile.approval_status }}
+            </span>
+        </div>
+    </div>
+
+    <!-- Protected Compliance Card (Read-Only) -->
+    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: var(--radius-md); padding: 1.5rem;">
+        <div style="display: flex; align-items: center; gap: 0.625rem; margin-bottom: 0.75rem;">
+            <svg style="width: 20px; height: 20px; color: #0284c7; flex-shrink: 0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+            <h2 style="font-size: 1rem; font-weight: 600; color: #0f172a; margin: 0;">
+                Regulatory Compliance & Credentials (Protected)
+            </h2>
+        </div>
+        <p style="font-size: 0.8125rem; color: #64748b; margin-top: 0; margin-bottom: 1.25rem; line-height: 1.5;">
+            Drug license number, GST identification, and approval status are verified by Central Administration. These records cannot be altered directly to maintain statutory healthcare compliance.
+        </p>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem;">
+            <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: var(--radius-sm); padding: 0.875rem 1rem;">
+                <span style="font-size: 0.75rem; text-transform: uppercase; color: #64748b; font-weight: 600; display: block;">
+                    Drug License Number
+                </span>
+                <span style="font-size: 0.9375rem; font-weight: 600; color: #0f172a; margin-top: 0.25rem; display: block;">
+                    {{ pharmacy_profile.pharmacy_license_number }}
+                </span>
+            </div>
+
+            <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: var(--radius-sm); padding: 0.875rem 1rem;">
+                <span style="font-size: 0.75rem; text-transform: uppercase; color: #64748b; font-weight: 600; display: block;">
+                    GST Identification Number
+                </span>
+                <span style="font-size: 0.9375rem; font-weight: 600; color: #0f172a; margin-top: 0.25rem; display: block;">
+                    {{ pharmacy_profile.gst_number }}
+                </span>
+            </div>
+
+            <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: var(--radius-sm); padding: 0.875rem 1rem;">
+                <span style="font-size: 0.75rem; text-transform: uppercase; color: #64748b; font-weight: 600; display: block;">
+                    Registration Date
+                </span>
+                <span style="font-size: 0.9375rem; font-weight: 600; color: #0f172a; margin-top: 0.25rem; display: block;">
+                    {{ pharmacy_profile.created_at|date:"d M Y, h:i A" }}
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Editable Settings Form -->
+    <form method="post" action="{% url 'pharmacy:settings' %}" novalidate style="display: flex; flex-direction: column; gap: 1.5rem;">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+            <div style="background: #fef2f2; border: 1px solid #f87171; color: #991b1b; padding: 1rem 1.25rem; border-radius: var(--radius-md); font-size: 0.875rem;">
+                {% for err in form.non_field_errors %}
+                    <div>{{ err }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <!-- Section: Store & Pharmacist Information -->
+        <div style="background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 1.5rem; box-shadow: var(--shadow-subtle);">
+            <h2 style="font-size: 1.125rem; font-weight: 600; color: var(--color-text-main); margin-top: 0; margin-bottom: 1.25rem;">
+                Store & Personnel Details
+            </h2>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem;">
+                <!-- Pharmacy Name -->
+                <div>
+                    <label for="{{ form.pharmacy_name.id_for_label }}" style="display: block; font-size: 0.875rem; font-weight: 600; color: var(--color-text-main); margin-bottom: 0.375rem;">
+                        Pharmacy Name <span style="color: #dc2626;">*</span>
+                    </label>
+                    {{ form.pharmacy_name }}
+                    {% if form.pharmacy_name.errors %}
+                        <div style="color: #dc2626; font-size: 0.75rem; margin-top: 0.25rem;">{{ form.pharmacy_name.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Pharmacist Name -->
+                <div>
+                    <label for="{{ form.pharmacist_name.id_for_label }}" style="display: block; font-size: 0.875rem; font-weight: 600; color: var(--color-text-main); margin-bottom: 0.375rem;">
+                        Pharmacist in Charge <span style="color: #dc2626;">*</span>
+                    </label>
+                    {{ form.pharmacist_name }}
+                    {% if form.pharmacist_name.errors %}
+                        <div style="color: #dc2626; font-size: 0.75rem; margin-top: 0.25rem;">{{ form.pharmacist_name.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Owner Name -->
+                <div>
+                    <label for="{{ form.owner_name.id_for_label }}" style="display: block; font-size: 0.875rem; font-weight: 600; color: var(--color-text-main); margin-bottom: 0.375rem;">
+                        Business Owner Name <span style="color: #dc2626;">*</span>
+                    </label>
+                    {{ form.owner_name }}
+                    {% if form.owner_name.errors %}
+                        <div style="color: #dc2626; font-size: 0.75rem; margin-top: 0.25rem;">{{ form.owner_name.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Store Contact Phone -->
+                <div>
+                    <label for="{{ form.phone_number.id_for_label }}" style="display: block; font-size: 0.875rem; font-weight: 600; color: var(--color-text-main); margin-bottom: 0.375rem;">
+                        Contact Phone Number <span style="color: #dc2626;">*</span>
+                    </label>
+                    {{ form.phone_number }}
+                    {% if form.phone_number.errors %}
+                        <div style="color: #dc2626; font-size: 0.75rem; margin-top: 0.25rem;">{{ form.phone_number.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Store Contact Email -->
+                <div>
+                    <label for="{{ form.email.id_for_label }}" style="display: block; font-size: 0.875rem; font-weight: 600; color: var(--color-text-main); margin-bottom: 0.375rem;">
+                        Official Email Address <span style="color: #dc2626;">*</span>
+                    </label>
+                    {{ form.email }}
+                    {% if form.email.errors %}
+                        <div style="color: #dc2626; font-size: 0.75rem; margin-top: 0.25rem;">{{ form.email.errors.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Section: Physical Store Address -->
+        <div style="background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 1.5rem; box-shadow: var(--shadow-subtle);">
+            <h2 style="font-size: 1.125rem; font-weight: 600; color: var(--color-text-main); margin-top: 0; margin-bottom: 1.25rem;">
+                Physical Store Address
+            </h2>
+
+            <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+                <!-- Street Address -->
+                <div>
+                    <label for="{{ form.address.id_for_label }}" style="display: block; font-size: 0.875rem; font-weight: 600; color: var(--color-text-main); margin-bottom: 0.375rem;">
+                        Street Address / Landmark <span style="color: #dc2626;">*</span>
+                    </label>
+                    {{ form.address }}
+                    {% if form.address.errors %}
+                        <div style="color: #dc2626; font-size: 0.75rem; margin-top: 0.25rem;">{{ form.address.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.25rem;">
+                    <!-- City -->
+                    <div>
+                        <label for="{{ form.city.id_for_label }}" style="display: block; font-size: 0.875rem; font-weight: 600; color: var(--color-text-main); margin-bottom: 0.375rem;">
+                            City <span style="color: #dc2626;">*</span>
+                        </label>
+                        {{ form.city }}
+                        {% if form.city.errors %}
+                            <div style="color: #dc2626; font-size: 0.75rem; margin-top: 0.25rem;">{{ form.city.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- State -->
+                    <div>
+                        <label for="{{ form.state.id_for_label }}" style="display: block; font-size: 0.875rem; font-weight: 600; color: var(--color-text-main); margin-bottom: 0.375rem;">
+                            State <span style="color: #dc2626;">*</span>
+                        </label>
+                        {{ form.state }}
+                        {% if form.state.errors %}
+                            <div style="color: #dc2626; font-size: 0.75rem; margin-top: 0.25rem;">{{ form.state.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- PIN Code -->
+                    <div>
+                        <label for="{{ form.pincode.id_for_label }}" style="display: block; font-size: 0.875rem; font-weight: 600; color: var(--color-text-main); margin-bottom: 0.375rem;">
+                            Postal PIN Code <span style="color: #dc2626;">*</span>
+                        </label>
+                        {{ form.pincode }}
+                        {% if form.pincode.errors %}
+                            <div style="color: #dc2626; font-size: 0.75rem; margin-top: 0.25rem;">{{ form.pincode.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section: GPS Location & Patient Discovery -->
+        <div style="background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 1.5rem; box-shadow: var(--shadow-subtle);">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
+                <div>
+                    <h2 style="font-size: 1.125rem; font-weight: 600; color: var(--color-text-main); margin-top: 0; margin-bottom: 0.25rem;">
+                        GPS Geolocation Coordinates
+                    </h2>
+                    <p style="color: var(--color-text-muted); font-size: 0.8125rem; margin: 0; line-height: 1.4;">
+                        Precise coordinates allow nearby patients on MedAccess to locate your store on the interactive map.
+                    </p>
+                </div>
+
+                <!-- Geolocation Action Button -->
+                <button type="button" id="btn-detect-location" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.875rem;">
+                    <svg style="width: 16px; height: 16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="2" x2="12" y2="6"></line>
+                        <line x1="12" y1="18" x2="12" y2="22"></line>
+                        <line x1="2" y1="12" x2="6" y2="12"></line>
+                        <line x1="18" y1="12" x2="22" y2="12"></line>
+                    </svg>
+                    <span>Use My Current Location</span>
+                </button>
+            </div>
+
+            <!-- Geolocation Status Notice -->
+            <div id="location-status-container" style="display: none; padding: 0.75rem 1rem; border-radius: var(--radius-sm); font-size: 0.8125rem; margin-bottom: 1.25rem;">
+                <span id="location-status-text"></span>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.25rem;">
+                <!-- Latitude -->
+                <div>
+                    <label for="{{ form.latitude.id_for_label }}" style="display: block; font-size: 0.875rem; font-weight: 600; color: var(--color-text-main); margin-bottom: 0.375rem;">
+                        Latitude (Decimal Degrees)
+                    </label>
+                    {{ form.latitude }}
+                    <span style="font-size: 0.75rem; color: var(--color-text-muted); margin-top: 0.25rem; display: block;">
+                        Range: -90.0 to +90.0 (e.g. 23.2599330)
+                    </span>
+                    {% if form.latitude.errors %}
+                        <div style="color: #dc2626; font-size: 0.75rem; margin-top: 0.25rem;">{{ form.latitude.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Longitude -->
+                <div>
+                    <label for="{{ form.longitude.id_for_label }}" style="display: block; font-size: 0.875rem; font-weight: 600; color: var(--color-text-main); margin-bottom: 0.375rem;">
+                        Longitude (Decimal Degrees)
+                    </label>
+                    {{ form.longitude }}
+                    <span style="font-size: 0.75rem; color: var(--color-text-muted); margin-top: 0.25rem; display: block;">
+                        Range: -180.0 to +180.0 (e.g. 77.4126150)
+                    </span>
+                    {% if form.longitude.errors %}
+                        <div style="color: #dc2626; font-size: 0.75rem; margin-top: 0.25rem;">{{ form.longitude.errors.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Form Actions Footer -->
+        <div style="display: flex; align-items: center; justify-content: flex-end; gap: 1rem; padding: 1.25rem 0;">
+            <a href="{% url 'pharmacy:dashboard' %}" class="btn btn-secondary">
+                Cancel
+            </a>
+            <button type="submit" class="btn btn-primary" style="padding: 0.75rem 2rem; font-weight: 600;">
+                Save Profile Changes
+            </button>
+        </div>
+    </form>
+
+</div>
+
+<script>
+    (function () {
+        'use strict';
+
+        const btnDetect = document.getElementById('btn-detect-location');
+        const statusContainer = document.getElementById('location-status-container');
+        const statusText = document.getElementById('location-status-text');
+        const latInput = document.getElementById('{{ form.latitude.id_for_label }}');
+        const lonInput = document.getElementById('{{ form.longitude.id_for_label }}');
+
+        if (!btnDetect || !latInput || !lonInput) {
+            return;
+        }
+
+        function showStatus(message, isSuccess) {
+            if (!statusContainer || !statusText) return;
+            statusContainer.style.display = 'block';
+            statusText.textContent = message;
+
+            if (isSuccess) {
+                statusContainer.style.background = '#f0fdf4';
+                statusContainer.style.color = '#15803d';
+                statusContainer.style.border = '1px solid #bbf7d0';
+            } else {
+                statusContainer.style.background = '#fffbeb';
+                statusContainer.style.color = '#b45309';
+                statusContainer.style.border = '1px solid #fde68a';
+            }
+        }
+
+        btnDetect.addEventListener('click', function () {
+            if (!('geolocation' in navigator)) {
+                showStatus('Browser geolocation is not supported on this device. Please enter coordinates manually.', false);
+                return;
+            }
+
+            btnDetect.disabled = true;
+            showStatus('Requesting current location from device sensors...', true);
+
+            navigator.geolocation.getCurrentPosition(
+                function (position) {
+                    btnDetect.disabled = false;
+                    const lat = position.coords.latitude.toFixed(7);
+                    const lon = position.coords.longitude.toFixed(7);
+
+                    latInput.value = lat;
+                    lonInput.value = lon;
+
+                    showStatus('Location acquired successfully: ' + lat + ', ' + lon + '. Remember to click "Save Profile Changes" below.', true);
+                },
+                function (error) {
+                    btnDetect.disabled = false;
+                    let errorMsg = 'Could not acquire location.';
+                    switch (error.code) {
+                        case error.PERMISSION_DENIED:
+                            errorMsg = 'Location permission was denied. Please allow location permissions in your browser or enter coordinates manually.';
+                            break;
+                        case error.POSITION_UNAVAILABLE:
+                            errorMsg = 'Location information is currently unavailable from your device. You can enter coordinates manually.';
+                            break;
+                        case error.TIMEOUT:
+                            errorMsg = 'Location request timed out. Please try clicking the button again or enter coordinates manually.';
+                            break;
+                        default:
+                            errorMsg = 'An unexpected error occurred while detecting location. Please enter coordinates manually.';
+                            break;
+                    }
+                    showStatus(errorMsg, false);
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 12000,
+                    maximumAge: 0
+                }
+            );
+        });
+    })();
+</script>
+{% endblock content %}
+

@@ -1,0 +1,275 @@
+{% extends 'pharmacy/base_pharmacy.html' %}
+
+{% block title %}Prescription Requests | Pharmacy Portal | MedAccess{% endblock title %}
+{% block header_title %}Prescription Requests Inbox{% endblock header_title %}
+{% block nav_requests %}active{% endblock nav_requests %}
+
+{% block content %}
+<div class="requests-inbox-container" style="display: flex; flex-direction: column; gap: 1.5rem; width: 100%;">
+
+    <!-- Top Action & Overview Banner -->
+    <div style="background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 1.5rem; box-shadow: var(--shadow-subtle);">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div>
+                <h1 style="font-size: 1.5rem; font-weight: 700; color: var(--color-text-main); margin: 0;">
+                    Prescription Fulfillment Requests
+                </h1>
+                <p style="color: var(--color-text-muted); font-size: 0.875rem; margin-top: 0.375rem; margin-bottom: 0;">
+                    Manage orders submitted by nearby patients for <strong>{{ pharmacy_profile.pharmacy_name }}</strong>.
+                </p>
+            </div>
+            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                <span class="status-badge" style="background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; font-weight: 600;">
+                    Total Requests: {{ counts.all }}
+                </span>
+                {% if counts.pending > 0 %}
+                    <span class="status-badge" style="background: #fef3c7; color: #92400e; border: 1px solid #fde68a; font-weight: 700;">
+                        {{ counts.pending }} Pending Review
+                    </span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Filter Tabs -->
+    <div style="display: flex; gap: 0.5rem; overflow-x: auto; padding-bottom: 0.25rem;">
+        <a href="?status=all{% if query %}&q={{ query }}{% endif %}"
+           class="status-tab"
+           style="text-decoration: none; padding: 0.5rem 1rem; border-radius: var(--radius-sm); font-size: 0.8125rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.5rem; white-space: nowrap; {% if status_filter == 'all' %}background: var(--color-primary); color: #ffffff;{% else %}background: var(--color-surface); color: var(--color-text-main); border: 1px solid var(--color-border);{% endif %}">
+            <span>All Requests</span>
+            <span style="font-size: 0.75rem; padding: 1px 6px; border-radius: 9999px; {% if status_filter == 'all' %}background: rgba(255,255,255,0.25); color: #ffffff;{% else %}background: #e2e8f0; color: #475569;{% endif %}">{{ counts.all }}</span>
+        </a>
+
+        <a href="?status=pending{% if query %}&q={{ query }}{% endif %}"
+           class="status-tab"
+           style="text-decoration: none; padding: 0.5rem 1rem; border-radius: var(--radius-sm); font-size: 0.8125rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.5rem; white-space: nowrap; {% if status_filter == 'pending' %}background: #d97706; color: #ffffff;{% else %}background: var(--color-surface); color: var(--color-text-main); border: 1px solid var(--color-border);{% endif %}">
+            <span>Pending</span>
+            <span style="font-size: 0.75rem; padding: 1px 6px; border-radius: 9999px; {% if status_filter == 'pending' %}background: rgba(255,255,255,0.25); color: #ffffff;{% else %}background: #fef3c7; color: #92400e;{% endif %}">{{ counts.pending }}</span>
+        </a>
+
+        <a href="?status=accepted{% if query %}&q={{ query }}{% endif %}"
+           class="status-tab"
+           style="text-decoration: none; padding: 0.5rem 1rem; border-radius: var(--radius-sm); font-size: 0.8125rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.5rem; white-space: nowrap; {% if status_filter == 'accepted' %}background: #2563eb; color: #ffffff;{% else %}background: var(--color-surface); color: var(--color-text-main); border: 1px solid var(--color-border);{% endif %}">
+            <span>Accepted</span>
+            <span style="font-size: 0.75rem; padding: 1px 6px; border-radius: 9999px; {% if status_filter == 'accepted' %}background: rgba(255,255,255,0.25); color: #ffffff;{% else %}background: #dbeafe; color: #1e40af;{% endif %}">{{ counts.accepted }}</span>
+        </a>
+
+        <a href="?status=processing{% if query %}&q={{ query }}{% endif %}"
+           class="status-tab"
+           style="text-decoration: none; padding: 0.5rem 1rem; border-radius: var(--radius-sm); font-size: 0.8125rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.5rem; white-space: nowrap; {% if status_filter == 'processing' %}background: #7c3aed; color: #ffffff;{% else %}background: var(--color-surface); color: var(--color-text-main); border: 1px solid var(--color-border);{% endif %}">
+            <span>Preparing</span>
+            <span style="font-size: 0.75rem; padding: 1px 6px; border-radius: 9999px; {% if status_filter == 'processing' %}background: rgba(255,255,255,0.25); color: #ffffff;{% else %}background: #ede9fe; color: #5b21b6;{% endif %}">{{ counts.processing }}</span>
+        </a>
+
+        <a href="?status=ready_for_pickup{% if query %}&q={{ query }}{% endif %}"
+           class="status-tab"
+           style="text-decoration: none; padding: 0.5rem 1rem; border-radius: var(--radius-sm); font-size: 0.8125rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.5rem; white-space: nowrap; {% if status_filter == 'ready_for_pickup' %}background: #0d9488; color: #ffffff;{% else %}background: var(--color-surface); color: var(--color-text-main); border: 1px solid var(--color-border);{% endif %}">
+            <span>Ready for Pickup</span>
+            <span style="font-size: 0.75rem; padding: 1px 6px; border-radius: 9999px; {% if status_filter == 'ready_for_pickup' %}background: rgba(255,255,255,0.25); color: #ffffff;{% else %}background: #ccfbf1; color: #115e59;{% endif %}">{{ counts.ready_for_pickup }}</span>
+        </a>
+
+        <a href="?status=completed{% if query %}&q={{ query }}{% endif %}"
+           class="status-tab"
+           style="text-decoration: none; padding: 0.5rem 1rem; border-radius: var(--radius-sm); font-size: 0.8125rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.5rem; white-space: nowrap; {% if status_filter == 'completed' %}background: #16a34a; color: #ffffff;{% else %}background: var(--color-surface); color: var(--color-text-main); border: 1px solid var(--color-border);{% endif %}">
+            <span>Completed</span>
+            <span style="font-size: 0.75rem; padding: 1px 6px; border-radius: 9999px; {% if status_filter == 'completed' %}background: rgba(255,255,255,0.25); color: #ffffff;{% else %}background: #dcfce7; color: #166534;{% endif %}">{{ counts.completed }}</span>
+        </a>
+
+        <a href="?status=rejected{% if query %}&q={{ query }}{% endif %}"
+           class="status-tab"
+           style="text-decoration: none; padding: 0.5rem 1rem; border-radius: var(--radius-sm); font-size: 0.8125rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.5rem; white-space: nowrap; {% if status_filter == 'rejected' %}background: #dc2626; color: #ffffff;{% else %}background: var(--color-surface); color: var(--color-text-main); border: 1px solid var(--color-border);{% endif %}">
+            <span>Rejected</span>
+            <span style="font-size: 0.75rem; padding: 1px 6px; border-radius: 9999px; {% if status_filter == 'rejected' %}background: rgba(255,255,255,0.25); color: #ffffff;{% else %}background: #fee2e2; color: #991b1b;{% endif %}">{{ counts.rejected }}</span>
+        </a>
+
+        <a href="?status=cancelled{% if query %}&q={{ query }}{% endif %}"
+           class="status-tab"
+           style="text-decoration: none; padding: 0.5rem 1rem; border-radius: var(--radius-sm); font-size: 0.8125rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.5rem; white-space: nowrap; {% if status_filter == 'cancelled' %}background: #64748b; color: #ffffff;{% else %}background: var(--color-surface); color: var(--color-text-main); border: 1px solid var(--color-border);{% endif %}">
+            <span>Cancelled</span>
+            <span style="font-size: 0.75rem; padding: 1px 6px; border-radius: 9999px; {% if status_filter == 'cancelled' %}background: rgba(255,255,255,0.25); color: #ffffff;{% else %}background: #f1f5f9; color: #475569;{% endif %}">{{ counts.cancelled }}</span>
+        </a>
+    </div>
+
+    <!-- Search Toolbar -->
+    <div style="background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 1rem 1.25rem;">
+        <form method="get" action="{% url 'pharmacy:requests_inbox' %}" style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+            {% if status_filter and status_filter != 'all' %}
+                <input type="hidden" name="status" value="{{ status_filter }}">
+            {% endif %}
+
+            <div style="flex: 1; min-width: 260px; position: relative;">
+                <input type="text"
+                       name="q"
+                       value="{{ query }}"
+                       placeholder="Search by Request ID, Prescription ID, patient name, or phone..."
+                       class="form-input"
+                       style="width: 100%; padding-left: 2.25rem;">
+                <svg style="position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--color-text-muted);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="padding: 0.625rem 1.25rem;">
+                Search
+            </button>
+
+            {% if query or status_filter != 'all' %}
+                <a href="{% url 'pharmacy:requests_inbox' %}" class="btn btn-secondary" style="padding: 0.625rem 1rem;">
+                    Clear Filters
+                </a>
+            {% endif %}
+        </form>
+    </div>
+
+    <!-- Requests Table -->
+    {% if page_obj.object_list %}
+        <div style="background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); overflow: hidden; box-shadow: var(--shadow-subtle);">
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.875rem;">
+                    <thead>
+                        <tr style="background: #f8fafc; border-bottom: 1px solid var(--color-border); color: var(--color-text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">
+                            <th style="padding: 0.875rem 1.25rem;">Request</th>
+                            <th style="padding: 0.875rem 1.25rem;">Patient</th>
+                            <th style="padding: 0.875rem 1.25rem;">Prescribed Medicines</th>
+                            <th style="padding: 0.875rem 1.25rem;">Submitted On</th>
+                            <th style="padding: 0.875rem 1.25rem;">Initial Availability</th>
+                            <th style="padding: 0.875rem 1.25rem;">Status</th>
+                            <th style="padding: 0.875rem 1.25rem; text-align: right;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for req in page_obj.object_list %}
+                            <tr style="border-bottom: 1px solid var(--color-border); transition: background-color 0.15s ease;" onmouseover="this.style.backgroundColor='#f8fafc'" onmouseout="this.style.backgroundColor='transparent'">
+                                <td style="padding: 1rem 1.25rem;">
+                                    <strong style="color: var(--color-text-main); font-size: 0.9375rem;">#{{ req.id }}</strong>
+                                    <div style="font-size: 0.75rem; color: var(--color-text-muted); margin-top: 0.15rem;">
+                                        Rx #{{ req.prescription_id }}
+                                    </div>
+                                </td>
+                                <td style="padding: 1rem 1.25rem;">
+                                    <div style="font-weight: 600; color: var(--color-text-main);">
+                                        {{ req.patient.user.get_full_name|default:req.patient.user.username }}
+                                    </div>
+                                    <div style="font-size: 0.75rem; color: var(--color-text-muted); margin-top: 0.15rem;">
+                                        {{ req.patient.user.phone_number|default:"Phone not on file" }}
+                                    </div>
+                                </td>
+                                <td style="padding: 1rem 1.25rem;">
+                                    <span style="font-weight: 600; color: var(--color-text-main);">
+                                        {{ req.items.count }} item{{ req.items.count|pluralize }}
+                                    </span>
+                                    <div style="display: flex; flex-wrap: wrap; gap: 0.25rem; margin-top: 0.35rem; max-width: 320px;">
+                                        {% for item in req.items.all|slice:":3" %}
+                                            <span style="background: #f1f5f9; color: #334155; font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0; white-space: nowrap;">
+                                                {{ item.prescribed_name_snapshot|truncatechars:18 }}
+                                            </span>
+                                        {% endfor %}
+                                        {% if req.items.count > 3 %}
+                                            <span style="font-size: 0.7rem; color: #64748b; padding: 2px 4px;">+{{ req.items.count|add:"-3" }} more</span>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td style="padding: 1rem 1.25rem; color: var(--color-text-muted); font-size: 0.8125rem;">
+                                    {{ req.created_at|date:"M d, Y" }}
+                                    <div style="font-size: 0.75rem;">{{ req.created_at|date:"h:i A" }}</div>
+                                </td>
+                                <td style="padding: 1rem 1.25rem;">
+                                    {% if req.initial_availability_status == 'FULLY_AVAILABLE' %}
+                                        <span style="background: #dcfce7; color: #15803d; font-size: 0.75rem; font-weight: 600; padding: 0.25rem 0.6rem; border-radius: 9999px;">
+                                            Fully Available
+                                        </span>
+                                    {% elif req.initial_availability_status == 'PARTIALLY_AVAILABLE' %}
+                                        <span style="background: #fef3c7; color: #b45309; font-size: 0.75rem; font-weight: 600; padding: 0.25rem 0.6rem; border-radius: 9999px;">
+                                            Partially Available
+                                        </span>
+                                    {% else %}
+                                        <span style="background: #fee2e2; color: #b91c1c; font-size: 0.75rem; font-weight: 600; padding: 0.25rem 0.6rem; border-radius: 9999px;">
+                                            Out of Stock
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td style="padding: 1rem 1.25rem;">
+                                    {% if req.status == 'PENDING' %}
+                                        <span style="background: #fef3c7; color: #92400e; font-size: 0.75rem; font-weight: 700; padding: 0.3rem 0.65rem; border-radius: 9999px; text-transform: uppercase;">Pending Review</span>
+                                    {% elif req.status == 'ACCEPTED' %}
+                                        <span style="background: #dbeafe; color: #1e40af; font-size: 0.75rem; font-weight: 700; padding: 0.3rem 0.65rem; border-radius: 9999px; text-transform: uppercase;">Accepted</span>
+                                    {% elif req.status == 'PROCESSING' %}
+                                        <span style="background: #ede9fe; color: #5b21b6; font-size: 0.75rem; font-weight: 700; padding: 0.3rem 0.65rem; border-radius: 9999px; text-transform: uppercase;">Preparing</span>
+                                    {% elif req.status == 'READY_FOR_PICKUP' %}
+                                        <span style="background: #ccfbf1; color: #115e59; font-size: 0.75rem; font-weight: 700; padding: 0.3rem 0.65rem; border-radius: 9999px; text-transform: uppercase;">Ready for Pickup</span>
+                                    {% elif req.status == 'COMPLETED' %}
+                                        <span style="background: #dcfce7; color: #166534; font-size: 0.75rem; font-weight: 700; padding: 0.3rem 0.65rem; border-radius: 9999px; text-transform: uppercase;">Completed</span>
+                                    {% elif req.status == 'REJECTED' %}
+                                        <span style="background: #fee2e2; color: #991b1b; font-size: 0.75rem; font-weight: 700; padding: 0.3rem 0.65rem; border-radius: 9999px; text-transform: uppercase;">Rejected</span>
+                                    {% elif req.status == 'CANCELLED' %}
+                                        <span style="background: #f1f5f9; color: #475569; font-size: 0.75rem; font-weight: 700; padding: 0.3rem 0.65rem; border-radius: 9999px; text-transform: uppercase;">Cancelled</span>
+                                    {% endif %}
+                                </td>
+                                <td style="padding: 1rem 1.25rem; text-align: right;">
+                                    <a href="{% url 'pharmacy:request_detail' req.id %}" class="btn btn-secondary btn-sm" style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.4rem 0.75rem;">
+                                        <span>View Details</span>
+                                        <svg style="width: 14px; height: 14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <polyline points="9 18 15 12 9 6"></polyline>
+                                        </svg>
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination Bar -->
+            {% if page_obj.has_other_pages %}
+                <div style="padding: 1rem 1.5rem; background: #f8fafc; border-top: 1px solid var(--color-border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; font-size: 0.8125rem;">
+                    <span style="color: var(--color-text-muted);">
+                        Showing page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }} ({{ total_count }} total requests)
+                    </span>
+                    <div style="display: flex; gap: 0.375rem;">
+                        {% if page_obj.has_previous %}
+                            <a href="?page={{ page_obj.previous_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if query %}&q={{ query }}{% endif %}"
+                               class="btn btn-secondary btn-sm" style="padding: 0.35rem 0.75rem;">
+                                &laquo; Previous
+                            </a>
+                        {% endif %}
+
+                        {% if page_obj.has_next %}
+                            <a href="?page={{ page_obj.next_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if query %}&q={{ query }}{% endif %}"
+                               class="btn btn-secondary btn-sm" style="padding: 0.35rem 0.75rem;">
+                                Next &raquo;
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    {% else %}
+        <!-- Empty State Card -->
+        <div style="background: var(--color-surface); border: 1px dashed var(--color-border); border-radius: var(--radius-md); padding: 3rem 1.5rem; text-align: center;">
+            <svg style="width: 48px; height: 48px; color: var(--color-text-muted); margin-bottom: 0.75rem;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+                <path d="M9 14l2 2 4-4"></path>
+            </svg>
+            <h3 style="font-size: 1.125rem; font-weight: 600; color: var(--color-text-main); margin: 0;">
+                No Prescription Requests Found
+            </h3>
+            <p style="color: var(--color-text-muted); font-size: 0.875rem; margin-top: 0.375rem; max-width: 450px; margin-left: auto; margin-right: auto;">
+                {% if query or status_filter != 'all' %}
+                    No requests match your current filters or search terms. Try clearing your filters above.
+                {% else %}
+                    You do not have any incoming prescription requests from nearby patients yet. When patients select your pharmacy for fulfillment, their orders will appear here.
+                {% endif %}
+            </p>
+            {% if query or status_filter != 'all' %}
+                <a href="{% url 'pharmacy:requests_inbox' %}" class="btn btn-secondary" style="margin-top: 0.75rem; display: inline-block;">
+                    Reset All Filters
+                </a>
+            {% endif %}
+        </div>
+    {% endif %}
+
+</div>
+{% endblock content %}
+

@@ -1,0 +1,95 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}MedAccess{% endblock title %}</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=3.1.0">
+    <script>
+        (function() {
+            var saved = localStorage.getItem('medaccess_theme');
+            var theme = saved || (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            document.documentElement.setAttribute('data-theme', theme);
+        })();
+    </script>
+    {% block extra_css %}{% endblock extra_css %}
+</head>
+<body data-portal="public">
+    <header class="navbar">
+        <div class="navbar-container">
+            <a href="{% url 'landing' %}" class="brand-logo">
+                <svg class="brand-icon" viewBox="0 0 24 24">
+                    <path d="M12 2v20M2 12h20M7 7l10 10M17 7L7 17"></path>
+                </svg>
+                <span>MedAccess</span>
+            </a>
+
+            <nav class="nav-links">
+                <a href="{% url 'allergy_checker' %}" class="nav-link">Allergy Checker</a>
+                {% if user.is_authenticated %}
+                    {% if user.role == 'PATIENT' %}
+                        <a href="{% url 'patient:dashboard' %}" class="nav-link">Patient Dashboard</a>
+                        <a href="{% url 'patient:prescriptions_list' %}" class="nav-link">My Prescriptions</a>
+                    {% elif user.role == 'PHARMACY' and user.pharmacy_profile.approval_status == 'APPROVED' %}
+                        <a href="{% url 'pharmacy:dashboard' %}" class="nav-link">Pharmacy Dashboard</a>
+                    {% elif user.role == 'ADMIN' %}
+                        <a href="{% url 'admin_portal:dashboard' %}" class="nav-link">Admin Portal</a>
+                    {% endif %}
+                    <span class="status-pill status-pill-{{ user.role|lower }}">
+                        {{ user.username }} ({{ user.role }})
+                    </span>
+                    <form method="post" action="{% url 'accounts:logout' %}" style="display:inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-secondary" style="padding: 0.4rem 0.8rem; font-size: 0.8125rem;">Logout</button>
+                    </form>
+                {% else %}
+                    <a href="{% url 'accounts:login' %}" class="nav-link">Login</a>
+                    <a href="{% url 'accounts:register_patient' %}" class="nav-link">Patient Sign Up</a>
+                    <a href="{% url 'accounts:register_pharmacy' %}" class="nav-link">Pharmacy Sign Up</a>
+                {% endif %}
+
+                <!-- Theme Switcher Toggle -->
+                <button type="button" class="theme-toggle-btn" id="theme-toggle-btn" aria-label="Toggle light or dark theme" title="Toggle Theme" onclick="if(window.medaccessToggleTheme)window.medaccessToggleTheme();">
+                    <svg class="theme-icon-sun" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                    <svg class="theme-icon-moon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main-wrapper">
+        {% if messages %}
+            <div class="messages-container">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">
+                        <div>{{ message|safe }}</div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        {% block content %}
+        {% endblock content %}
+    </main>
+
+    <footer class="site-footer">
+        <p>&copy; 2026 MedAccess Healthcare Platform. All rights reserved.</p>
+    </footer>
+
+    <script src="{% static 'js/theme_switcher.js' %}?v=3.1.0"></script>
+    {% block extra_js %}{% endblock extra_js %}
+</body>
+</html>

@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+
+{% block title %}Email Verification | MedAccess{% endblock title %}
+
+{% block content %}
+<div class="auth-card" style="max-width: 520px; text-align: center;">
+    {% if status == 'success' %}
+        <div style="margin-bottom: 1.25rem;">
+            <div style="width: 56px; height: 56px; border-radius: 50%; background: rgba(16, 185, 129, 0.12); color: #059669; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 0.75rem;">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+            </div>
+            <h1 class="auth-title" style="margin-bottom: 0.5rem;">Email Verified Successfully</h1>
+            <p class="auth-subtitle">Your email address has been confirmed.</p>
+        </div>
+
+        {% if user.role == 'PHARMACY' %}
+            <div class="alert alert-info" style="text-align: left; margin-bottom: 1.5rem;">
+                <div>
+                    <strong>Pharmacy Notice:</strong> Your email has been verified. Your store account remains in administrative review. You will be able to access the Pharmacy Portal once your license credentials are verified and approved by the admin.
+                </div>
+            </div>
+        {% else %}
+            <div class="alert alert-success" style="text-align: left; margin-bottom: 1.5rem;">
+                <div>
+                    Your patient account is now fully activated. You can sign in to view medicine availability, upload prescriptions, and book orders.
+                </div>
+            </div>
+        {% endif %}
+
+        <a href="{% url 'accounts:login' %}" class="btn btn-primary btn-block">
+            Proceed to Sign In
+        </a>
+
+    {% elif status == 'already_verified' %}
+        <div style="margin-bottom: 1.25rem;">
+            <div style="width: 56px; height: 56px; border-radius: 50%; background: rgba(2, 132, 199, 0.12); color: #0284c7; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 0.75rem;">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                </svg>
+            </div>
+            <h1 class="auth-title" style="margin-bottom: 0.5rem;">Email Already Verified</h1>
+            <p class="auth-subtitle">Your account is already verified.</p>
+        </div>
+
+        <p style="color: var(--color-text-muted); font-size: 0.9375rem; margin-bottom: 1.5rem; line-height: 1.6;">
+            This email address was already verified. You can log in to your account with your credentials.
+        </p>
+
+        <a href="{% url 'accounts:login' %}" class="btn btn-primary btn-block">
+            Go to Sign In
+        </a>
+
+    {% elif status == 'expired' %}
+        <div style="margin-bottom: 1.25rem;">
+            <div style="width: 56px; height: 56px; border-radius: 50%; background: rgba(245, 158, 11, 0.12); color: #d97706; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 0.75rem;">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+            </div>
+            <h1 class="auth-title" style="margin-bottom: 0.5rem;">Verification Link Expired</h1>
+            <p class="auth-subtitle">This verification link has expired.</p>
+        </div>
+
+        <p style="color: var(--color-text-muted); font-size: 0.9375rem; margin-bottom: 1.5rem; line-height: 1.6;">
+            For your security, verification links are valid for 24 hours only. Please request a new verification link to activate your account.
+        </p>
+
+        <a href="{% url 'accounts:resend_verification' %}" class="btn btn-primary btn-block" style="margin-bottom: 0.75rem;">
+            Request New Verification Link
+        </a>
+        <a href="{% url 'accounts:login' %}" class="btn btn-secondary btn-block">
+            Back to Sign In
+        </a>
+
+    {% else %}
+        <div style="margin-bottom: 1.25rem;">
+            <div style="width: 56px; height: 56px; border-radius: 50%; background: rgba(239, 68, 68, 0.12); color: #dc2626; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 0.75rem;">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="15" y1="9" x2="9" y2="15"></line>
+                    <line x1="9" y1="9" x2="15" y2="15"></line>
+                </svg>
+            </div>
+            <h1 class="auth-title" style="margin-bottom: 0.5rem;">Invalid Verification Link</h1>
+            <p class="auth-subtitle">We could not verify your email address.</p>
+        </div>
+
+        <p style="color: var(--color-text-muted); font-size: 0.9375rem; margin-bottom: 1.5rem; line-height: 1.6;">
+            This verification link is invalid, corrupted, or has already been used. Please request a new verification link below.
+        </p>
+
+        <a href="{% url 'accounts:resend_verification' %}" class="btn btn-primary btn-block" style="margin-bottom: 0.75rem;">
+            Request New Verification Link
+        </a>
+        <a href="{% url 'accounts:login' %}" class="btn btn-secondary btn-block">
+            Back to Sign In
+        </a>
+    {% endif %}
+</div>
+{% endblock content %}
+

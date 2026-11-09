@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block title %}Resend Verification Email | MedAccess{% endblock title %}
+
+{% block content %}
+<div class="auth-card" style="max-width: 480px;">
+    <div class="auth-header">
+        <h1 class="auth-title">Resend Verification Email</h1>
+        <p class="auth-subtitle">Enter your registered email address to receive a fresh verification link</p>
+    </div>
+
+    <form method="post" action="{% url 'accounts:resend_verification' %}" novalidate>
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+            <div class="alert alert-error" style="margin-bottom: 1rem;">
+                {% for error in form.non_field_errors %}
+                    <div>{{ error }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <div class="form-grid">
+            <div class="form-group">
+                <label class="form-label" for="{{ form.email.id_for_label }}">Registered Email Address</label>
+                {{ form.email }}
+                {% if form.email.errors %}
+                    {% for error in form.email.errors %}
+                        <span class="field-error">{{ error }}</span>
+                    {% endfor %}
+                {% endif %}
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block" style="margin-top: 0.5rem;">
+                Send Verification Link
+            </button>
+        </div>
+    </form>
+
+    <div class="auth-footer-text">
+        <p style="margin-top: 0.75rem;">
+            <a href="{% url 'accounts:login' %}">&larr; Back to Sign In</a>
+        </p>
+    </div>
+</div>
+{% endblock content %}
+

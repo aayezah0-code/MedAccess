@@ -1,0 +1,368 @@
+{% extends 'pharmacy/base_pharmacy.html' %}
+
+{% block title %}Customer Feedback & Ratings | Pharmacy Portal | MedAccess{% endblock title %}
+{% block header_title %}Customer Feedback & Ratings{% endblock header_title %}
+{% block nav_feedback %}active{% endblock nav_feedback %}
+
+{% block content %}
+<div class="feedback-page-wrapper" style="display: flex; flex-direction: column; gap: 1.5rem;">
+
+    <!-- 1. Hero Overview Banner -->
+    <div class="welcome-card" style="background: linear-gradient(135deg, #042f2e 0%, #0f766e 100%); color: #ffffff; padding: 2rem; border-radius: var(--radius-md); box-shadow: var(--shadow-md);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+            <div>
+                <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+                    <span class="status-badge" style="background: rgba(220, 252, 231, 0.2); color: #86efac; border: 1px solid rgba(134, 239, 172, 0.4);">
+                        Patient Satisfaction
+                    </span>
+                    <span style="font-size: 0.8125rem; color: #ccfbf1;">Verified Patient Feedback</span>
+                </div>
+                <h1 style="font-size: 1.75rem; font-weight: 700; margin: 0; color: #ffffff;">
+                    {{ pharmacy_profile.pharmacy_name }} — Reviews
+                </h1>
+                <p style="margin-top: 0.5rem; margin-bottom: 0; color: #ccfbf1; max-width: 650px; font-size: 0.9375rem; line-height: 1.5;">
+                    Monitor service quality, patient ratings, and real-time reviews submitted by patients across the MedAccess healthcare network.
+                </p>
+            </div>
+
+            <div style="background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(8px); padding: 1rem 1.25rem; border-radius: var(--radius-sm); border: 1px solid rgba(255, 255, 255, 0.15); min-width: 220px;">
+                <div style="font-size: 0.75rem; color: #ccfbf1; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;">Store License</div>
+                <div style="font-weight: 600; font-size: 0.9375rem; color: #ffffff; margin-top: 0.25rem;">
+                    {{ pharmacy_profile.pharmacy_license_number|default:"Verified Partner" }}
+                </div>
+                <div style="font-size: 0.75rem; color: #99f6e4; margin-top: 0.25rem;">
+                    Location: {{ pharmacy_profile.city|default:"City" }}, {{ pharmacy_profile.state|default:"State" }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Summary KPI Metrics & Rating Distribution Grid -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.25rem;">
+
+        <!-- Card 1: Average Rating Score -->
+        <div style="background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 1.5rem; box-shadow: var(--shadow-subtle); display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <span style="font-size: 0.8125rem; color: var(--color-text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;">Average Rating</span>
+                    <span style="background: #fef3c7; color: #b45309; padding: 0.25rem 0.5rem; border-radius: var(--radius-sm); font-size: 0.6875rem; font-weight: 600;">Store Score</span>
+                </div>
+
+                <div style="display: flex; align-items: baseline; gap: 0.5rem; margin-top: 0.75rem;">
+                    {% if total_reviews > 0 %}
+                        <span style="font-size: 2.75rem; font-weight: 800; color: var(--color-text-main); line-height: 1;">{{ avg_rating }}</span>
+                        <span style="font-size: 1.125rem; color: var(--color-text-muted); font-weight: 500;">/ 5.0</span>
+                    {% else %}
+                        <span style="font-size: 2.25rem; font-weight: 700; color: var(--color-text-muted); line-height: 1;">—</span>
+                    {% endif %}
+                </div>
+
+                <!-- Star Icons Representation -->
+                <div style="display: flex; align-items: center; gap: 0.25rem; margin-top: 0.65rem;">
+                    {% for star_num in "12345" %}
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"
+                             style="color: {% if total_reviews > 0 and forloop.counter <= avg_rating %}#f59e0b{% elif total_reviews > 0 and forloop.counter <= avg_rating|add:'0.5' %}#fbbf24{% else %}#e2e8f0{% endif %};">
+                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                        </svg>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <p style="font-size: 0.8125rem; color: var(--color-text-muted); margin: 1rem 0 0 0; border-top: 1px solid var(--color-border); padding-top: 0.75rem;">
+                {% if total_reviews > 0 %}
+                    Calculated from <strong>{{ total_reviews }}</strong> patient review{{ total_reviews|pluralize }}
+                {% else %}
+                    No customer ratings recorded yet
+                {% endif %}
+            </p>
+        </div>
+
+        <!-- Card 2: Total Verified Reviews -->
+        <div style="background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 1.5rem; box-shadow: var(--shadow-subtle); display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <span style="font-size: 0.8125rem; color: var(--color-text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;">Total Feedback</span>
+                    <span style="background: #ecfdf5; color: #047857; padding: 0.25rem 0.5rem; border-radius: var(--radius-sm); font-size: 0.6875rem; font-weight: 600;">Lifetime</span>
+                </div>
+
+                <div style="font-size: 2.75rem; font-weight: 800; color: var(--color-text-main); margin-top: 0.75rem; line-height: 1;">
+                    {{ total_reviews }}
+                </div>
+
+                <div style="margin-top: 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
+                    <span style="display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.8125rem; color: #059669; font-weight: 600;">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        100% Genuine Patients
+                    </span>
+                </div>
+            </div>
+
+            <p style="font-size: 0.8125rem; color: var(--color-text-muted); margin: 1rem 0 0 0; border-top: 1px solid var(--color-border); padding-top: 0.75rem;">
+                Each patient can submit one review per pharmacy
+            </p>
+        </div>
+
+        <!-- Card 3: Rating Distribution Bars -->
+        <div style="background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 1.5rem; box-shadow: var(--shadow-subtle);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.875rem;">
+                <span style="font-size: 0.8125rem; color: var(--color-text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;">Rating Breakdown</span>
+                <span style="font-size: 0.75rem; color: var(--color-text-muted);">Distribution</span>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 0.55rem;">
+                {% for dist in rating_distribution %}
+                    <div style="display: flex; align-items: center; gap: 0.75rem; font-size: 0.8125rem;">
+                        <!-- Star label -->
+                        <span style="min-width: 50px; font-weight: 600; color: var(--color-text-main); display: inline-flex; align-items: center; gap: 0.25rem;">
+                            {{ dist.stars }}
+                            <svg viewBox="0 0 24 24" width="13" height="13" fill="#f59e0b">
+                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                            </svg>
+                        </span>
+
+                        <!-- Progress Bar Track -->
+                        <div style="flex: 1; background: #f1f5f9; height: 8px; border-radius: 9999px; overflow: hidden; position: relative;">
+                            <div style="background: linear-gradient(90deg, #f59e0b 0%, #d97706 100%); height: 100%; width: {{ dist.percentage }}%; border-radius: 9999px; transition: width 0.4s ease-out;"></div>
+                        </div>
+
+                        <!-- Count & Percent -->
+                        <span style="min-width: 55px; text-align: right; color: var(--color-text-muted); font-size: 0.75rem;">
+                            {{ dist.count }} ({{ dist.percentage }}%)
+                        </span>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+    </div>
+
+    <!-- 3. Search & Filter Bar -->
+    <div style="background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 1.25rem; box-shadow: var(--shadow-subtle);">
+        <form method="get" action="{% url 'pharmacy:customer_feedback' %}" style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; justify-content: space-between;">
+            <!-- Left: Search input + Rating select -->
+            <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; flex: 1; min-width: 280px;">
+                <!-- Comment Search Field -->
+                <div style="position: relative; flex: 1; min-width: 220px;">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                         style="position: absolute; left: 0.875rem; top: 50%; transform: translateY(-50%); color: #94a3b8; pointer-events: none;">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                    <input type="text"
+                           name="q"
+                           value="{{ search_query }}"
+                           placeholder="Search reviews by comment keyword..."
+                           class="form-input"
+                           style="padding-left: 2.5rem; width: 100%; box-sizing: border-box; height: 40px; border-radius: var(--radius-sm);">
+                </div>
+
+                <!-- Star Rating Filter Dropdown -->
+                <div style="min-width: 180px;">
+                    <select name="rating"
+                            class="form-input"
+                            style="width: 100%; height: 40px; border-radius: var(--radius-sm); font-size: 0.875rem;">
+                        <option value="all" {% if rating_filter == 'all' or not rating_filter %}selected{% endif %}>All Ratings (1–5 Stars)</option>
+                        <option value="5" {% if rating_filter == '5' %}selected{% endif %}>5 Stars Only</option>
+                        <option value="4" {% if rating_filter == '4' %}selected{% endif %}>4 Stars Only</option>
+                        <option value="3" {% if rating_filter == '3' %}selected{% endif %}>3 Stars Only</option>
+                        <option value="2" {% if rating_filter == '2' %}selected{% endif %}>2 Stars Only</option>
+                        <option value="1" {% if rating_filter == '1' %}selected{% endif %}>1 Star Only</option>
+                    </select>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" class="btn btn-primary" style="height: 40px; padding: 0 1.25rem; font-size: 0.875rem; display: inline-flex; align-items: center; gap: 0.35rem;">
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                    Filter
+                </button>
+
+                <!-- Clear Filters Button -->
+                {% if has_filters %}
+                    <a href="{% url 'pharmacy:customer_feedback' %}"
+                       class="btn btn-secondary"
+                       style="height: 40px; padding: 0 1rem; font-size: 0.875rem; display: inline-flex; align-items: center; gap: 0.35rem;">
+                        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                        Clear
+                    </a>
+                {% endif %}
+            </div>
+
+            <!-- Right: Filter Summary Counter -->
+            <div style="font-size: 0.8125rem; color: var(--color-text-muted);">
+                {% if has_filters %}
+                    Showing <strong>{{ filtered_count }}</strong> matching review{{ filtered_count|pluralize }} (out of {{ total_reviews }})
+                {% else %}
+                    Showing <strong>{{ total_reviews }}</strong> total review{{ total_reviews|pluralize }}
+                {% endif %}
+            </div>
+        </form>
+    </div>
+
+    <!-- 4. Customer Reviews List -->
+    <div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.875rem;">
+            <h2 style="font-size: 1.125rem; font-weight: 700; color: var(--color-text-main); margin: 0;">
+                Patient Reviews
+            </h2>
+            <span style="font-size: 0.75rem; color: var(--color-text-muted);">
+                Newest Reviews First &bull; Read-Only
+            </span>
+        </div>
+
+        {% if reviews.object_list %}
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
+                {% for review in reviews.object_list %}
+                    <div class="feedback-card" style="background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 1.35rem 1.5rem; box-shadow: var(--shadow-subtle); transition: transform 0.2s ease, box-shadow 0.2s ease;">
+
+                        <!-- Top row: Patient display name + Date -->
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.75rem;">
+                            <!-- Patient Avatar & Name -->
+                            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                <div style="width: 40px; height: 40px; border-radius: 50%; background: #e0f2fe; color: #0284c7; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.9375rem; flex-shrink: 0;">
+                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                        <circle cx="12" cy="7" r="4"></circle>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <div style="font-weight: 600; font-size: 0.9375rem; color: var(--color-text-main);">
+                                        {{ review.display_name }}
+                                    </div>
+                                    <div style="font-size: 0.75rem; color: #059669; font-weight: 500; display: inline-flex; align-items: center; gap: 0.25rem; margin-top: 2px;">
+                                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                            <polyline points="20 6 9 17 4 12"></polyline>
+                                        </svg>
+                                        Verified MedAccess Patient
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Submission Date -->
+                            <div style="font-size: 0.8125rem; color: var(--color-text-muted); background: #f8fafc; border: 1px solid #e2e8f0; padding: 0.25rem 0.65rem; border-radius: var(--radius-sm); font-weight: 500;">
+                                {{ review.created_at|date:"M d, Y" }}
+                            </div>
+                        </div>
+
+                        <!-- Rating Stars & Numeric Badge Row -->
+                        <div style="display: flex; align-items: center; gap: 0.65rem; margin-top: 0.875rem;">
+                            <div style="display: flex; align-items: center; gap: 0.2rem;">
+                                {% for s in "12345" %}
+                                    <svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor"
+                                         style="color: {% if forloop.counter <= review.rating %}#f59e0b{% else %}#e2e8f0{% endif %};">
+                                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                                    </svg>
+                                {% endfor %}
+                            </div>
+
+                            <span style="font-size: 0.8125rem; font-weight: 700; color: #b45309; background: #fef3c7; border: 1px solid #fde68a; padding: 0.15rem 0.5rem; border-radius: var(--radius-sm);">
+                                {{ review.rating }}/5
+                            </span>
+                        </div>
+
+                        <!-- Review Comment -->
+                        <div style="margin-top: 0.75rem; font-size: 0.9375rem; color: #334155; line-height: 1.6; background: #f8fafc; border-left: 3px solid #0284c7; padding: 0.75rem 1rem; border-radius: 0 var(--radius-sm) var(--radius-sm) 0;">
+                            {% if review.comment %}
+                                {{ review.comment }}
+                            {% else %}
+                                <span style="font-style: italic; color: #94a3b8;">No written review comment provided.</span>
+                            {% endif %}
+                        </div>
+
+                    </div>
+                {% endfor %}
+            </div>
+
+            <!-- Pagination Controls -->
+            {% if reviews.paginator.num_pages > 1 %}
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-top: 1.5rem; padding: 1rem; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md);">
+                    <div style="font-size: 0.875rem; color: var(--color-text-muted);">
+                        Page <strong>{{ reviews.number }}</strong> of <strong>{{ reviews.paginator.num_pages }}</strong>
+                    </div>
+
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        {% if reviews.has_previous %}
+                            <a href="?page={{ reviews.previous_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if rating_filter %}&rating={{ rating_filter }}{% endif %}"
+                               class="btn btn-secondary"
+                               style="padding: 0.45rem 0.9rem; font-size: 0.8125rem; display: inline-flex; align-items: center; gap: 0.35rem;">
+                                &larr; Previous
+                            </a>
+                        {% else %}
+                            <span class="btn btn-secondary disabled" style="opacity: 0.5; cursor: not-allowed; padding: 0.45rem 0.9rem; font-size: 0.8125rem;">
+                                &larr; Previous
+                            </span>
+                        {% endif %}
+
+                        <span style="font-size: 0.8125rem; color: var(--color-text-muted); padding: 0 0.5rem;">
+                            {{ reviews.start_index }}–{{ reviews.end_index }} of {{ reviews.paginator.count }}
+                        </span>
+
+                        {% if reviews.has_next %}
+                            <a href="?page={{ reviews.next_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if rating_filter %}&rating={{ rating_filter }}{% endif %}"
+                               class="btn btn-secondary"
+                               style="padding: 0.45rem 0.9rem; font-size: 0.8125rem; display: inline-flex; align-items: center; gap: 0.35rem;">
+                                Next &rarr;
+                            </a>
+                        {% else %}
+                            <span class="btn btn-secondary disabled" style="opacity: 0.5; cursor: not-allowed; padding: 0.45rem 0.9rem; font-size: 0.8125rem;">
+                                Next &rarr;
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
+
+        {% else %}
+            <!-- Empty State Handlers -->
+            {% if total_reviews == 0 %}
+                <!-- Case A: Pharmacy has zero reviews lifetime -->
+                <div style="background: var(--color-surface); border: 1px dashed var(--color-border); border-radius: var(--radius-md); padding: 3.5rem 1.5rem; text-align: center;">
+                    <div style="width: 56px; height: 56px; border-radius: 50%; background: #fef3c7; color: #d97706; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 1rem;">
+                        <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                        </svg>
+                    </div>
+                    <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--color-text-main); margin: 0 0 0.5rem 0;">
+                        No Customer Reviews Yet
+                    </h3>
+                    <p style="color: var(--color-text-muted); font-size: 0.9375rem; max-width: 480px; margin: 0 auto; line-height: 1.5;">
+                        Your pharmacy store has not received any patient ratings or reviews yet. When patients submit feedback through the MedAccess Patient Portal, reviews will appear here in real time.
+                    </p>
+                </div>
+            {% else %}
+                <!-- Case B: Search or Rating filter returned 0 results -->
+                <div style="background: var(--color-surface); border: 1px dashed var(--color-border); border-radius: var(--radius-md); padding: 3rem 1.5rem; text-align: center;">
+                    <div style="width: 52px; height: 52px; border-radius: 50%; background: #f1f5f9; color: #64748b; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 1rem;">
+                        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                    </div>
+                    <h3 style="font-size: 1.125rem; font-weight: 700; color: var(--color-text-main); margin: 0 0 0.5rem 0;">
+                        No Matching Reviews Found
+                    </h3>
+                    <p style="color: var(--color-text-muted); font-size: 0.9375rem; max-width: 440px; margin: 0 auto 1.25rem auto; line-height: 1.5;">
+                        No customer reviews match your current search or star rating filter. Try adjusting your search query or reset your filters.
+                    </p>
+                    <a href="{% url 'pharmacy:customer_feedback' %}" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 0.35rem;">
+                        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                        Clear Filters
+                    </a>
+                </div>
+            {% endif %}
+        {% endif %}
+    </div>
+
+</div>
+{% endblock content %}
+

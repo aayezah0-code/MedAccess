@@ -1,0 +1,185 @@
+{% extends 'admin_portal/base_admin.html' %}
+
+{% block title %}Patient: {{ patient_user.username }} | Admin Portal | MedAccess{% endblock title %}
+{% block header_title %}Patient Dossier: {{ patient_user.username }}{% endblock header_title %}
+{% block nav_patients %}active{% endblock nav_patients %}
+
+{% block content %}
+<div style="max-width: 1300px; margin: 0 auto;">
+
+    <!-- Breadcrumb & Back -->
+    <div style="margin-bottom: 1.25rem;">
+        <a href="{% url 'admin_portal:patient_list' %}" style="display: inline-flex; align-items: center; gap: 0.35rem; color: #2563eb; text-decoration: none; font-size: 0.875rem; font-weight: 600;">
+            &larr; Back to Patient Directory
+        </a>
+    </div>
+
+    <!-- Header Card -->
+    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+            <div style="display: flex; gap: 1rem; align-items: center;">
+                <div style="width: 56px; height: 56px; border-radius: 14px; background: linear-gradient(135deg, #eff6ff, #dbeafe); color: #1e40af; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; font-weight: 700;">
+                    {{ patient_user.username|slice:":2"|upper }}
+                </div>
+                <div>
+                    <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+                        <h1 style="font-size: 1.35rem; font-weight: 700; color: #0f172a; margin: 0;">
+                            {% if patient_user.first_name %}
+                                {{ patient_user.first_name }} {{ patient_user.last_name }}
+                            {% else %}
+                                {{ patient_user.username }}
+                            {% endif %}
+                        </h1>
+                        {% if patient_user.is_active %}
+                            <span class="status-pill-subtle pill-approved">Active Account</span>
+                        {% else %}
+                            <span class="status-pill-subtle pill-rejected">Deactivated</span>
+                        {% endif %}
+                    </div>
+                    <p style="margin: 0.25rem 0 0 0; font-size: 0.875rem; color: #64748b;">
+                        Username: <strong>@{{ patient_user.username }}</strong> &bull; Registered on {{ patient_user.date_joined|date:"F d, Y, h:i A" }}
+                    </p>
+                </div>
+            </div>
+
+            <!-- Action Controls -->
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
+                <a href="{% url 'admin_portal:patient_edit' patient_user.pk %}" class="btn btn-secondary" style="font-size: 0.8125rem; padding: 0.45rem 0.85rem;">
+                    Edit Profile
+                </a>
+
+                <form method="post" action="{% url 'admin_portal:patient_toggle_status' patient_user.pk %}" style="display: inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="toggle">
+                    <button type="submit" class="btn btn-secondary" style="font-size: 0.8125rem; padding: 0.45rem 0.85rem;"
+                            onclick="return confirm('Are you sure you want to {% if patient_user.is_active %}deactivate{% else %}activate{% endif %} this patient account?');">
+                        {% if patient_user.is_active %}Deactivate Account{% else %}Activate Account{% endif %}
+                    </button>
+                </form>
+
+                <form method="post" action="{% url 'admin_portal:patient_toggle_status' patient_user.pk %}" style="display: inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="delete">
+                    <button type="submit" class="btn btn-secondary" style="font-size: 0.8125rem; padding: 0.45rem 0.85rem; color: #dc2626; border-color: #fecaca;"
+                            onclick="return confirm('Warning: If this patient has clinical records, the account will be safely deactivated to preserve audit integrity. Proceed?');">
+                        Delete Account
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2-Column Info Grid -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem;">
+
+        <!-- Personal & Contact Details -->
+        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.25rem 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+            <h2 style="font-size: 1rem; font-weight: 700; color: #0f172a; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.75rem; margin-bottom: 1rem;">
+                Personal &amp; Contact Credentials
+            </h2>
+
+            <div style="display: grid; grid-template-columns: 140px 1fr; row-gap: 0.75rem; font-size: 0.875rem;">
+                <span style="color: #64748b; font-weight: 600;">Email Address</span>
+                <span style="color: #0f172a;">{{ patient_user.email }}</span>
+
+                <span style="color: #64748b; font-weight: 600;">Phone Number</span>
+                <span style="color: #0f172a;">{{ patient_user.phone_number|default:"Not specified" }}</span>
+
+                <span style="color: #64748b; font-weight: 600;">Email Verified</span>
+                <span>
+                    {% if patient_user.email_verified %}
+                        <span style="color: #059669; font-weight: 600;">Verified</span>
+                    {% else %}
+                        <span style="color: #d97706; font-weight: 600;">Unverified</span>
+                    {% endif %}
+                </span>
+
+                <span style="color: #64748b; font-weight: 600;">Last Login</span>
+                <span style="color: #0f172a;">{{ patient_user.last_login|date:"M d, Y, h:i A"|default:"Never logged in" }}</span>
+            </div>
+        </div>
+
+        <!-- Clinical Profile -->
+        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.25rem 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+            <h2 style="font-size: 1rem; font-weight: 700; color: #0f172a; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.75rem; margin-bottom: 1rem;">
+                Clinical &amp; Health Profile
+            </h2>
+
+            <div style="display: grid; grid-template-columns: 140px 1fr; row-gap: 0.75rem; font-size: 0.875rem;">
+                <span style="color: #64748b; font-weight: 600;">Gender</span>
+                <span style="color: #0f172a;">{{ profile.gender|default:"Not specified" }}</span>
+
+                <span style="color: #64748b; font-weight: 600;">Blood Group</span>
+                <span>
+                    {% if profile.blood_group %}
+                        <strong style="color: #b91c1c;">{{ profile.blood_group }}</strong>
+                    {% else %}
+                        <span style="color: #64748b;">Not specified</span>
+                    {% endif %}
+                </span>
+
+                <span style="color: #64748b; font-weight: 600;">Date of Birth</span>
+                <span style="color: #0f172a;">{{ profile.date_of_birth|date:"M d, Y"|default:"Not specified" }}</span>
+
+                <span style="color: #64748b; font-weight: 600;">Address</span>
+                <span style="color: #0f172a;">{{ profile.address|default:"No residential address recorded" }}</span>
+
+                <span style="color: #64748b; font-weight: 600;">Drug Allergies</span>
+                <span style="color: #0f172a;">
+                    {% if profile.allergies %}
+                        <span style="background: #fff1f2; color: #be123c; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: 600;">
+                            {{ profile.allergies }}
+                        </span>
+                    {% else %}
+                        <span style="color: #64748b;">None reported</span>
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Recent Fulfillment Requests Table -->
+    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; margin-bottom: 1.5rem; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+        <div style="padding: 1rem 1.25rem; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
+            <h2 style="font-size: 1rem; font-weight: 700; color: #0f172a; margin: 0;">
+                Recent Prescription Fulfillment Requests ({{ stats.total_requests }} total, {{ stats.completed_requests }} completed)
+            </h2>
+        </div>
+        <div style="overflow-x: auto;">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Request ID</th>
+                        <th>Target Pharmacy</th>
+                        <th>Status</th>
+                        <th>Prescription ID</th>
+                        <th>Created Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for req in recent_requests %}
+                        <tr>
+                            <td><strong>#{{ req.id }}</strong></td>
+                            <td>{{ req.pharmacy.pharmacy_name }}</td>
+                            <td>
+                                <span class="status-pill-subtle pill-{{ req.status|lower }}">{{ req.get_status_display }}</span>
+                            </td>
+                            <td>Rx #{{ req.prescription.id }}</td>
+                            <td style="color: #64748b;">{{ req.created_at|date:"M d, Y, h:i A" }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="5" style="text-align: center; padding: 2rem; color: #64748b;">
+                                No prescription fulfillment requests submitted by this patient yet.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock content %}
+

@@ -1,0 +1,295 @@
+{% extends 'admin_portal/base_admin.html' %}
+
+{% block title %}Medicines &amp; Inventory | Admin Portal | MedAccess{% endblock title %}
+{% block header_title %}Medicines Master Catalogue &amp; Inventory Overview{% endblock header_title %}
+{% block nav_medicines %}{% if view_mode != 'inventory' %}active{% endif %}{% endblock nav_medicines %}
+{% block nav_inventory %}{% if view_mode == 'inventory' %}active{% endif %}{% endblock nav_inventory %}
+
+{% block content %}
+<div style="max-width: 1400px; margin: 0 auto;">
+
+    <!-- Top Header -->
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
+        <div>
+            <h1 style="font-size: 1.35rem; font-weight: 700; color: var(--color-text-main, #0f172a); margin: 0 0 0.25rem 0;">
+                Platform Medicines &amp; Stock Directory
+            </h1>
+            <p style="margin: 0; font-size: 0.875rem; color: var(--color-text-muted, #64748b);">
+                Centralized drug catalogue definitions, batch-level pharmacy inventories, and real-time expiration monitoring.
+            </p>
+        </div>
+    </div>
+
+    <!-- Quick Metrics Cards -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+        <div class="admin-stat-card" style="padding: 1rem 1.25rem;">
+            <div class="admin-stat-icon icon-blue" style="width: 40px; height: 40px;">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.5 20.5l10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7z"></path><line x1="8.5" y1="8.5" x2="15.5" y2="15.5"></line></svg>
+            </div>
+            <div>
+                <span style="font-size: 0.75rem; color: #64748b; font-weight: 600; text-transform: uppercase;">Catalogue Medicines</span>
+                <div style="font-size: 1.4rem; font-weight: 700; color: #0f172a;">{{ metrics.total_medicines }}</div>
+            </div>
+        </div>
+
+        <div class="admin-stat-card" style="padding: 1rem 1.25rem;">
+            <div class="admin-stat-icon icon-teal" style="width: 40px; height: 40px;">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+            </div>
+            <div>
+                <span style="font-size: 0.75rem; color: #64748b; font-weight: 600; text-transform: uppercase;">Active Batches</span>
+                <div style="font-size: 1.4rem; font-weight: 700; color: #0d9488;">{{ metrics.total_batches }}</div>
+            </div>
+        </div>
+
+        <div class="admin-stat-card" style="padding: 1rem 1.25rem;">
+            <div class="admin-stat-icon icon-amber" style="width: 40px; height: 40px;">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+            </div>
+            <div>
+                <span style="font-size: 0.75rem; color: #92400e; font-weight: 600; text-transform: uppercase;">Low Stock Batches</span>
+                <div style="font-size: 1.4rem; font-weight: 700; color: #b45309;">{{ metrics.low_stock }}</div>
+            </div>
+        </div>
+
+        <div class="admin-stat-card" style="padding: 1rem 1.25rem;">
+            <div class="admin-stat-icon icon-purple" style="width: 40px; height: 40px; background: #fef2f2; color: #dc2626;">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
+            </div>
+            <div>
+                <span style="font-size: 0.75rem; color: #991b1b; font-weight: 600; text-transform: uppercase;">Expired Batches</span>
+                <div style="font-size: 1.4rem; font-weight: 700; color: #dc2626;">{{ metrics.expired }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stock Unit Breakdown Ribbon -->
+    {% if unit_stock_summary %}
+        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 0.85rem 1.25rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 1.25rem; flex-wrap: wrap;">
+            <span style="font-size: 0.8125rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em;">
+                Units in Circulation:
+            </span>
+            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                {% for item in unit_stock_summary %}
+                    <span style="display: inline-flex; align-items: center; gap: 0.35rem; background: #f1f5f9; padding: 0.25rem 0.65rem; border-radius: 6px; font-size: 0.8125rem; color: #1e293b;">
+                        <strong>{{ item.total_qty|default:0 }}</strong> {{ item.unit }}
+                        <span style="color: #64748b; font-size: 0.75rem;">({{ item.batch_count }} batches)</span>
+                    </span>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- View Switcher Tabs -->
+    <div style="display: flex; gap: 0.5rem; border-bottom: 2px solid #e2e8f0; margin-bottom: 1.5rem;">
+        <a href="?tab=catalogue"
+           style="padding: 0.65rem 1.25rem; font-size: 0.9rem; font-weight: 600; text-decoration: none; border-bottom: 3px solid {% if view_mode != 'inventory' %}#2563eb{% else %}transparent{% endif %}; color: {% if view_mode != 'inventory' %}#2563eb{% else %}#64748b{% endif %}; margin-bottom: -2px;">
+            Master Medicine Catalogue
+        </a>
+        <a href="?tab=inventory"
+           style="padding: 0.65rem 1.25rem; font-size: 0.9rem; font-weight: 600; text-decoration: none; border-bottom: 3px solid {% if view_mode == 'inventory' %}#2563eb{% else %}transparent{% endif %}; color: {% if view_mode == 'inventory' %}#2563eb{% else %}#64748b{% endif %}; margin-bottom: -2px;">
+            Pharmacy-wise Inventory Batches
+        </a>
+    </div>
+
+    <!-- Filter & Search Controls -->
+    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+        <form method="get" action="{% url 'admin_portal:medicine_list' %}" style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
+            <input type="hidden" name="tab" value="{{ view_mode }}">
+
+            <div style="flex: 1; min-width: 250px;">
+                <input type="text" name="q" value="{{ search_query }}"
+                       placeholder="{% if view_mode == 'inventory' %}Search by drug name, batch #, or pharmacy...{% else %}Search catalogue by name, manufacturer, or composition...{% endif %}"
+                       class="form-input" style="padding: 0.5rem 0.85rem; font-size: 0.875rem;">
+            </div>
+
+            {% if view_mode == 'inventory' %}
+                <div style="min-width: 180px;">
+                    <select name="pharmacy" class="form-input" style="padding: 0.5rem 0.85rem; font-size: 0.875rem;">
+                        <option value="">All Pharmacies</option>
+                        {% for ph in pharmacies_list %}
+                            <option value="{{ ph.id }}" {% if selected_pharmacy == ph.id|stringformat:"s" %}selected{% endif %}>
+                                {{ ph.pharmacy_name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div style="min-width: 150px;">
+                    <select name="filter" class="form-input" style="padding: 0.5rem 0.85rem; font-size: 0.875rem;">
+                        <option value="all" {% if filter_type == 'all' %}selected{% endif %}>All Stock Conditions</option>
+                        <option value="low_stock" {% if filter_type == 'low_stock' %}selected{% endif %}>Low Stock Only</option>
+                        <option value="out_of_stock" {% if filter_type == 'out_of_stock' %}selected{% endif %}>Out of Stock</option>
+                        <option value="expired" {% if filter_type == 'expired' %}selected{% endif %}>Expired Batches</option>
+                    </select>
+                </div>
+            {% endif %}
+
+            <button type="submit" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.875rem; font-weight: 600;">
+                Search
+            </button>
+
+            {% if search_query or filter_type != 'all' or selected_pharmacy %}
+                <a href="?tab={{ view_mode }}" class="btn btn-link" style="font-size: 0.8125rem; color: #64748b;">
+                    Reset
+                </a>
+            {% endif %}
+        </form>
+    </div>
+
+    <!-- Data Display Table -->
+    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+        <div style="overflow-x: auto;">
+            {% if view_mode == 'inventory' %}
+                <!-- Inventory View -->
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Medicine</th>
+                            <th>Pharmacy Facility</th>
+                            <th>Batch #</th>
+                            <th>Stock Quantity</th>
+                            <th>Expiry Date</th>
+                            <th>Status</th>
+                            <th>Last Updated</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for inv in items %}
+                            <tr>
+                                <td>
+                                    <strong style="color: #0f172a; font-size: 0.875rem;">{{ inv.medicine.medicine_name }}</strong>
+                                    {% if inv.medicine.manufacturer %}
+                                        <span style="display: block; font-size: 0.75rem; color: #64748b;">{{ inv.medicine.manufacturer }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span style="font-weight: 500; color: #334155;">{{ inv.pharmacy.pharmacy_name }}</span>
+                                    <span style="display: block; font-size: 0.75rem; color: #64748b;">{{ inv.pharmacy.city }}</span>
+                                </td>
+                                <td>
+                                    <code style="background: #f1f5f9; padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.8125rem;">
+                                        {{ inv.batch_number }}
+                                    </code>
+                                </td>
+                                <td>
+                                    <strong>{{ inv.quantity }}</strong> {{ inv.unit }}
+                                    <span style="display: block; font-size: 0.75rem; color: #94a3b8;">Limit: {{ inv.low_stock_limit }}</span>
+                                </td>
+                                <td>
+                                    {% if inv.expiry_date < today %}
+                                        <span style="color: #dc2626; font-weight: 600;">{{ inv.expiry_date|date:"M d, Y" }}</span>
+                                    {% else %}
+                                        <span style="color: #334155;">{{ inv.expiry_date|date:"M d, Y" }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if inv.expiry_date < today %}
+                                        <span class="status-pill-subtle pill-rejected">Expired</span>
+                                    {% elif inv.quantity == 0 %}
+                                        <span class="status-pill-subtle pill-rejected">Out of Stock</span>
+                                    {% elif inv.quantity <= inv.low_stock_limit %}
+                                        <span class="status-pill-subtle pill-pending">Low Stock</span>
+                                    {% else %}
+                                        <span class="status-pill-subtle pill-approved">In Stock</span>
+                                    {% endif %}
+                                </td>
+                                <td style="color: #64748b; font-size: 0.8125rem;">
+                                    {{ inv.updated_at|date:"M d, Y" }}
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="7" style="text-align: center; padding: 3rem 1.5rem; color: #64748b;">
+                                    No inventory batches matching the selected filters.
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <!-- Catalogue View -->
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Medicine Name</th>
+                            <th>Manufacturer</th>
+                            <th>Dosage Form</th>
+                            <th>Strength &amp; Pack</th>
+                            <th>MRP</th>
+                            <th>Active Batches</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for med in items %}
+                            <tr>
+                                <td>
+                                    <strong style="color: #0f172a; font-size: 0.9rem;">{{ med.medicine_name }}</strong>
+                                    {% if med.composition %}
+                                        <span style="display: block; font-size: 0.75rem; color: #64748b; max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                            {{ med.composition }}
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span style="font-size: 0.85rem; color: #334155;">{{ med.manufacturer|default:"—" }}</span>
+                                </td>
+                                <td>
+                                    <span style="display: inline-block; padding: 0.15rem 0.5rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 0.75rem;">
+                                        {{ med.dosage_form|default:"Standard" }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span style="font-size: 0.85rem; color: #334155;">{{ med.strength|default:"" }} {% if med.pack_size %}({{ med.pack_size }}){% endif %}</span>
+                                </td>
+                                <td>
+                                    {% if med.mrp %}
+                                        <strong style="color: #0f172a;">&#8377;{{ med.mrp }}</strong>
+                                    {% else %}
+                                        <span style="color: #94a3b8;">—</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span style="display: inline-block; padding: 0.15rem 0.55rem; background: #eff6ff; color: #1e40af; border-radius: 6px; font-size: 0.75rem; font-weight: 600;">
+                                        {{ med.total_batches }} batches
+                                    </span>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="6" style="text-align: center; padding: 3rem 1.5rem; color: #64748b;">
+                                    No medicines found matching your catalogue search.
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% endif %}
+        </div>
+
+        <!-- Pagination Footer -->
+        {% if items.has_other_pages %}
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.875rem 1.25rem; border-top: 1px solid #e2e8f0; background: #f8fafc; font-size: 0.875rem;">
+                <span style="color: #64748b;">
+                    Showing page {{ items.number }} of {{ items.paginator.num_pages }}
+                </span>
+                <div style="display: flex; gap: 0.35rem;">
+                    {% if items.has_previous %}
+                        <a href="?tab={{ view_mode }}&page={{ items.previous_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if filter_type != 'all' %}&filter={{ filter_type }}{% endif %}{% if selected_pharmacy %}&pharmacy={{ selected_pharmacy }}{% endif %}" class="btn btn-secondary" style="padding: 0.3rem 0.65rem; font-size: 0.75rem;">
+                            &larr; Previous
+                        </a>
+                    {% endif %}
+
+                    {% if items.has_next %}
+                        <a href="?tab={{ view_mode }}&page={{ items.next_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if filter_type != 'all' %}&filter={{ filter_type }}{% endif %}{% if selected_pharmacy %}&pharmacy={{ selected_pharmacy }}{% endif %}" class="btn btn-secondary" style="padding: 0.3rem 0.65rem; font-size: 0.75rem;">
+                            Next &rarr;
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock content %}
+

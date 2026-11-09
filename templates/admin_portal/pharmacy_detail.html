@@ -1,0 +1,247 @@
+{% extends 'admin_portal/base_admin.html' %}
+
+{% block title %}Pharmacy Dossier: {{ pharmacy.pharmacy_name }} | Admin Portal | MedAccess{% endblock title %}
+{% block header_title %}Pharmacy Verification Dossier{% endblock header_title %}
+{% block nav_pharmacies %}active{% endblock nav_pharmacies %}
+
+{% block content %}
+<div style="max-width: 1300px; margin: 0 auto;">
+
+    <!-- Breadcrumb -->
+    <div style="margin-bottom: 1.25rem;">
+        <a href="{% url 'admin_portal:pharmacy_list' %}" style="display: inline-flex; align-items: center; gap: 0.35rem; color: #2563eb; text-decoration: none; font-size: 0.875rem; font-weight: 600;">
+            &larr; Back to Pharmacy Directory
+        </a>
+    </div>
+
+    <!-- Header Banner Card -->
+    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+            <div style="display: flex; gap: 1rem; align-items: center;">
+                <div style="width: 58px; height: 58px; border-radius: 14px; background: #ecfdf5; color: #059669; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 700;">
+                    {{ pharmacy.pharmacy_name|slice:":2"|upper }}
+                </div>
+                <div>
+                    <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+                        <h1 style="font-size: 1.4rem; font-weight: 700; color: #0f172a; margin: 0;">
+                            {{ pharmacy.pharmacy_name }}
+                        </h1>
+                        {% if pharmacy.approval_status == 'APPROVED' %}
+                            <span class="status-pill-subtle pill-approved" style="font-size: 0.8125rem;">Approved &amp; Operational</span>
+                        {% elif pharmacy.approval_status == 'PENDING' %}
+                            <span class="status-pill-subtle pill-pending" style="font-size: 0.8125rem;">Pending Administrator Review</span>
+                        {% else %}
+                            <span class="status-pill-subtle pill-rejected" style="font-size: 0.8125rem;">Application Rejected</span>
+                        {% endif %}
+                    </div>
+                    <p style="margin: 0.25rem 0 0 0; font-size: 0.875rem; color: #64748b;">
+                        Store Code: <strong>#PH-{{ pharmacy.id }}</strong> &bull; Portal Account: <strong>@{{ pharmacy.user.username }}</strong> &bull; Registered {{ pharmacy.created_at|date:"M d, Y" }}
+                    </p>
+                </div>
+            </div>
+
+            <!-- Verification Action Buttons -->
+            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
+                {% if pharmacy.approval_status != 'APPROVED' %}
+                    <form method="post" action="{% url 'admin_portal:pharmacy_approve' pharmacy.pk %}" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-primary" style="background: #059669; border-color: #059669; padding: 0.5rem 1.25rem; font-weight: 600;"
+                                onclick="return confirm('Approve {{ pharmacy.pharmacy_name }}? The store will immediately be authorized to log in, manage inventory, and fulfill prescription requests.');">
+                            &check; Approve Pharmacy
+                        </button>
+                    </form>
+                {% endif %}
+
+                {% if pharmacy.approval_status != 'REJECTED' %}
+                    <button type="button" class="btn btn-secondary" style="color: #dc2626; border-color: #fecaca; padding: 0.5rem 1.25rem; font-weight: 600;"
+                            onclick="document.getElementById('reject-modal').style.display='flex';">
+                        &times; Reject Application
+                    </button>
+                {% else %}
+                    <button type="button" class="btn btn-secondary" style="padding: 0.5rem 1.25rem; font-weight: 600;"
+                            onclick="document.getElementById('reject-modal').style.display='flex';">
+                        Update Rejection Notes
+                    </button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Rejection Alert Callout if Rejected -->
+    {% if pharmacy.approval_status == 'REJECTED' %}
+        <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 12px; padding: 1.25rem 1.5rem; margin-bottom: 1.5rem;">
+            <div style="display: flex; gap: 0.75rem; align-items: flex-start;">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#dc2626" stroke-width="2" style="flex-shrink: 0; margin-top: 0.1rem;">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+                <div>
+                    <strong style="color: #991b1b; font-size: 0.95rem; display: block; margin-bottom: 0.25rem;">
+                        This pharmacy application was rejected
+                    </strong>
+                    {% if pharmacy.rejection_reason %}
+                        <p style="margin: 0; font-size: 0.875rem; color: #7f1d1d; white-space: pre-wrap;">
+                            <strong>Recorded reason:</strong> {{ pharmacy.rejection_reason }}
+                        </p>
+                    {% else %}
+                        <p style="margin: 0; font-size: 0.875rem; color: #7f1d1d; font-style: italic;">
+                            No specific reason was entered. The pharmacy owner can correct their license details and resubmit.
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- 2-Column Info Grid -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem;">
+
+        <!-- Regulatory & Legal Credentials -->
+        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.25rem 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+            <h2 style="font-size: 1rem; font-weight: 700; color: #0f172a; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.75rem; margin-bottom: 1rem;">
+                Regulatory &amp; Compliance Details
+            </h2>
+
+            <div style="display: grid; grid-template-columns: 160px 1fr; row-gap: 0.75rem; font-size: 0.875rem;">
+                <span style="color: #64748b; font-weight: 600;">Drug License Number</span>
+                <span style="color: #0f172a; font-family: monospace; font-weight: 700; font-size: 0.95rem;">
+                    {{ pharmacy.pharmacy_license_number }}
+                </span>
+
+                <span style="color: #64748b; font-weight: 600;">GST Identification</span>
+                <span style="color: #0f172a; font-family: monospace; font-weight: 600;">
+                    {{ pharmacy.gst_number }}
+                </span>
+
+                <span style="color: #64748b; font-weight: 600;">Business Owner</span>
+                <span style="color: #0f172a;">{{ pharmacy.owner_name }}</span>
+
+                <span style="color: #64748b; font-weight: 600;">Qualified Pharmacist</span>
+                <span style="color: #0f172a;">{{ pharmacy.pharmacist_name }}</span>
+
+                <span style="color: #64748b; font-weight: 600;">Approval Status</span>
+                <span>
+                    {% if pharmacy.approval_status == 'APPROVED' %}
+                        <strong style="color: #059669;">Approved (Account Active)</strong>
+                    {% elif pharmacy.approval_status == 'PENDING' %}
+                        <strong style="color: #d97706;">Pending Verification</strong>
+                    {% else %}
+                        <strong style="color: #dc2626;">Rejected</strong>
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+
+        <!-- Contact & Location Coordinates -->
+        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.25rem 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+            <h2 style="font-size: 1rem; font-weight: 700; color: #0f172a; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.75rem; margin-bottom: 1rem;">
+                Store Contact &amp; Physical Location
+            </h2>
+
+            <div style="display: grid; grid-template-columns: 140px 1fr; row-gap: 0.75rem; font-size: 0.875rem;">
+                <span style="color: #64748b; font-weight: 600;">Contact Phone</span>
+                <span style="color: #0f172a;">{{ pharmacy.phone_number }}</span>
+
+                <span style="color: #64748b; font-weight: 600;">Official Email</span>
+                <span style="color: #0f172a;">{{ pharmacy.email }}</span>
+
+                <span style="color: #64748b; font-weight: 600;">Street Address</span>
+                <span style="color: #0f172a;">{{ pharmacy.address }}</span>
+
+                <span style="color: #64748b; font-weight: 600;">City &amp; State</span>
+                <span style="color: #0f172a;">{{ pharmacy.city }}, {{ pharmacy.state }} - {{ pharmacy.pincode }}</span>
+
+                <span style="color: #64748b; font-weight: 600;">GPS Coordinates</span>
+                <span style="color: #0f172a;">
+                    {% if pharmacy.latitude and pharmacy.longitude %}
+                        {{ pharmacy.latitude }}, {{ pharmacy.longitude }}
+                    {% else %}
+                        <span style="color: #94a3b8;">Not calibrated</span>
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Fulfillment Requests Table -->
+    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; margin-bottom: 1.5rem; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+        <div style="padding: 1rem 1.25rem; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
+            <h2 style="font-size: 1rem; font-weight: 700; color: #0f172a; margin: 0;">
+                Recent Fulfillment Requests ({{ completed_requests_count }} completed)
+            </h2>
+            <span style="font-size: 0.8125rem; color: #64748b;">{{ inventory_count }} inventory batches registered</span>
+        </div>
+        <div style="overflow-x: auto;">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Request ID</th>
+                        <th>Patient</th>
+                        <th>Status</th>
+                        <th>Date Submitted</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for req in recent_requests %}
+                        <tr>
+                            <td><strong>#{{ req.id }}</strong></td>
+                            <td>
+                                {% if req.patient.user.first_name %}
+                                    {{ req.patient.user.first_name }} {{ req.patient.user.last_name }}
+                                {% else %}
+                                    {{ req.patient.user.username }}
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="status-pill-subtle pill-{{ req.status|lower }}">{{ req.get_status_display }}</span>
+                            </td>
+                            <td style="color: #64748b;">{{ req.created_at|date:"M d, Y, h:i A" }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="4" style="text-align: center; padding: 2rem; color: #64748b;">
+                                No fulfillment requests received by this pharmacy yet.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<!-- Rejection Modal -->
+<div id="reject-modal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center; padding: 1.5rem;">
+    <div style="background: #ffffff; border-radius: 12px; max-width: 520px; width: 100%; padding: 1.75rem; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2);">
+        <h3 style="font-size: 1.15rem; font-weight: 700; color: #0f172a; margin: 0 0 0.5rem 0;">
+            Reject Pharmacy Application
+        </h3>
+        <p style="font-size: 0.875rem; color: #64748b; margin: 0 0 1.25rem 0; line-height: 1.45;">
+            Rejecting this pharmacy will disable its portal login until details are corrected. You may optionally specify rejection reasons to guide the pharmacy owner.
+        </p>
+
+        <form method="post" action="{% url 'admin_portal:pharmacy_reject' pharmacy.pk %}">
+            {% csrf_token %}
+            <div class="form-group" style="margin-bottom: 1.25rem;">
+                <label class="form-label" for="{{ reject_form.rejection_reason.id_for_label }}">
+                    Rejection Reason / Guidance (Optional)
+                </label>
+                {{ reject_form.rejection_reason }}
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+                <button type="button" class="btn btn-secondary" onclick="document.getElementById('reject-modal').style.display='none';">
+                    Cancel
+                </button>
+                <button type="submit" class="btn btn-primary" style="background: #dc2626; border-color: #dc2626; font-weight: 600;">
+                    Confirm Rejection
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock content %}
+

@@ -1,0 +1,338 @@
+{% extends 'patient/base_patient.html' %}
+
+{% block title %}My Profile | Patient Portal | MedAccess{% endblock title %}
+{% block header_title %}Patient Profile{% endblock header_title %}
+{% block nav_profile %}active{% endblock nav_profile %}
+
+{% block content %}
+<div class="profile-container">
+
+    <!-- Page Header -->
+    <div class="profile-header-card">
+        <div class="profile-header-user">
+            {% if patient_profile.profile_photo %}
+                <img src="{{ patient_profile.profile_photo.url }}" alt="Profile photo" class="profile-large-avatar" id="current-photo-img">
+            {% else %}
+                <div class="profile-large-placeholder" id="current-photo-placeholder">
+                    {{ request.user.first_name|first|upper }}{{ request.user.last_name|first|upper|default:request.user.username|first|upper }}
+                </div>
+            {% endif %}
+            <div class="profile-header-meta">
+                <h1 class="profile-user-name">{{ request.user.get_full_name|default:request.user.username }}</h1>
+                <p class="profile-user-username">@{{ request.user.username }} &bull; <span class="profile-role-pill">Patient</span></p>
+                <p class="profile-user-sub">Manage your personal and medical information used across your prescriptions and pharmacy orders.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Profile Form -->
+    <form method="post" action="{% url 'patient:profile' %}" enctype="multipart/form-data" class="profile-form">
+        {% csrf_token %}
+
+        <div class="profile-grid">
+
+            <!-- Column 1: Personal & Contact Details -->
+            <div class="profile-section-card">
+                <div class="profile-section-heading">
+                    <div class="profile-section-icon">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="profile-section-title">Personal & Contact Info</h2>
+                        <p class="profile-section-desc">Your basic account identity and contact details.</p>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-col">
+                        <label for="{{ user_form.first_name.id_for_label }}" class="form-label">First Name *</label>
+                        {{ user_form.first_name }}
+                        {% if user_form.first_name.errors %}
+                            <div class="field-error">{{ user_form.first_name.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="form-col">
+                        <label for="{{ user_form.last_name.id_for_label }}" class="form-label">Last Name *</label>
+                        {{ user_form.last_name }}
+                        {% if user_form.last_name.errors %}
+                            <div class="field-error">{{ user_form.last_name.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-col">
+                        <label for="{{ user_form.email.id_for_label }}" class="form-label">Email Address *</label>
+                        {{ user_form.email }}
+                        {% if user_form.email.errors %}
+                            <div class="field-error">{{ user_form.email.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="form-col">
+                        <label for="{{ user_form.phone_number.id_for_label }}" class="form-label">Phone Number</label>
+                        {{ user_form.phone_number }}
+                        {% if user_form.phone_number.errors %}
+                            <div class="field-error">{{ user_form.phone_number.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-top: 1rem;">
+                    <label for="{{ profile_form.profile_photo.id_for_label }}" class="form-label">Update Profile Photo</label>
+                    {{ profile_form.profile_photo }}
+                    <span class="form-help-text">JPG, PNG, or WebP. Maximum size: 5MB.</span>
+                    {% if profile_form.profile_photo.errors %}
+                        <div class="field-error">{{ profile_form.profile_photo.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group" style="margin-top: 1rem;">
+                    <label for="{{ profile_form.address.id_for_label }}" class="form-label">Residential Address</label>
+                    {{ profile_form.address }}
+                    {% if profile_form.address.errors %}
+                        <div class="field-error">{{ profile_form.address.errors.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Column 2: Health Details & Location -->
+            <div class="profile-section-card">
+                <div class="profile-section-heading">
+                    <div class="profile-section-icon profile-section-icon-teal">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="profile-section-title">Medical & Health Details</h2>
+                        <p class="profile-section-desc">Key health info to help identify drug interactions.</p>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-col">
+                        <label for="{{ profile_form.date_of_birth.id_for_label }}" class="form-label">Date of Birth</label>
+                        {{ profile_form.date_of_birth }}
+                        {% if profile_form.date_of_birth.errors %}
+                            <div class="field-error">{{ profile_form.date_of_birth.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="form-col">
+                        <label for="{{ profile_form.gender.id_for_label }}" class="form-label">Gender</label>
+                        {{ profile_form.gender }}
+                        {% if profile_form.gender.errors %}
+                            <div class="field-error">{{ profile_form.gender.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-top: 1rem;">
+                    <label for="{{ profile_form.blood_group.id_for_label }}" class="form-label">Blood Group</label>
+                    {{ profile_form.blood_group }}
+                    {% if profile_form.blood_group.errors %}
+                        <div class="field-error">{{ profile_form.blood_group.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group" style="margin-top: 1rem;">
+                    <label for="{{ profile_form.allergies.id_for_label }}" class="form-label">Known Allergies</label>
+                    {{ profile_form.allergies }}
+                    <span class="form-help-text">List any drug, food, or environmental allergies.</span>
+                    {% if profile_form.allergies.errors %}
+                        <div class="field-error">{{ profile_form.allergies.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- GPS Location Box -->
+                <div class="location-box">
+                    <div class="location-box-header">
+                        <div class="location-box-title">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                <circle cx="12" cy="10" r="3"></circle>
+                            </svg>
+                            <span>GPS Location (for Nearby Pharmacies)</span>
+                        </div>
+                    </div>
+
+                    <div class="location-coords">
+                        <div>
+                            <span class="coords-label">Latitude:</span>
+                            <span class="coords-val" id="display-lat">
+                                {% if patient_profile.current_latitude %}{{ patient_profile.current_latitude }}{% else %}Not set{% endif %}
+                            </span>
+                        </div>
+                        <div>
+                            <span class="coords-label">Longitude:</span>
+                            <span class="coords-val" id="display-lng">
+                                {% if patient_profile.current_longitude %}{{ patient_profile.current_longitude }}{% else %}Not set{% endif %}
+                            </span>
+                        </div>
+                    </div>
+
+                    <p class="location-updated" id="display-location-updated">
+                        {% if patient_profile.location_updated_at %}
+                            Last updated on {{ patient_profile.location_updated_at|date:"M d, Y \a\t h:i A" }}
+                        {% else %}
+                            Location permission has not been requested yet.
+                        {% endif %}
+                    </p>
+
+                    <div id="location-status" class="location-status-message" style="display: none;"></div>
+
+                    <button type="button" id="btn-get-location" class="btn-location">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="22" y1="12" x2="18" y2="12"></line>
+                            <line x1="6" y1="12" x2="2" y2="12"></line>
+                            <line x1="12" y1="6" x2="12" y2="2"></line>
+                            <line x1="12" y1="22" x2="12" y2="18"></line>
+                        </svg>
+                        <span>Use My Current Location</span>
+                    </button>
+                    <p class="location-help-text">Location is requested only upon clicking and is used solely to locate nearby licensed pharmacies. You can save your profile without sharing location.</p>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Form Actions -->
+        <div class="profile-form-footer">
+            <button type="submit" class="btn btn-primary btn-save-profile">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                    <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                    <polyline points="7 3 7 8 15 8"></polyline>
+                </svg>
+                <span>Save Profile Changes</span>
+            </button>
+        </div>
+    </form>
+
+</div>
+{% endblock content %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const locationBtn = document.getElementById('btn-get-location');
+    const locationStatus = document.getElementById('location-status');
+    const displayLat = document.getElementById('display-lat');
+    const displayLng = document.getElementById('display-lng');
+    const displayUpdated = document.getElementById('display-location-updated');
+
+    function showLocationStatus(msg, type) {
+        if (!locationStatus) return;
+        locationStatus.style.display = 'block';
+        locationStatus.textContent = msg;
+        locationStatus.className = 'location-status-message status-' + type;
+    }
+
+    if (locationBtn) {
+        locationBtn.addEventListener('click', function() {
+            if (!navigator.geolocation) {
+                showLocationStatus('Geolocation is not supported by your browser.', 'error');
+                return;
+            }
+
+            locationBtn.disabled = true;
+            locationBtn.textContent = 'Detecting location...';
+            showLocationStatus('Requesting GPS coordinates from your browser...', 'info');
+
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+
+                    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                    fetch("{% url 'patient:update_location' %}", {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrfToken
+                        },
+                        body: JSON.stringify({
+                            latitude: lat,
+                            longitude: lng
+                        })
+                    })
+                    .then(function(res) {
+                        return res.json();
+                    })
+                    .then(function(data) {
+                        locationBtn.disabled = false;
+                        locationBtn.innerHTML = `
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="22" y1="12" x2="18" y2="12"></line>
+                                <line x1="6" y1="12" x2="2" y2="12"></line>
+                                <line x1="12" y1="6" x2="12" y2="2"></line>
+                                <line x1="12" y1="22" x2="12" y2="18"></line>
+                            </svg>
+                            <span>Use My Current Location</span>
+                        `;
+                        if (data.status === 'success') {
+                            showLocationStatus(data.message, 'success');
+                            if (displayLat) displayLat.textContent = parseFloat(data.latitude).toFixed(7);
+                            if (displayLng) displayLng.textContent = parseFloat(data.longitude).toFixed(7);
+                            if (displayUpdated) displayUpdated.textContent = 'Last updated on ' + data.updated_at;
+                        } else {
+                            showLocationStatus(data.message || 'Failed to update location.', 'error');
+                        }
+                    })
+                    .catch(function(err) {
+                        locationBtn.disabled = false;
+                        locationBtn.innerHTML = `
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="22" y1="12" x2="18" y2="12"></line>
+                                <line x1="6" y1="12" x2="2" y2="12"></line>
+                                <line x1="12" y1="6" x2="12" y2="2"></line>
+                                <line x1="12" y1="22" x2="12" y2="18"></line>
+                            </svg>
+                            <span>Use My Current Location</span>
+                        `;
+                        showLocationStatus('Network error while saving location.', 'error');
+                    });
+                },
+                function(err) {
+                    locationBtn.disabled = false;
+                    locationBtn.innerHTML = `
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="22" y1="12" x2="18" y2="12"></line>
+                            <line x1="6" y1="12" x2="2" y2="12"></line>
+                            <line x1="12" y1="6" x2="12" y2="2"></line>
+                            <line x1="12" y1="22" x2="12" y2="18"></line>
+                        </svg>
+                        <span>Use My Current Location</span>
+                    `;
+                    let errMsg = 'Location could not be determined.';
+                    switch (err.code) {
+                        case err.PERMISSION_DENIED:
+                            errMsg = 'Location permission was denied. You can continue using your profile without location.';
+                            break;
+                        case err.POSITION_UNAVAILABLE:
+                            errMsg = 'GPS location is unavailable on your device.';
+                            break;
+                        case err.TIMEOUT:
+                            errMsg = 'Location request timed out. Please try again.';
+                            break;
+                    }
+                    showLocationStatus(errMsg, 'error');
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 0
+                }
+            );
+        });
+    }
+});
+</script>
+{% endblock extra_js %}
+

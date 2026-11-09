@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+
+{% block title %}Welcome to MedAccess | Healthcare Access Platform{% endblock title %}
+
+{% block content %}
+<section class="hero-card">
+    <span class="hero-badge">Healthcare Access Platform</span>
+    <h1 class="hero-title">Connecting Patients and Registered Pharmacies</h1>
+    <p class="hero-description">
+        MedAccess bridges the gap between healthcare seekers and verified pharmacies.
+        Upload prescriptions, verify medicine availability, and get reliable access to essential healthcare supplies.
+    </p>
+
+    {% if user.is_authenticated %}
+        <div class="welcome-banner-authenticated" style="background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: 1.5rem; margin-top: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; box-shadow: var(--shadow-card);">
+            <div>
+                <h3 style="margin: 0; color: var(--color-text-main);">Welcome back, {{ user.get_full_name|default:user.username }}!</h3>
+                <p style="color: var(--color-text-muted); margin-top: 0.5rem; margin-bottom: 0;">
+                    You are currently signed in as <strong>{{ user.role }}</strong>.
+                </p>
+                {% if user.role == 'PHARMACY' %}
+                    <p style="font-size: 0.875rem; color: var(--color-primary); margin-top: 0.5rem; margin-bottom: 0;">
+                        Pharmacy Status: <strong>{{ user.pharmacy_profile.approval_status }}</strong>
+                    </p>
+                {% endif %}
+            </div>
+            {% if user.role == 'PATIENT' %}
+                <div>
+                    <a href="{% url 'patient:dashboard' %}" class="btn btn-primary" id="welcome-dashboard-btn">
+                        <span>Go to Patient Dashboard &rarr;</span>
+                    </a>
+                </div>
+            {% elif user.role == 'PHARMACY' and user.pharmacy_profile.approval_status == 'APPROVED' %}
+                <div>
+                    <a href="{% url 'pharmacy:dashboard' %}" class="btn btn-primary" id="welcome-pharmacy-dashboard-btn">
+                        <span>Go to Pharmacy Dashboard &rarr;</span>
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    {% else %}
+        <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+            <a href="{% url 'accounts:login' %}" class="btn btn-primary" style="min-width: 160px;">Login to Portal</a>
+            <a href="{% url 'accounts:register_patient' %}" class="btn btn-secondary" style="min-width: 160px;">Patient Registration</a>
+            <a href="{% url 'accounts:register_pharmacy' %}" class="btn btn-secondary" style="min-width: 160px;">Pharmacy Registration</a>
+        </div>
+    {% endif %}
+
+    <div class="portal-grid">
+        <div class="portal-card" id="card-patient-portal" {% if user.is_authenticated and user.role == 'PATIENT' %}onclick="if(event.target.tagName !== 'A'){ var a = this.querySelector('a'); if(a) a.click(); }" style="cursor: pointer;"{% endif %}>
+            <h3>Patient Portal</h3>
+            <p>Upload prescriptions, manage prescribed medicines, search local registered pharmacies, and track saved pharmacies.</p>
+            {% if user.is_authenticated %}
+                {% if user.role == 'PATIENT' %}
+                    <a href="{% url 'patient:dashboard' %}" class="btn btn-primary" id="patient-portal-btn" style="font-size: 0.8125rem;">
+                        Go to Patient Dashboard &rarr;
+                    </a>
+                {% else %}
+                    <span class="btn btn-secondary disabled" style="font-size: 0.8125rem; opacity: 0.6; cursor: not-allowed;" title="Access restricted to Patient accounts">
+                        Patient Role Required
+                    </span>
+                {% endif %}
+            {% else %}
+                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                    <a href="{% url 'accounts:login' %}?next={% url 'patient:dashboard' %}" class="btn btn-primary" style="font-size: 0.8125rem;">Login to Patient Portal &rarr;</a>
+                    <a href="{% url 'accounts:register_patient' %}" class="btn btn-secondary" style="font-size: 0.8125rem;">Register as Patient</a>
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="portal-card" id="card-pharmacy-portal" {% if user.is_authenticated and user.role == 'PHARMACY' and user.pharmacy_profile.approval_status == 'APPROVED' %}onclick="if(event.target.tagName !== 'A'){ var a = this.querySelector('a'); if(a) a.click(); }" style="cursor: pointer;"{% endif %}>
+            <h3>Pharmacy Portal</h3>
+            <p>Manage medicine catalogue, maintain real-time batch inventory, and receive patient prescription fulfillment requests.</p>
+            {% if user.is_authenticated %}
+                {% if user.role == 'PHARMACY' %}
+                    {% if user.pharmacy_profile.approval_status == 'APPROVED' %}
+                        <a href="{% url 'pharmacy:dashboard' %}" class="btn btn-primary" id="pharmacy-portal-btn" style="font-size: 0.8125rem;">Pharmacy Dashboard &rarr;</a>
+                    {% else %}
+                        <span class="btn btn-secondary disabled" style="font-size: 0.8125rem; opacity: 0.6; cursor: not-allowed;">Pending Verification</span>
+                    {% endif %}
+                {% else %}
+                    <span class="btn btn-secondary disabled" style="font-size: 0.8125rem; opacity: 0.6; cursor: not-allowed;" title="Access restricted to Pharmacy accounts">
+                        Pharmacy Role Required
+                    </span>
+                {% endif %}
+            {% else %}
+                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                    <a href="{% url 'accounts:login' %}?next={% url 'pharmacy:dashboard' %}" class="btn btn-primary" style="font-size: 0.8125rem;">Login to Portal &rarr;</a>
+                    <a href="{% url 'accounts:register_pharmacy' %}" class="btn btn-secondary" style="font-size: 0.8125rem;">Register Pharmacy</a>
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="portal-card" id="card-admin-portal" {% if user.is_authenticated and user.role == 'ADMIN' %}onclick="if(event.target.tagName !== 'A'){ var a = this.querySelector('a'); if(a) a.click(); }" style="cursor: pointer;"{% endif %}>
+            <h3>Central Administration</h3>
+            <p>Verify pharmacy drug license credentials, monitor inventory trends, and ensure platform healthcare compliance.</p>
+            {% if user.is_authenticated %}
+                {% if user.role == 'ADMIN' %}
+                    <a href="{% url 'admin_portal:dashboard' %}" class="btn btn-primary" id="admin-portal-btn" style="font-size: 0.8125rem;">Admin Portal &rarr;</a>
+                {% else %}
+                    <span class="btn btn-secondary disabled" style="font-size: 0.8125rem; opacity: 0.6; cursor: not-allowed;" title="Access restricted to Authorized Administrators">
+                        Admin Role Required
+                    </span>
+                {% endif %}
+            {% else %}
+                <a href="{% url 'admin_portal:dashboard' %}" class="btn btn-secondary" id="admin-portal-btn" style="font-size: 0.8125rem;">Admin Portal &rarr;</a>
+            {% endif %}
+        </div>
+
+        <div class="portal-card" id="card-allergy-checker" onclick="if(event.target.tagName !== 'A'){ var a = this.querySelector('a'); if(a) a.click(); }" style="cursor: pointer;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.4rem;">
+                <h3 style="margin: 0; color: var(--color-text-main); display: flex; align-items: center; gap: 0.5rem;">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--color-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                        <path d="M12 8v4"></path>
+                        <path d="M12 16h.01"></path>
+                    </svg>
+                    Allergy Checker
+                </h3>
+                <span style="font-size: 0.6875rem; font-weight: 700; background: var(--color-primary-light); color: var(--color-primary); padding: 0.2rem 0.5rem; border-radius: 9999px; text-transform: uppercase; letter-spacing: 0.04em;">
+                    Public AI
+                </span>
+            </div>
+            <p>Experiencing adverse reactions after taking medication? Screen your medicine and symptoms with Groq AI in English, Hindi, or Hinglish.</p>
+            <div>
+                <a href="{% url 'allergy_checker' %}" class="btn btn-primary" id="allergy-checker-btn" style="font-size: 0.8125rem;">
+                    Check Medicine Allergy &rarr;
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock content %}

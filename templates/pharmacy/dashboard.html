@@ -1,0 +1,151 @@
+{% extends 'pharmacy/base_pharmacy.html' %}
+
+{% block title %}Dashboard | Pharmacy Portal | MedAccess{% endblock title %}
+{% block header_title %}Pharmacy Dashboard{% endblock header_title %}
+{% block nav_dashboard %}active{% endblock nav_dashboard %}
+
+{% block content %}
+<div class="dashboard-wrapper" style="display: flex; flex-direction: column; gap: 1.5rem;">
+
+    <!-- Welcome Hero Section -->
+    <div class="welcome-card" style="background: linear-gradient(135deg, #042f2e 0%, #0f766e 100%); color: #ffffff; padding: 2rem; border-radius: var(--radius-md); box-shadow: var(--shadow-md);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+            <div>
+                <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+                    <span class="status-badge" style="background: rgba(220, 252, 231, 0.2); color: #86efac; border: 1px solid rgba(134, 239, 172, 0.4);">
+                        Approved Partner
+                    </span>
+                    <span style="font-size: 0.8125rem; color: #ccfbf1;">Drug License Verified</span>
+                </div>
+                <h1 style="font-size: 1.75rem; font-weight: 700; margin: 0; color: #ffffff;">
+                    Welcome, {{ pharmacy_profile.pharmacy_name|default:request.user.username }}!
+                </h1>
+                <p style="margin-top: 0.5rem; margin-bottom: 0; color: #ccfbf1; max-width: 650px; font-size: 0.9375rem; line-height: 1.5;">
+                    Manage your pharmacy's real-time inventory, update medicine stock levels, review batch expiry dates, and connect with nearby patients across the MedAccess healthcare network.
+                </p>
+            </div>
+
+            <div style="background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(8px); padding: 1rem 1.25rem; border-radius: var(--radius-sm); border: 1px solid rgba(255, 255, 255, 0.15); min-width: 220px;">
+                <div style="font-size: 0.75rem; color: #ccfbf1; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;">Pharmacist in Charge</div>
+                <div style="font-weight: 600; font-size: 0.9375rem; color: #ffffff; margin-top: 0.25rem;">
+                    {{ pharmacy_profile.pharmacist_name|default:request.user.get_full_name|default:"Licensed Pharmacist" }}
+                </div>
+                <div style="font-size: 0.75rem; color: #99f6e4; margin-top: 0.25rem;">
+                    License: {{ pharmacy_profile.pharmacy_license_number|default:"Verified" }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- License & Credentials Status Bar -->
+    <div style="background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 1rem 1.5rem; display: flex; flex-wrap: wrap; gap: 1.5rem; align-items: center; justify-content: space-between;">
+        <div style="display: flex; gap: 2rem; flex-wrap: wrap;">
+            <div>
+                <span style="font-size: 0.75rem; color: var(--color-text-muted); display: block; text-transform: uppercase;">GST Number</span>
+                <strong style="color: var(--color-text-main); font-size: 0.875rem;">{{ pharmacy_profile.gst_number|default:"Not Provided" }}</strong>
+            </div>
+            <div>
+                <span style="font-size: 0.75rem; color: var(--color-text-muted); display: block; text-transform: uppercase;">Location</span>
+                <strong style="color: var(--color-text-main); font-size: 0.875rem;">{{ pharmacy_profile.city|default:"City" }}, {{ pharmacy_profile.state|default:"State" }} ({{ pharmacy_profile.pincode|default:"" }})</strong>
+            </div>
+            <div>
+                <span style="font-size: 0.75rem; color: var(--color-text-muted); display: block; text-transform: uppercase;">Contact Phone</span>
+                <strong style="color: var(--color-text-main); font-size: 0.875rem;">{{ pharmacy_profile.phone_number|default:"-" }}</strong>
+            </div>
+            <div>
+                <span style="font-size: 0.75rem; color: var(--color-text-muted); display: block; text-transform: uppercase;">Map GPS Status</span>
+                {% if pharmacy_profile.latitude and pharmacy_profile.longitude %}
+                    <span style="color: #16a34a; font-weight: 600; font-size: 0.875rem;">Visible to Nearby Patients</span>
+                {% else %}
+                    <span style="color: #d97706; font-weight: 600; font-size: 0.875rem;">Coordinates Pending</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <span class="status-badge status-completed">
+            Account Status: {{ pharmacy_profile.approval_status|default:"APPROVED" }}
+        </span>
+    </div>
+
+    <!-- Real-Time KPI Statistics Grid -->
+    <div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.875rem;">
+            <h2 style="font-size: 1.125rem; font-weight: 600; color: var(--color-text-main); margin: 0;">
+                Inventory & Operations Overview
+            </h2>
+            <span style="font-size: 0.75rem; color: #047857; background: #ecfdf5; border: 1px solid #a7f3d0; padding: 0.25rem 0.625rem; border-radius: 9999px; font-weight: 500;">
+                Live Inventory Data
+            </span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 1rem;">
+            <!-- Metric 1: Total Medicines -->
+            <div style="background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 1.25rem; box-shadow: var(--shadow-subtle);">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <span style="font-size: 0.8125rem; color: var(--color-text-muted); font-weight: 500;">Total Medicines</span>
+                    <span style="background: #e0f2fe; color: #0369a1; padding: 0.25rem 0.5rem; border-radius: var(--radius-sm); font-size: 0.6875rem; font-weight: 600;">Catalog</span>
+                </div>
+                <div style="font-size: 1.75rem; font-weight: 700; color: var(--color-text-main); margin-top: 0.5rem;">{{ total_medicines|default:0 }}</div>
+                <p style="font-size: 0.75rem; color: var(--color-text-muted); margin: 0.25rem 0 0 0;">Distinct catalog medicines</p>
+            </div>
+
+            <!-- Metric 2: Active Inventory Batches -->
+            <div style="background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 1.25rem; box-shadow: var(--shadow-subtle);">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <span style="font-size: 0.8125rem; color: var(--color-text-muted); font-weight: 500;">Active Batches</span>
+                    <span style="background: #ccfbf1; color: #0f766e; padding: 0.25rem 0.5rem; border-radius: var(--radius-sm); font-size: 0.6875rem; font-weight: 600;">Stock</span>
+                </div>
+                <div style="font-size: 1.75rem; font-weight: 700; color: var(--color-text-main); margin-top: 0.5rem;">{{ active_batches|default:0 }}</div>
+                <p style="font-size: 0.75rem; color: var(--color-text-muted); margin: 0.25rem 0 0 0;">Unexpired batches with stock</p>
+            </div>
+
+            <!-- Metric 3: Low Stock Alerts -->
+            <div style="background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 1.25rem; box-shadow: var(--shadow-subtle);">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <span style="font-size: 0.8125rem; color: var(--color-text-muted); font-weight: 500;">Low Stock Alerts</span>
+                    <span style="background: #fef3c7; color: #92400e; padding: 0.25rem 0.5rem; border-radius: var(--radius-sm); font-size: 0.6875rem; font-weight: 600;">Alert</span>
+                </div>
+                <div style="font-size: 1.75rem; font-weight: 700; color: var(--color-text-main); margin-top: 0.5rem;">{{ low_stock_alerts|default:0 }}</div>
+                <p style="font-size: 0.75rem; color: var(--color-text-muted); margin: 0.25rem 0 0 0;">Batches at or below low limit</p>
+            </div>
+
+            <!-- Metric 4: Out of Stock -->
+            <div style="background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 1.25rem; box-shadow: var(--shadow-subtle);">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <span style="font-size: 0.8125rem; color: var(--color-text-muted); font-weight: 500;">Out of Stock</span>
+                    <span style="background: #fee2e2; color: #991b1b; padding: 0.25rem 0.5rem; border-radius: var(--radius-sm); font-size: 0.6875rem; font-weight: 600;">Depleted</span>
+                </div>
+                <div style="font-size: 1.75rem; font-weight: 700; color: var(--color-text-main); margin-top: 0.5rem;">{{ out_of_stock|default:0 }}</div>
+                <p style="font-size: 0.75rem; color: var(--color-text-muted); margin: 0.25rem 0 0 0;">Unexpired batches with 0 stock</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Operations Placeholder Card -->
+    <div style="background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 1.5rem;">
+        <h3 style="margin-top: 0; margin-bottom: 0.5rem; font-size: 1rem; color: var(--color-text-main);">
+            Quick Operations
+        </h3>
+        <p style="color: var(--color-text-muted); font-size: 0.875rem; margin-bottom: 1rem;">
+            Direct links to inventory, stock adjustments, and catalogue maintenance will activate as Phase 2 modules are implemented.
+        </p>
+
+        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+            <a href="{% url 'pharmacy:inventory' %}" class="btn btn-secondary">
+                Manage Inventory &rarr;
+            </a>
+            <a href="{% url 'pharmacy:update_stock' %}" class="btn btn-secondary">
+                Update Stock &rarr;
+            </a>
+            <a href="{% url 'pharmacy:medicines' %}" class="btn btn-secondary">
+                Manage Medicines &rarr;
+            </a>
+            <a href="{% url 'pharmacy:settings' %}" class="btn btn-secondary">
+                Business Settings &rarr;
+            </a>
+        </div>
+    </div>
+
+</div>
+{% endblock content %}
+

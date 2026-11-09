@@ -1,0 +1,2879 @@
+{% extends 'pharmacy/base_pharmacy.html' %}
+
+{% block title %}Update Stocks &bull; Smart Stock Entry | Pharmacy Portal | MedAccess{% endblock title %}
+{% block header_title %}Update Stocks &bull; Smart Stock Entry{% endblock header_title %}
+{% block nav_update_stock %}active{% endblock nav_update_stock %}
+
+{% block content %}
+<div class="smart-stock-entry-container" style="display: flex; flex-direction: column; gap: 1.5rem; max-width: 860px; margin: 0 auto; width: 100%;">
+
+    <!-- Navigation Breadcrumb -->
+    <div>
+        <a href="{% url 'pharmacy:inventory' %}" style="display: inline-flex; align-items: center; gap: 0.375rem; color: #0284c7; text-decoration: none; font-size: 0.875rem; font-weight: 500;">
+            <svg style="width: 16px; height: 16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            <span>Back to Inventory Overview</span>
+        </a>
+    </div>
+
+    <!-- Header & Entry Mode Selector -->
+    <div style="background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 1.5rem; box-shadow: var(--shadow-subtle);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+            <div>
+                <h1 style="font-size: 1.5rem; font-weight: 700; color: var(--color-text-main); margin: 0;">
+                    Smart Stock Entry
+                </h1>
+                <p style="color: var(--color-text-muted); font-size: 0.875rem; margin-top: 0.375rem; margin-bottom: 0; line-height: 1.5;">
+                    Log newly arrived medicine batches into <strong>{{ pharmacy_profile.pharmacy_name }}</strong>'s live stock via manual search or voice recognition.
+                </p>
+            </div>
+
+            <!-- Functional Mode Switcher (Manual Search vs Voice Entry) -->
+            <div style="display: inline-flex; background: #f1f5f9; padding: 4px; border-radius: 8px; border: 1px solid #e2e8f0; gap: 4px;">
+                <button type="button"
+                        id="tab-mode-manual"
+                        class="mode-toggle-btn active"
+                        style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 14px; font-size: 0.8125rem; font-weight: 600; color: #0f172a; display: inline-flex; align-items: center; gap: 0.375rem; box-shadow: 0 1px 2px rgba(0,0,0,0.05); cursor: pointer; transition: all 0.15s ease;">
+                    <svg style="width: 14px; height: 14px; color: #0284c7;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="4 7 4 4 20 4 20 7"></polyline>
+                        <line x1="9" y1="20" x2="15" y2="20"></line>
+                        <line x1="12" y1="4" x2="12" y2="20"></line>
+                    </svg>
+                    <span>Manual Search</span>
+                </button>
+                <button type="button"
+                        id="tab-mode-voice"
+                        class="mode-toggle-btn"
+                        style="background: transparent; border: 1px solid transparent; border-radius: 6px; padding: 6px 14px; font-size: 0.8125rem; font-weight: 500; color: #475569; display: inline-flex; align-items: center; gap: 0.375rem; cursor: pointer; transition: all 0.15s ease;">
+                    <svg style="width: 14px; height: 14px; color: #ea580c;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                        <line x1="12" y1="19" x2="12" y2="23"></line>
+                        <line x1="8" y1="23" x2="16" y2="23"></line>
+                    </svg>
+                    <span>Voice Entry</span>
+                    <span style="font-size: 0.6875rem; background: #fee2e2; color: #b91c1c; padding: 1px 5px; border-radius: 4px; font-weight: 600;">Beta</span>
+                </button>
+                <button type="button"
+                        id="tab-mode-csv"
+                        class="mode-toggle-btn"
+                        style="background: transparent; border: 1px solid transparent; border-radius: 6px; padding: 6px 14px; font-size: 0.8125rem; font-weight: 500; color: #475569; display: inline-flex; align-items: center; gap: 0.375rem; cursor: pointer; transition: all 0.15s ease;">
+                    <svg style="width: 14px; height: 14px; color: #16a34a;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                        <polyline points="10 9 9 9 8 9"></polyline>
+                    </svg>
+                    <span>Upload CSV</span>
+                    <span style="font-size: 0.6875rem; background: #dcfce7; color: #15803d; padding: 1px 5px; border-radius: 4px; font-weight: 600;">Bulk</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stock Entry Form -->
+    <form method="post" action="{% url 'pharmacy:update_stock' %}" id="smart-stock-form" novalidate style="display: flex; flex-direction: column; gap: 1.5rem;">
+        {% csrf_token %}
+
+        <!-- Form-Level Error Alert -->
+        {% if form.non_field_errors %}
+            <div style="background: #fef2f2; border: 1px solid #f87171; color: #991b1b; padding: 1rem 1.25rem; border-radius: var(--radius-md); font-size: 0.875rem;">
+                <div style="display: flex; align-items: flex-start; gap: 0.5rem;">
+                    <svg style="width: 20px; height: 20px; color: #dc2626; flex-shrink: 0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                    <div>
+                        <strong style="display: block; margin-bottom: 0.25rem;">Inventory Validation Error</strong>
+                        {% for err in form.non_field_errors %}
+                            <div>{{ err }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        <!-- Hidden input for selected medicine ID -->
+        {{ form.medicine }}
+
+        <!-- ============================================================== -->
+        <!-- SECTION 1A: Master Catalogue Search & Autocomplete (Manual)   -->
+        <!-- ============================================================== -->
+        <div id="section-manual-search" style="background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 1.5rem; box-shadow: var(--shadow-subtle);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h2 style="font-size: 1.125rem; font-weight: 600; color: var(--color-text-main); margin: 0;">
+                    1. Select Catalogue Medicine
+                </h2>
+                <a href="{% url 'pharmacy:medicine_add' %}" style="font-size: 0.8125rem; color: #0284c7; text-decoration: none; font-weight: 500; display: inline-flex; align-items: center; gap: 0.25rem;">
+                    <span>Can't find formulation? Add New &rarr;</span>
+                </a>
+            </div>
+
+            <!-- Autocomplete Search Input Wrapper -->
+            <div id="autocomplete-search-wrapper" style="position: relative; {% if selected_medicine or form.medicine.value %}display: none;{% endif %}">
+                <label for="medicine-search-input" style="display: block; font-size: 0.875rem; font-weight: 600; color: var(--color-text-main); margin-bottom: 0.375rem;">
+                    Search Medicine Catalogue <span style="color: #dc2626;">*</span>
+                </label>
+                <div style="position: relative;">
+                    <input type="text"
+                           id="medicine-search-input"
+                           class="form-input"
+                           placeholder="Type at least 2 characters to search (e.g. Paracetamol, Insulin, Cipla, 500mg)..."
+                           autocomplete="off"
+                           style="padding-left: 2.5rem; width: 100%;">
+                    <div style="position: absolute; left: 0.875rem; top: 50%; transform: translateY(-50%); color: #94a3b8; pointer-events: none; display: flex;">
+                        <svg style="width: 18px; height: 18px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                    </div>
+                </div>
+                <span style="font-size: 0.75rem; color: var(--color-text-muted); margin-top: 0.375rem; display: block;">
+                    Live query over 7,400+ master catalogue formulations by trade name, composition, manufacturer, or strength.
+                </span>
+
+                <!-- Autocomplete Dropdown Menu -->
+                <div id="autocomplete-dropdown"
+                     style="display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1); z-index: 50; max-height: 340px; overflow-y: auto;">
+                </div>
+
+                {% if form.medicine.errors %}
+                    <div id="medicine-field-error" style="color: #dc2626; font-size: 0.8125rem; margin-top: 0.375rem; font-weight: 500;">
+                        {{ form.medicine.errors.0 }}
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Selected Medicine Details Preview Card -->
+            <div id="selected-medicine-card" style="{% if not selected_medicine and not form.medicine.value %}display: none;{% endif %} background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 1.25rem;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.75rem;">
+                    <div>
+                        <div style="display: inline-flex; align-items: center; gap: 0.375rem; background: #dcfce7; color: #15803d; padding: 2px 8px; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; margin-bottom: 0.375rem;">
+                            <svg style="width: 14px; height: 14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                            <span>Catalogue Formulation Selected</span>
+                        </div>
+                        <h3 id="preview-name" style="font-size: 1.125rem; font-weight: 700; color: #0f172a; margin: 0;">
+                            {{ selected_medicine.medicine_name|default:"" }}
+                        </h3>
+                        <div id="preview-composition" style="font-size: 0.8125rem; color: #475569; margin-top: 0.25rem;">
+                            {{ selected_medicine.composition|default:"No salt composition recorded" }}
+                        </div>
+                    </div>
+
+                    <button type="button" id="btn-change-medicine" style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 5px 10px; font-size: 0.8125rem; font-weight: 600; color: #475569; cursor: pointer; display: inline-flex; align-items: center; gap: 0.375rem;">
+                        <svg style="width: 14px; height: 14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
+                        </svg>
+                        <span>Change Medicine</span>
+                    </button>
+                </div>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0.75rem; margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid #dcfce7; font-size: 0.8125rem;">
+                    <div>
+                        <span style="color: #64748b; display: block; font-size: 0.75rem;">Manufacturer:</span>
+                        <strong id="preview-manufacturer" style="color: #0f172a;">{{ selected_medicine.manufacturer|default:"Standard" }}</strong>
+                    </div>
+                    <div>
+                        <span style="color: #64748b; display: block; font-size: 0.75rem;">Formulation:</span>
+                        <strong id="preview-form" style="color: #0f172a;">{{ selected_medicine.dosage_form|default:"Medicine" }} &bull; {{ selected_medicine.strength|default:"" }}</strong>
+                    </div>
+                    <div>
+                        <span style="color: #64748b; display: block; font-size: 0.75rem;">Catalogue MRP:</span>
+                        <strong id="preview-mrp" style="color: #0f172a;">₹{{ selected_medicine.mrp|default:"0.00" }}</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================================== -->
+        <!-- SECTION 1B: Voice Entry Interface Foundation (Phase 1)        -->
+        <!-- ============================================================== -->
+        <div id="section-voice-entry" style="display: none; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 1.5rem; box-shadow: var(--shadow-subtle);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h2 style="font-size: 1.125rem; font-weight: 600; color: var(--color-text-main); margin: 0; display: inline-flex; align-items: center; gap: 0.5rem;">
+                    <svg style="width: 18px; height: 18px; color: #ea580c;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                        <line x1="12" y1="19" x2="12" y2="23"></line>
+                        <line x1="8" y1="23" x2="16" y2="23"></line>
+                    </svg>
+                    <span>Voice-Assisted Stock Entry (Phase 1: Speech UI)</span>
+                </h2>
+                <span style="font-size: 0.75rem; background: #fee2e2; color: #991b1b; padding: 2px 8px; border-radius: 9999px; font-weight: 600;">
+                    Client-Side Speech API
+                </span>
+            </div>
+
+            <!-- Voice Instruction Banner -->
+            <div style="background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 0.875rem 1rem; margin-bottom: 1.25rem;">
+                <div style="display: flex; align-items: flex-start; gap: 0.625rem;">
+                    <svg style="width: 18px; height: 18px; color: #0284c7; flex-shrink: 0; margin-top: 2px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    </svg>
+                    <div style="font-size: 0.8125rem; color: #0369a1; line-height: 1.5;">
+                        <strong>How to speak:</strong> Clearly state the medicine name, quantity, and packaging unit into your microphone.
+                        <div style="margin-top: 0.25rem; font-family: monospace; background: #e0f2fe; padding: 3px 8px; border-radius: 4px; display: inline-block; color: #0c4a6e; font-size: 0.75rem;">
+                            Example: "Paracetamol 650 fifty strips" or "Dolo 650 100 tablets"
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Browser Unsupported Fallback Alert -->
+            <div id="voice-unsupported-alert" style="display: none; background: #fff7ed; border: 1px solid #fed7aa; color: #9a3412; padding: 1rem 1.25rem; border-radius: 8px; font-size: 0.875rem; margin-bottom: 1.25rem;">
+                <div style="display: flex; align-items: flex-start; gap: 0.625rem;">
+                    <svg style="width: 20px; height: 20px; color: #ea580c; flex-shrink: 0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                        <line x1="12" y1="9" x2="12" y2="13"></line>
+                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                    </svg>
+                    <div>
+                        <strong style="display: block; margin-bottom: 0.25rem;">Web Speech API Not Supported</strong>
+                        Speech recognition is not supported in this browser. Please use Google Chrome, Microsoft Edge, or a Web Speech API compatible browser. You can switch to <strong>Manual Search</strong> mode above to continue logging stock.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Voice Controls Toolbar -->
+            <div id="voice-controls-toolbar" style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; justify-content: space-between; padding: 1rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 1.25rem;">
+                <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem;">
+                    <!-- Language Selector -->
+                    <div style="display: inline-flex; align-items: center; gap: 0.5rem;">
+                        <label for="voice-language-select" style="font-size: 0.8125rem; font-weight: 600; color: #475569; white-space: nowrap;">
+                            Language:
+                        </label>
+                        <select id="voice-language-select" class="form-input" style="padding: 0.45rem 0.75rem; font-size: 0.8125rem; width: auto; border-radius: 6px;">
+                            <option value="en-IN" selected>English (India) [en-IN]</option>
+                            <option value="hi-IN">हिन्दी (India) [hi-IN]</option>
+                        </select>
+                    </div>
+
+                    <!-- Microphone Button (Start / Stop) -->
+                    <button type="button"
+                            id="btn-voice-record"
+                            class="btn btn-primary"
+                            style="display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 600; padding: 0.5rem 1.25rem; border-radius: 6px; transition: all 0.2s ease;">
+                        <svg id="icon-mic-ready" style="width: 16px; height: 16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                            <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                            <line x1="12" y1="19" x2="12" y2="23"></line>
+                            <line x1="8" y1="23" x2="16" y2="23"></line>
+                        </svg>
+                        <svg id="icon-mic-listening" style="display: none; width: 16px; height: 16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="6" y="6" width="12" height="12" rx="2"></rect>
+                        </svg>
+                        <span id="label-voice-record">Start Listening</span>
+                    </button>
+                </div>
+
+                <!-- Clear Transcript Action -->
+                <div>
+                    <button type="button" id="btn-clear-transcript" class="btn btn-secondary" style="font-size: 0.8125rem; padding: 0.5rem 1rem; display: inline-flex; align-items: center; gap: 0.375rem;">
+                        <svg style="width: 14px; height: 14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="1 4 1 10 7 10"></polyline>
+                            <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+                        </svg>
+                        <span>Clear Transcript</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Recording Status Indicator Banner -->
+            <div id="voice-status-container" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem;">
+                <div style="display: inline-flex; align-items: center; gap: 0.5rem;">
+                    <span style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: #64748b; letter-spacing: 0.05em;">Status:</span>
+                    <!-- Status Badge -->
+                    <span id="voice-status-badge"
+                          class="status-pill status-ready"
+                          style="display: inline-flex; align-items: center; gap: 0.375rem; font-size: 0.75rem; font-weight: 600; padding: 3px 10px; border-radius: 9999px; background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1;">
+                        <span class="status-indicator-dot" style="width: 8px; height: 8px; border-radius: 50%; background: #64748b;"></span>
+                        <span id="voice-status-text">Ready</span>
+                    </span>
+                </div>
+
+                <!-- Interim Live Feedback String -->
+                <div id="voice-interim-text" style="font-size: 0.8125rem; color: #0284c7; font-style: italic; min-height: 1.25rem;"></div>
+            </div>
+
+            <!-- Editable Transcript Text Area -->
+            <div>
+                <label for="voice-transcript-input" style="display: block; font-size: 0.875rem; font-weight: 600; color: var(--color-text-main); margin-bottom: 0.375rem;">
+                    Recognized Speech Transcript <span style="font-weight: 400; color: #64748b;">(Editable)</span>
+                </label>
+                <textarea id="voice-transcript-input"
+                          class="form-input"
+                          rows="3"
+                          placeholder="Your spoken words will appear here in real time. You can also edit or refine the text manually..."
+                          style="width: 100%; font-family: inherit; font-size: 0.9375rem; line-height: 1.5;"></textarea>
+                <span style="font-size: 0.75rem; color: var(--color-text-muted); margin-top: 0.375rem; display: block;">
+                    Live Hinglish Speech Recognition: Spoken transcripts can be processed into structured parameters and matched with catalogue formulations below.
+                </span>
+            </div>
+
+            <!-- Voice Processing Action Bar -->
+            <div style="margin-top: 1rem; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem;">
+                <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+                    <button type="button"
+                            id="btn-process-voice"
+                            class="btn btn-primary"
+                            style="background: #4f46e5; border-color: #4338ca; color: #ffffff; display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 600; padding: 0.55rem 1.25rem; border-radius: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all 0.2s ease;">
+                        <svg id="icon-process-idle" style="width: 16px; height: 16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                        </svg>
+                        <svg id="icon-process-spinning" style="display: none; width: 16px; height: 16px; animation: spin 1s linear infinite;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10" stroke-opacity="0.25"></circle>
+                            <path d="M12 2a10 10 0 0 1 10 10" stroke-opacity="0.85"></path>
+                        </svg>
+                        <span id="label-process-voice">Process Voice Details</span>
+                    </button>
+                    <span style="font-size: 0.75rem; color: #64748b;">
+                        Extracts medicine, strength, quantity, unit, batch, and expiry from English/Hinglish speech.
+                    </span>
+                </div>
+            </div>
+
+            <!-- Error Notification Alert -->
+            <div id="voice-process-error" style="display: none; margin-top: 1rem; background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; padding: 0.875rem 1rem; border-radius: 8px; font-size: 0.875rem;">
+                <div style="display: flex; align-items: flex-start; gap: 0.625rem;">
+                    <svg style="width: 18px; height: 18px; color: #dc2626; flex-shrink: 0; margin-top: 1px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                    <span id="voice-error-text">Please provide a valid transcript to parse.</span>
+                </div>
+            </div>
+
+            <!-- Voice Extraction Review Card -->
+            <div id="voice-review-section" style="display: none; margin-top: 1.25rem; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 1.25rem;">
+                <!-- Review Header -->
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #e2e8f0;">
+                    <div>
+                        <div style="display: inline-flex; align-items: center; gap: 0.375rem; background: #e0e7ff; color: #3730a3; padding: 2px 8px; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; margin-bottom: 0.25rem;">
+                            <svg style="width: 12px; height: 12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                            <span>Voice Extraction Result</span>
+                        </div>
+                        <h3 style="font-size: 1rem; font-weight: 700; color: #0f172a; margin: 0;">
+                            Extracted Parameters (Review & Confirm)
+                        </h3>
+                    </div>
+                    <span id="voice-completion-badge" style="font-size: 0.75rem; padding: 3px 10px; border-radius: 9999px; font-weight: 600; background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1;">
+                        Checking fields...
+                    </span>
+                </div>
+
+                <!-- Missing Fields Notice -->
+                <div id="voice-missing-notice" style="display: none; background: #fffbeb; border: 1px solid #fef3c7; color: #92400e; padding: 0.625rem 0.875rem; border-radius: 6px; font-size: 0.8125rem; margin-bottom: 1rem;">
+                    <strong>Note:</strong> Some parameters were not detected in the voice command. You can fill them in below or speak them in another command.
+                </div>
+
+                <!-- Extracted Parameters Grid -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.25rem;">
+                    <div>
+                        <label for="voice-field-medicine" style="display: block; font-size: 0.8125rem; font-weight: 600; color: #475569; margin-bottom: 0.25rem;">
+                            Medicine Name
+                        </label>
+                        <input type="text" id="voice-field-medicine" class="form-input" placeholder="e.g. Paracetamol" style="font-size: 0.875rem;">
+                    </div>
+                    <div>
+                        <label for="voice-field-strength" style="display: block; font-size: 0.8125rem; font-weight: 600; color: #475569; margin-bottom: 0.25rem;">
+                            Strength
+                        </label>
+                        <input type="text" id="voice-field-strength" class="form-input" placeholder="e.g. 500 mg" style="font-size: 0.875rem;">
+                    </div>
+                    <div>
+                        <label for="voice-field-quantity" style="display: block; font-size: 0.8125rem; font-weight: 600; color: #475569; margin-bottom: 0.25rem;">
+                            Quantity
+                        </label>
+                        <input type="number" id="voice-field-quantity" class="form-input" min="1" placeholder="e.g. 50" style="font-size: 0.875rem;">
+                    </div>
+                    <div>
+                        <label for="voice-field-unit" style="display: block; font-size: 0.8125rem; font-weight: 600; color: #475569; margin-bottom: 0.25rem;">
+                            Packaging Unit
+                        </label>
+                        <select id="voice-field-unit" class="form-input" style="font-size: 0.875rem;">
+                            <option value="Strips">Strips</option>
+                            <option value="Tablets">Tablets</option>
+                            <option value="Capsules">Capsules</option>
+                            <option value="Boxes">Boxes</option>
+                            <option value="Bottles">Bottles</option>
+                            <option value="Vials">Vials</option>
+                            <option value="Ampoules">Ampoules</option>
+                            <option value="Pieces">Pieces</option>
+                            <option value="Packs">Packs</option>
+                            <option value="Units">Units</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="voice-field-batch" style="display: block; font-size: 0.8125rem; font-weight: 600; color: #475569; margin-bottom: 0.25rem;">
+                            Batch Number
+                        </label>
+                        <input type="text" id="voice-field-batch" class="form-input" placeholder="e.g. PARA-101" style="font-size: 0.875rem;">
+                    </div>
+                    <div>
+                        <label for="voice-field-expiry" style="display: block; font-size: 0.8125rem; font-weight: 600; color: #475569; margin-bottom: 0.25rem;">
+                            Expiry Date
+                        </label>
+                        <input type="date" id="voice-field-expiry" class="form-input" style="font-size: 0.875rem;">
+                    </div>
+                </div>
+
+                <!-- Matched Catalogue Formulations List -->
+                <div style="margin-top: 1rem; border-top: 1px solid #e2e8f0; padding-top: 1rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                        <h4 style="font-size: 0.875rem; font-weight: 700; color: #0f172a; margin: 0; display: inline-flex; align-items: center; gap: 0.375rem;">
+                            <svg style="width: 16px; height: 16px; color: #0284c7;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                            </svg>
+                            <span>Matched Catalogue Formulations</span>
+                        </h4>
+                        <span id="voice-candidate-count" style="font-size: 0.75rem; color: #64748b; font-weight: 600;"></span>
+                    </div>
+
+                    <!-- Candidates Container -->
+                    <div id="voice-candidates-container" style="display: grid; gap: 0.75rem;">
+                        <!-- Candidate cards injected dynamically via JS -->
+                    </div>
+
+                    <!-- No Match Alert -->
+                    <div id="voice-no-match-alert" style="display: none; background: #fff7ed; border: 1px solid #fed7aa; color: #9a3412; padding: 0.875rem 1rem; border-radius: 6px; font-size: 0.8125rem;">
+                        <div style="display: flex; align-items: flex-start; gap: 0.625rem;">
+                            <svg style="width: 18px; height: 18px; color: #ea580c; flex-shrink: 0; margin-top: 1px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="8" x2="12" y2="12"></line>
+                                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                            </svg>
+                            <div>
+                                <span id="voice-no-match-text">No catalogue matches found.</span>
+                                <div style="margin-top: 0.25rem;">
+                                    You can check spelling above or <a href="{% url 'pharmacy:medicines' %}" target="_blank" style="color: #c2410c; font-weight: 600; text-decoration: underline;">Browse Manage Medicines</a> or <a href="{% url 'pharmacy:medicine_add' %}" target="_blank" style="color: #c2410c; font-weight: 600; text-decoration: underline;">Add to Catalogue</a>.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Review Actions Toolbar -->
+                <div style="margin-top: 1.25rem; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem; padding-top: 1rem; border-top: 1px solid #e2e8f0;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <button type="button"
+                                id="btn-apply-voice-details"
+                                class="btn btn-primary"
+                                style="background: #16a34a; border-color: #15803d; color: #ffffff; display: inline-flex; align-items: center; gap: 0.375rem; font-size: 0.875rem; font-weight: 600; padding: 0.5rem 1.25rem; border-radius: 6px;">
+                            <svg style="width: 16px; height: 16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                            <span>Apply to Stock Form</span>
+                        </button>
+                        <button type="button"
+                                id="btn-dismiss-review"
+                                class="btn btn-secondary"
+                                style="font-size: 0.8125rem; padding: 0.5rem 0.875rem;">
+                            Close Review
+                        </button>
+                    </div>
+                    <span style="font-size: 0.75rem; color: #64748b; font-style: italic;">
+                        Phase 2: Review and formulation selection only. Batches are saved via Section 2.
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================================== -->
+        <!-- SECTION 1C: CSV Bulk Stock Upload                            -->
+        <!-- ============================================================== -->
+        <div id="section-csv-upload" style="display: none; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 1.5rem; box-shadow: var(--shadow-subtle);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+                <h2 style="font-size: 1.125rem; font-weight: 600; color: var(--color-text-main); margin: 0; display: inline-flex; align-items: center; gap: 0.5rem;">
+                    <svg style="width: 18px; height: 18px; color: #16a34a;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                        <polyline points="10 9 9 9 8 9"></polyline>
+                    </svg>
+                    <span>Flexible CSV Bulk Stock Upload</span>
+                </h2>
+                <span style="font-size: 0.75rem; background: #dcfce7; color: #15803d; padding: 2px 8px; border-radius: 9999px; font-weight: 600;">
+                    Automatic Column Detection & Matching
+                </span>
+            </div>
+
+            <!-- CSV Instructional Info Banner -->
+            <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 0.875rem 1rem; margin-bottom: 1.25rem;">
+                <div style="display: flex; align-items: flex-start; gap: 0.625rem;">
+                    <svg style="width: 18px; height: 18px; color: #16a34a; flex-shrink: 0; margin-top: 2px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    </svg>
+                    <div style="font-size: 0.8125rem; color: #166534; line-height: 1.5;">
+                        <strong>Flexible Format Support:</strong> Upload any inventory CSV. Different column headers (e.g. <em>product_name</em>, <em>medicine</em>, <em>brand</em>, <em>qty</em>, <em>stock</em>, <em>batch_no</em>), column orders, and extra columns are supported.
+                        <div style="margin-top: 0.25rem; font-size: 0.75rem; color: #15803d;">
+                            Required data: <strong>Medicine Name</strong>, <strong>Batch Number</strong>, <strong>Expiry Date</strong>, and <strong>Quantity</strong>. Expiry formats like <code>DD-MM-YYYY</code>, <code>YYYY-MM-DD</code>, and <code>MM/YYYY</code> are automatically parsed.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 1: Upload & Drag-and-Drop Area -->
+            <div id="csv-upload-step">
+                <div id="csv-dropzone" style="border: 2px dashed #cbd5e1; border-radius: 8px; padding: 2.5rem 1.5rem; text-align: center; background: #f8fafc; cursor: pointer; transition: all 0.2s ease;">
+                    <input type="file" id="csv-file-input" accept=".csv,text/csv" style="display: none;">
+                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.75rem;">
+                        <div style="width: 48px; height: 48px; border-radius: 50%; background: #e0f2fe; display: flex; align-items: center; justify-content: center; color: #0284c7;">
+                            <svg style="width: 24px; height: 24px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                            </svg>
+                        </div>
+                        <div>
+                            <p style="font-size: 0.9375rem; font-weight: 600; color: #0f172a; margin: 0;">
+                                Drag and drop your CSV file here, or click to browse
+                            </p>
+                            <p style="font-size: 0.75rem; color: #64748b; margin: 0.25rem 0 0 0;">
+                                Accepts .csv files up to 10 MB (up to 5,000 data rows)
+                            </p>
+                        </div>
+                        <button type="button" id="btn-browse-csv" class="btn btn-secondary" style="font-size: 0.8125rem; padding: 0.45rem 1rem;">
+                            Browse Computer
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Selected File Display Bar -->
+                <div id="csv-file-bar" style="display: none; margin-top: 1rem; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0.875rem 1rem; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem;">
+                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                        <div style="width: 36px; height: 36px; border-radius: 6px; background: #f0fdf4; border: 1px solid #bbf7d0; display: flex; align-items: center; justify-content: center; color: #16a34a;">
+                            <svg style="width: 18px; height: 18px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                            </svg>
+                        </div>
+                        <div>
+                            <strong id="csv-filename-label" style="font-size: 0.875rem; color: #0f172a;">filename.csv</strong>
+                            <div style="font-size: 0.75rem; color: #64748b;" id="csv-filesize-label">0 KB</div>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <button type="button" id="btn-remove-csv" class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.4rem 0.75rem; color: #b91c1c;">
+                            Change File
+                        </button>
+                        <button type="button" id="btn-analyze-csv" class="btn btn-primary" style="background: #16a34a; border-color: #15803d; font-size: 0.8125rem; font-weight: 600; padding: 0.45rem 1.125rem; display: inline-flex; align-items: center; gap: 0.375rem;">
+                            <svg id="icon-analyze-idle" style="width: 15px; height: 15px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                            </svg>
+                            <svg id="icon-analyze-spinning" style="display: none; width: 15px; height: 15px; animation: spin 1s linear infinite;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10" stroke-opacity="0.25"></circle>
+                                <path d="M12 2a10 10 0 0 1 10 10" stroke-opacity="0.85"></path>
+                            </svg>
+                            <span id="label-analyze-csv">Upload & Analyze Columns</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Upload Error Notice -->
+                <div id="csv-upload-error" style="display: none; margin-top: 1rem; background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; padding: 0.875rem 1rem; border-radius: 8px; font-size: 0.875rem;">
+                    <div style="display: flex; align-items: flex-start; gap: 0.5rem;">
+                        <svg style="width: 18px; height: 18px; color: #dc2626; flex-shrink: 0; margin-top: 1px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="8" x2="12" y2="12"></line>
+                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                        </svg>
+                        <span id="csv-error-message">Error message</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: Column Mapping Interface -->
+            <div id="csv-mapping-section" style="display: none; margin-top: 1.5rem; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 1.25rem;">
+                <div style="margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.5rem;">
+                    <div>
+                        <h3 style="font-size: 1rem; font-weight: 700; color: #0f172a; margin: 0;">
+                            Step 2: Map CSV Columns to Inventory Fields
+                        </h3>
+                        <p style="font-size: 0.8125rem; color: #64748b; margin: 0.25rem 0 0 0;">
+                            Review the automatically detected column mappings below. Modify any dropdown if needed.
+                        </p>
+                    </div>
+                    <span id="csv-detected-format-badge" style="font-size: 0.75rem; padding: 3px 8px; border-radius: 4px; background: #f1f5f9; color: #475569; font-weight: 600;">
+                        Delimiter: Comma (,) • UTF-8
+                    </span>
+                </div>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1.25rem;">
+                    <!-- Required: Medicine Name -->
+                    <div>
+                        <label for="map-col-medicine_name" style="display: block; font-size: 0.8125rem; font-weight: 600; color: #0f172a; margin-bottom: 0.25rem;">
+                            Medicine Name <span style="color: #dc2626;">*</span>
+                        </label>
+                        <select id="map-col-medicine_name" class="form-input csv-map-select" style="font-size: 0.875rem;">
+                            <option value="">-- Select Column --</option>
+                        </select>
+                    </div>
+
+                    <!-- Required: Batch Number -->
+                    <div>
+                        <label for="map-col-batch_number" style="display: block; font-size: 0.8125rem; font-weight: 600; color: #0f172a; margin-bottom: 0.25rem;">
+                            Batch Number <span style="color: #dc2626;">*</span>
+                        </label>
+                        <select id="map-col-batch_number" class="form-input csv-map-select" style="font-size: 0.875rem;">
+                            <option value="">-- Select Column --</option>
+                        </select>
+                    </div>
+
+                    <!-- Required: Expiry Date -->
+                    <div>
+                        <label for="map-col-expiry_date" style="display: block; font-size: 0.8125rem; font-weight: 600; color: #0f172a; margin-bottom: 0.25rem;">
+                            Expiry Date <span style="color: #dc2626;">*</span>
+                        </label>
+                        <select id="map-col-expiry_date" class="form-input csv-map-select" style="font-size: 0.875rem;">
+                            <option value="">-- Select Column --</option>
+                        </select>
+                    </div>
+
+                    <!-- Required: Quantity -->
+                    <div>
+                        <label for="map-col-quantity" style="display: block; font-size: 0.8125rem; font-weight: 600; color: #0f172a; margin-bottom: 0.25rem;">
+                            Quantity <span style="color: #dc2626;">*</span>
+                        </label>
+                        <select id="map-col-quantity" class="form-input csv-map-select" style="font-size: 0.875rem;">
+                            <option value="">-- Select Column --</option>
+                        </select>
+                    </div>
+
+                    <!-- Optional: Strength -->
+                    <div>
+                        <label for="map-col-strength" style="display: block; font-size: 0.8125rem; font-weight: 600; color: #475569; margin-bottom: 0.25rem;">
+                            Strength <span style="font-weight: 400; color: #94a3b8;">(Optional)</span>
+                        </label>
+                        <select id="map-col-strength" class="form-input csv-map-select" style="font-size: 0.875rem;">
+                            <option value="">-- None / Not in CSV --</option>
+                        </select>
+                    </div>
+
+                    <!-- Optional: Unit -->
+                    <div>
+                        <label for="map-col-unit" style="display: block; font-size: 0.8125rem; font-weight: 600; color: #475569; margin-bottom: 0.25rem;">
+                            Unit <span style="font-weight: 400; color: #94a3b8;">(Default: Units)</span>
+                        </label>
+                        <select id="map-col-unit" class="form-input csv-map-select" style="font-size: 0.875rem;">
+                            <option value="">-- None / Default (Units) --</option>
+                        </select>
+                    </div>
+
+                    <!-- Optional: Low Stock Limit -->
+                    <div>
+                        <label for="map-col-low_stock_limit" style="display: block; font-size: 0.8125rem; font-weight: 600; color: #475569; margin-bottom: 0.25rem;">
+                            Low Stock Limit <span style="font-weight: 400; color: #94a3b8;">(Default: 10)</span>
+                        </label>
+                        <select id="map-col-low_stock_limit" class="form-input csv-map-select" style="font-size: 0.875rem;">
+                            <option value="">-- None / Default (10) --</option>
+                        </select>
+                    </div>
+
+                    <!-- Optional: Composition / Salt (Catalogue) -->
+                    <div>
+                        <label for="map-col-composition" style="display: block; font-size: 0.8125rem; font-weight: 600; color: #475569; margin-bottom: 0.25rem;">
+                            Composition / Salt <span style="font-weight: 400; color: #94a3b8;">(Catalogue)</span>
+                        </label>
+                        <select id="map-col-composition" class="form-input csv-map-select" style="font-size: 0.875rem;">
+                            <option value="">-- None / Not in CSV --</option>
+                        </select>
+                    </div>
+
+                    <!-- Optional: Manufacturer / Company (Catalogue) -->
+                    <div>
+                        <label for="map-col-manufacturer" style="display: block; font-size: 0.8125rem; font-weight: 600; color: #475569; margin-bottom: 0.25rem;">
+                            Manufacturer <span style="font-weight: 400; color: #94a3b8;">(Catalogue)</span>
+                        </label>
+                        <select id="map-col-manufacturer" class="form-input csv-map-select" style="font-size: 0.875rem;">
+                            <option value="">-- None / Not in CSV --</option>
+                        </select>
+                    </div>
+
+                    <!-- Optional: Dosage Form (Catalogue) -->
+                    <div>
+                        <label for="map-col-dosage_form" style="display: block; font-size: 0.8125rem; font-weight: 600; color: #475569; margin-bottom: 0.25rem;">
+                            Dosage Form <span style="font-weight: 400; color: #94a3b8;">(Catalogue)</span>
+                        </label>
+                        <select id="map-col-dosage_form" class="form-input csv-map-select" style="font-size: 0.875rem;">
+                            <option value="">-- None / Not in CSV --</option>
+                        </select>
+                    </div>
+
+                    <!-- Optional: Pack Size (Catalogue) -->
+                    <div>
+                        <label for="map-col-pack_size" style="display: block; font-size: 0.8125rem; font-weight: 600; color: #475569; margin-bottom: 0.25rem;">
+                            Pack Size <span style="font-weight: 400; color: #94a3b8;">(Catalogue)</span>
+                        </label>
+                        <select id="map-col-pack_size" class="form-input csv-map-select" style="font-size: 0.875rem;">
+                            <option value="">-- None / Not in CSV --</option>
+                        </select>
+                    </div>
+
+                    <!-- Optional: MRP / Price (Catalogue) -->
+                    <div>
+                        <label for="map-col-mrp" style="display: block; font-size: 0.8125rem; font-weight: 600; color: #475569; margin-bottom: 0.25rem;">
+                            MRP / Price (₹) <span style="font-weight: 400; color: #94a3b8;">(Catalogue)</span>
+                        </label>
+                        <select id="map-col-mrp" class="form-input csv-map-select" style="font-size: 0.875rem;">
+                            <option value="">-- None / Not in CSV --</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Unmapped Extra Columns List -->
+                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 0.75rem 1rem; margin-bottom: 1.25rem;">
+                    <div style="font-size: 0.75rem; font-weight: 600; color: #64748b; margin-bottom: 0.375rem;">
+                        Unmapped / Extra CSV Columns (Ignored safely):
+                    </div>
+                    <div id="csv-extra-columns-container" style="display: flex; flex-wrap: wrap; gap: 0.375rem;">
+                        <span style="font-size: 0.75rem; color: #94a3b8; font-style: italic;">None</span>
+                    </div>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+                    <button type="button" id="btn-cancel-mapping" class="btn btn-secondary" style="font-size: 0.8125rem; padding: 0.45rem 0.875rem;">
+                        &larr; Choose Different File
+                    </button>
+                    <button type="button" id="btn-validate-csv" class="btn btn-primary" style="background: #0284c7; border-color: #0369a1; font-weight: 600; padding: 0.5rem 1.25rem; font-size: 0.875rem; display: inline-flex; align-items: center; gap: 0.375rem;">
+                        <svg id="icon-validate-idle" style="width: 16px; height: 16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        <svg id="icon-validate-spinning" style="display: none; width: 16px; height: 16px; animation: spin 1s linear infinite;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10" stroke-opacity="0.25"></circle>
+                            <path d="M12 2a10 10 0 0 1 10 10" stroke-opacity="0.85"></path>
+                        </svg>
+                        <span id="label-validate-csv">Validate & Preview Stock Rows</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 3: Preview & Validation Table -->
+            <div id="csv-preview-section" style="display: none; margin-top: 1.5rem;">
+                <!-- Summary Metrics Bar -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.75rem; margin-bottom: 1rem;">
+                    <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0.875rem; text-align: center;">
+                        <div style="font-size: 0.75rem; color: #64748b; font-weight: 600;">TOTAL ROWS</div>
+                        <div id="metric-total-rows" style="font-size: 1.375rem; font-weight: 700; color: #0f172a; margin-top: 0.25rem;">0</div>
+                    </div>
+                    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 0.875rem; text-align: center;">
+                        <div style="font-size: 0.75rem; color: #166534; font-weight: 600;">READY TO IMPORT</div>
+                        <div id="metric-valid-rows" style="font-size: 1.375rem; font-weight: 700; color: #15803d; margin-top: 0.25rem;">0</div>
+                    </div>
+                    <div style="background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px; padding: 0.875rem; text-align: center;">
+                        <div style="font-size: 0.75rem; color: #9a3412; font-weight: 600;">MISSING MEDICINES</div>
+                        <div id="metric-unmatched-rows" style="font-size: 1.375rem; font-weight: 700; color: #c2410c; margin-top: 0.25rem;">0</div>
+                    </div>
+                    <div style="background: #fffbeb; border: 1px solid #fef3c7; border-radius: 8px; padding: 0.875rem; text-align: center;">
+                        <div style="font-size: 0.75rem; color: #92400e; font-weight: 600;">DUPLICATE BATCHES</div>
+                        <div id="metric-duplicate-rows" style="font-size: 1.375rem; font-weight: 700; color: #b45309; margin-top: 0.25rem;">0</div>
+                    </div>
+                    <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 0.875rem; text-align: center;">
+                        <div style="font-size: 0.75rem; color: #991b1b; font-weight: 600;">INVALID DATA</div>
+                        <div id="metric-invalid-rows" style="font-size: 1.375rem; font-weight: 700; color: #dc2626; margin-top: 0.25rem;">0</div>
+                    </div>
+                </div>
+
+                <!-- Preview Table Filter & Action Header -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
+                    <div style="display: inline-flex; gap: 0.375rem; flex-wrap: wrap;">
+                        <button type="button" class="csv-filter-btn active" data-filter="all" style="font-size: 0.75rem; padding: 4px 12px; border-radius: 6px; border: 1px solid #cbd5e1; background: #0f172a; color: #ffffff; cursor: pointer; font-weight: 600;">
+                            All Categories
+                        </button>
+                        <button type="button" class="csv-filter-btn" data-filter="matched" style="font-size: 0.75rem; padding: 4px 12px; border-radius: 6px; border: 1px solid #cbd5e1; background: #ffffff; color: #475569; cursor: pointer; font-weight: 600;">
+                            Category A: Matched (<span id="filter-count-matched">0</span>)
+                        </button>
+                        <button type="button" class="csv-filter-btn" data-filter="missing" style="font-size: 0.75rem; padding: 4px 12px; border-radius: 6px; border: 1px solid #fed7aa; background: #fff7ed; color: #9a3412; cursor: pointer; font-weight: 600;">
+                            Category B: Missing Review (<span id="filter-count-missing">0</span>)
+                        </button>
+                        <button type="button" class="csv-filter-btn" data-filter="invalid" style="font-size: 0.75rem; padding: 4px 12px; border-radius: 6px; border: 1px solid #cbd5e1; background: #ffffff; color: #475569; cursor: pointer; font-weight: 600;">
+                            Category C: Invalid / Duplicates (<span id="filter-count-invalid">0</span>)
+                        </button>
+                    </div>
+                    <button type="button" id="btn-back-to-mapping" class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.35rem 0.75rem;">
+                        &larr; Adjust Mapping
+                    </button>
+                </div>
+
+                <!-- CATEGORY A: Matched Catalogue Medicines -->
+                <div id="section-category-a" style="margin-bottom: 1.5rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                        <h4 style="font-size: 0.875rem; font-weight: 700; color: #15803d; margin: 0; display: inline-flex; align-items: center; gap: 0.375rem;">
+                            <svg style="width: 16px; height: 16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            <span>Category A: Matched Medicines — Ready for Stock Import</span>
+                        </h4>
+                        <span id="cat-a-count-badge" style="font-size: 0.75rem; color: #64748b; font-weight: 600;"></span>
+                    </div>
+                    <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; overflow: hidden; box-shadow: var(--shadow-subtle);">
+                        <div style="max-height: 340px; overflow-y: auto; overflow-x: auto;">
+                            <table style="width: 100%; border-collapse: collapse; font-size: 0.8125rem; text-align: left; min-width: 800px;">
+                                <thead style="background: #f8fafc; border-bottom: 1px solid #e2e8f0; position: sticky; top: 0; z-index: 10;">
+                                    <tr>
+                                        <th style="padding: 0.625rem 0.75rem; font-weight: 600; color: #475569; width: 45px;">#</th>
+                                        <th style="padding: 0.625rem 0.75rem; font-weight: 600; color: #475569;">CSV Medicine</th>
+                                        <th style="padding: 0.625rem 0.75rem; font-weight: 600; color: #475569;">Matched Catalogue Formulation</th>
+                                        <th style="padding: 0.625rem 0.75rem; font-weight: 600; color: #475569;">Batch</th>
+                                        <th style="padding: 0.625rem 0.75rem; font-weight: 600; color: #475569;">Expiry</th>
+                                        <th style="padding: 0.625rem 0.75rem; font-weight: 600; color: #475569;">Qty</th>
+                                        <th style="padding: 0.625rem 0.75rem; font-weight: 600; color: #475569;">Unit</th>
+                                        <th style="padding: 0.625rem 0.75rem; font-weight: 600; color: #475569;">Status</th>
+                                        <th style="padding: 0.625rem 0.75rem; font-weight: 600; color: #475569;">Details</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="csv-matched-table-body">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CATEGORY B: Missing Medicines — Review & Catalogue Creation -->
+                <div id="section-category-b" style="margin-bottom: 1.5rem;">
+                    <div style="background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 0.75rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.5rem;">
+                            <div>
+                                <h4 style="font-size: 0.9375rem; font-weight: 700; color: #9a3412; margin: 0; display: inline-flex; align-items: center; gap: 0.375rem;">
+                                    <svg style="width: 18px; height: 18px; color: #ea580c;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                                    <span>Category B: Medicines Review & Catalogue Creation</span>
+                                </h4>
+                                <p style="font-size: 0.8125rem; color: #7c2d12; margin: 0.25rem 0 0 0;">
+                                    Review your medicines before import. Only <strong>Medicine Name</strong> is mandatory; all other catalogue fields (Composition, Manufacturer, Strength, Dosage Form, Pack Size, MRP) are optional.
+                                </p>
+                            </div>
+                            <span id="cat-b-count-badge" style="font-size: 0.75rem; background: #fed7aa; color: #7c2d12; padding: 3px 8px; border-radius: 4px; font-weight: 700;"></span>
+                        </div>
+                    </div>
+
+                    <!-- Cards Container -->
+                    <div id="csv-missing-cards-list" style="display: grid; gap: 1rem;">
+                        <!-- Rendered dynamically by JS -->
+                    </div>
+                </div>
+
+                <!-- CATEGORY C: Invalid Stock Rows -->
+                <div id="section-category-c" style="margin-bottom: 1.5rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                        <h4 style="font-size: 0.875rem; font-weight: 700; color: #dc2626; margin: 0; display: inline-flex; align-items: center; gap: 0.375rem;">
+                            <svg style="width: 16px; height: 16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+                            <span>Category C: Invalid Stock Rows & Duplicate Batches</span>
+                        </h4>
+                        <span id="cat-c-count-badge" style="font-size: 0.75rem; color: #64748b; font-weight: 600;"></span>
+                    </div>
+                    <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; overflow: hidden; box-shadow: var(--shadow-subtle);">
+                        <div style="max-height: 280px; overflow-y: auto; overflow-x: auto;">
+                            <table style="width: 100%; border-collapse: collapse; font-size: 0.8125rem; text-align: left; min-width: 700px;">
+                                <thead style="background: #f8fafc; border-bottom: 1px solid #e2e8f0; position: sticky; top: 0; z-index: 10;">
+                                    <tr>
+                                        <th style="padding: 0.625rem 0.75rem; font-weight: 600; color: #475569; width: 45px;">#</th>
+                                        <th style="padding: 0.625rem 0.75rem; font-weight: 600; color: #475569;">CSV Medicine</th>
+                                        <th style="padding: 0.625rem 0.75rem; font-weight: 600; color: #475569;">Batch</th>
+                                        <th style="padding: 0.625rem 0.75rem; font-weight: 600; color: #475569;">Expiry</th>
+                                        <th style="padding: 0.625rem 0.75rem; font-weight: 600; color: #475569;">Qty</th>
+                                        <th style="padding: 0.625rem 0.75rem; font-weight: 600; color: #475569;">Issues / Error Description</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="csv-invalid-table-body">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Import Confirmation Actions -->
+                <div id="csv-import-action-bar" style="margin-top: 1.25rem; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 1rem 1.25rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+                    <div>
+                        <div style="font-size: 0.875rem; font-weight: 700; color: #0f172a;">
+                            Ready to import <span id="ready-import-label-count" style="color: #16a34a;">0</span> matched batch(es) and create <span id="ready-create-label-count" style="color: #0284c7;">0</span> new catalogue medicine(s)?
+                        </div>
+                        <div style="font-size: 0.75rem; color: #64748b;">
+                            New medicines will be saved to the shared catalogue; stock batches will belong exclusively to your pharmacy.
+                        </div>
+                    </div>
+                    <button type="button" id="btn-confirm-import" class="btn btn-primary" style="background: #16a34a; border-color: #15803d; font-weight: 700; font-size: 0.9375rem; padding: 0.6rem 1.5rem; display: inline-flex; align-items: center; gap: 0.5rem; box-shadow: 0 2px 4px rgba(22, 163, 74, 0.2);">
+                        <svg id="icon-import-idle" style="width: 18px; height: 18px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        <svg id="icon-import-spinning" style="display: none; width: 18px; height: 18px; animation: spin 1s linear infinite;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10" stroke-opacity="0.25"></circle>
+                            <path d="M12 2a10 10 0 0 1 10 10" stroke-opacity="0.85"></path>
+                        </svg>
+                        <span id="label-confirm-import">Confirm & Import Valid Stocks</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 4: Import Results Summary -->
+            <div id="csv-results-section" style="display: none; margin-top: 1.5rem; background: #ffffff; border: 1px solid #bbf7d0; border-radius: 8px; padding: 1.5rem; box-shadow: var(--shadow-subtle);">
+                <div style="display: flex; align-items: flex-start; gap: 0.75rem; margin-bottom: 1.25rem;">
+                    <div style="width: 44px; height: 44px; border-radius: 50%; background: #dcfce7; display: flex; align-items: center; justify-content: center; color: #16a34a; flex-shrink: 0;">
+                        <svg style="width: 24px; height: 24px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 style="font-size: 1.125rem; font-weight: 700; color: #0f172a; margin: 0;">
+                            CSV Bulk Import Complete
+                        </h3>
+                        <p style="font-size: 0.8125rem; color: #475569; margin: 0.25rem 0 0 0;">
+                            Catalogue records and valid medicine batches have been saved.
+                        </p>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.75rem; margin-bottom: 1.5rem;">
+                    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 0.875rem; text-align: center;">
+                        <div style="font-size: 0.75rem; color: #15803d; font-weight: 600;">STOCK BATCHES IMPORTED</div>
+                        <div id="res-imported-count" style="font-size: 1.5rem; font-weight: 700; color: #15803d; margin-top: 0.25rem;">0</div>
+                    </div>
+                    <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 0.875rem; text-align: center;">
+                        <div style="font-size: 0.75rem; color: #1e40af; font-weight: 600;">NEW MEDICINES CREATED</div>
+                        <div id="res-new-meds-count" style="font-size: 1.5rem; font-weight: 700; color: #1d4ed8; margin-top: 0.25rem;">0</div>
+                    </div>
+                    <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0.875rem; text-align: center;">
+                        <div style="font-size: 0.75rem; color: #475569; font-weight: 600;">EXISTING CATALOGUE BATCHES</div>
+                        <div id="res-existing-meds-count" style="font-size: 1.5rem; font-weight: 700; color: #334155; margin-top: 0.25rem;">0</div>
+                    </div>
+                    <div style="background: #fffbeb; border: 1px solid #fef3c7; border-radius: 8px; padding: 0.875rem; text-align: center;">
+                        <div style="font-size: 0.75rem; color: #b45309; font-weight: 600;">SKIPPED / DUPLICATES</div>
+                        <div id="res-skipped-count" style="font-size: 1.5rem; font-weight: 700; color: #b45309; margin-top: 0.25rem;">0</div>
+                    </div>
+                    <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 0.875rem; text-align: center;">
+                        <div style="font-size: 0.75rem; color: #dc2626; font-weight: 600;">FAILED ROWS</div>
+                        <div id="res-failed-count" style="font-size: 1.5rem; font-weight: 700; color: #dc2626; margin-top: 0.25rem;">0</div>
+                    </div>
+                </div>
+
+                <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem; padding-top: 1rem; border-top: 1px solid #e2e8f0;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                        <a href="{% url 'pharmacy:inventory' %}" class="btn btn-primary" style="font-size: 0.8125rem; font-weight: 600; padding: 0.5rem 1.125rem;">
+                            View Updated Inventory &rarr;
+                        </a>
+                        <button type="button" id="btn-download-error-report" class="btn btn-secondary" style="font-size: 0.8125rem; padding: 0.5rem 1rem; display: inline-flex; align-items: center; gap: 0.375rem;">
+                            <svg style="width: 14px; height: 14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                            <span>Download Skipped/Failed Rows Report (CSV)</span>
+                        </button>
+                    </div>
+                    <button type="button" id="btn-upload-another-csv" class="btn btn-secondary" style="font-size: 0.8125rem; padding: 0.5rem 1rem;">
+                        Upload Another CSV
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================================== -->
+        <!-- SECTION 2: Stock Parameters & Batch Tracking                   -->
+        <!-- ============================================================== -->
+        <div id="section-stock-parameters" style="background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 1.5rem; box-shadow: var(--shadow-subtle);">
+            <h2 style="font-size: 1.125rem; font-weight: 600; color: var(--color-text-main); margin-top: 0; margin-bottom: 1.25rem;">
+                2. Batch Details & Stock Quantities
+            </h2>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.25rem;">
+
+                <!-- Batch Number -->
+                <div>
+                    <label for="{{ form.batch_number.id_for_label }}" style="display: block; font-size: 0.875rem; font-weight: 600; color: var(--color-text-main); margin-bottom: 0.375rem;">
+                        Batch / Lot Number <span style="color: #dc2626;">*</span>
+                    </label>
+                    {{ form.batch_number }}
+                    <span style="font-size: 0.75rem; color: var(--color-text-muted); margin-top: 0.25rem; display: block;">
+                        Stamped on the physical medicine packaging.
+                    </span>
+                    {% if form.batch_number.errors %}
+                        <div style="color: #dc2626; font-size: 0.75rem; margin-top: 0.25rem;">{{ form.batch_number.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Expiry Date -->
+                <div>
+                    <label for="{{ form.expiry_date.id_for_label }}" style="display: block; font-size: 0.875rem; font-weight: 600; color: var(--color-text-main); margin-bottom: 0.375rem;">
+                        Batch Expiry Date <span style="color: #dc2626;">*</span>
+                    </label>
+                    {{ form.expiry_date }}
+                    <span style="font-size: 0.75rem; color: var(--color-text-muted); margin-top: 0.25rem; display: block;">
+                        Date after which this batch cannot be dispensed.
+                    </span>
+                    {% if form.expiry_date.errors %}
+                        <div style="color: #dc2626; font-size: 0.75rem; margin-top: 0.25rem;">{{ form.expiry_date.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Quantity in Stock -->
+                <div>
+                    <label for="{{ form.quantity.id_for_label }}" style="display: block; font-size: 0.875rem; font-weight: 600; color: var(--color-text-main); margin-bottom: 0.375rem;">
+                        Quantity in Stock <span style="color: #dc2626;">*</span>
+                    </label>
+                    {{ form.quantity }}
+                    <span style="font-size: 0.75rem; color: var(--color-text-muted); margin-top: 0.25rem; display: block;">
+                        Units or items physically in stock.
+                    </span>
+                    {% if form.quantity.errors %}
+                        <div style="color: #dc2626; font-size: 0.75rem; margin-top: 0.25rem;">{{ form.quantity.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Packaging Unit -->
+                <div>
+                    <label for="{{ form.unit.id_for_label }}" style="display: block; font-size: 0.875rem; font-weight: 600; color: var(--color-text-main); margin-bottom: 0.375rem;">
+                        Packaging Unit <span style="color: #dc2626;">*</span>
+                    </label>
+                    {{ form.unit }}
+                    <span style="font-size: 0.75rem; color: var(--color-text-muted); margin-top: 0.25rem; display: block;">
+                        e.g. Tablets, Strips, Capsules, Bottles, Vials.
+                    </span>
+                    {% if form.unit.errors %}
+                        <div style="color: #dc2626; font-size: 0.75rem; margin-top: 0.25rem;">{{ form.unit.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Low Stock Limit -->
+                <div>
+                    <label for="{{ form.low_stock_limit.id_for_label }}" style="display: block; font-size: 0.875rem; font-weight: 600; color: var(--color-text-main); margin-bottom: 0.375rem;">
+                        Low Stock Alert Limit <span style="color: #dc2626;">*</span>
+                    </label>
+                    {{ form.low_stock_limit }}
+                    <span style="font-size: 0.75rem; color: var(--color-text-muted); margin-top: 0.25rem; display: block;">
+                        Generates a dashboard warning when quantity drops below this.
+                    </span>
+                    {% if form.low_stock_limit.errors %}
+                        <div style="color: #dc2626; font-size: 0.75rem; margin-top: 0.25rem;">{{ form.low_stock_limit.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Form Submission Actions -->
+        <div id="single-stock-actions" style="display: flex; justify-content: flex-end; align-items: center; gap: 0.75rem; margin-top: 0.5rem;">
+            <a href="{% url 'pharmacy:inventory' %}" class="btn btn-secondary">
+                Cancel
+            </a>
+            <button type="submit" class="btn btn-primary" id="btn-submit-stock" style="display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 600; padding: 0.625rem 1.5rem;">
+                <svg style="width: 18px; height: 18px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                    <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                    <polyline points="7 3 7 8 15 8"></polyline>
+                </svg>
+                <span>Save Stock Entry &rarr;</span>
+            </button>
+        </div>
+
+    </form>
+</div>
+
+<!-- ============================================================== -->
+<!-- Frontend Scripts: Autocomplete & Web Speech Recognition       -->
+<!-- ============================================================== -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+
+    // -------------------------------------------------------------
+    // 1. Mode Switcher (Manual Search vs Voice Entry vs Upload CSV)
+    // -------------------------------------------------------------
+    const tabModeManual = document.getElementById('tab-mode-manual');
+    const tabModeVoice = document.getElementById('tab-mode-voice');
+    const tabModeCsv = document.getElementById('tab-mode-csv');
+    const sectionManualSearch = document.getElementById('section-manual-search');
+    const sectionVoiceEntry = document.getElementById('section-voice-entry');
+    const sectionCsvUpload = document.getElementById('section-csv-upload');
+    const sectionStockParameters = document.getElementById('section-stock-parameters');
+    const singleStockActions = document.getElementById('single-stock-actions');
+
+    function resetTabStyles() {
+        [tabModeManual, tabModeVoice, tabModeCsv].forEach(tab => {
+            if (!tab) return;
+            tab.style.background = 'transparent';
+            tab.style.border = '1px solid transparent';
+            tab.style.color = '#475569';
+            tab.style.fontWeight = '500';
+            tab.style.boxShadow = 'none';
+        });
+    }
+
+    function setActiveTabStyle(tab) {
+        if (!tab) return;
+        tab.style.background = '#ffffff';
+        tab.style.border = '1px solid #cbd5e1';
+        tab.style.color = '#0f172a';
+        tab.style.fontWeight = '600';
+        tab.style.boxShadow = '0 1px 2px rgba(0,0,0,0.05)';
+    }
+
+    function setEntryMode(mode) {
+        resetTabStyles();
+
+        if (mode === 'voice') {
+            setActiveTabStyle(tabModeVoice);
+            if (sectionManualSearch) sectionManualSearch.style.display = 'none';
+            if (sectionCsvUpload) sectionCsvUpload.style.display = 'none';
+            if (sectionVoiceEntry) sectionVoiceEntry.style.display = 'block';
+            if (sectionStockParameters) sectionStockParameters.style.display = 'block';
+            if (singleStockActions) singleStockActions.style.display = 'flex';
+        } else if (mode === 'csv') {
+            // Stop speech recognition cleanly when switching to CSV
+            stopSpeechRecognition(false);
+            setActiveTabStyle(tabModeCsv);
+            if (sectionManualSearch) sectionManualSearch.style.display = 'none';
+            if (sectionVoiceEntry) sectionVoiceEntry.style.display = 'none';
+            if (sectionCsvUpload) sectionCsvUpload.style.display = 'block';
+            if (sectionStockParameters) sectionStockParameters.style.display = 'none';
+            if (singleStockActions) singleStockActions.style.display = 'none';
+        } else {
+            // Default to manual mode
+            stopSpeechRecognition(false);
+            setActiveTabStyle(tabModeManual);
+            if (sectionVoiceEntry) sectionVoiceEntry.style.display = 'none';
+            if (sectionCsvUpload) sectionCsvUpload.style.display = 'none';
+            if (sectionManualSearch) sectionManualSearch.style.display = 'block';
+            if (sectionStockParameters) sectionStockParameters.style.display = 'block';
+            if (singleStockActions) singleStockActions.style.display = 'flex';
+        }
+    }
+
+    if (tabModeManual) tabModeManual.addEventListener('click', () => setEntryMode('manual'));
+    if (tabModeVoice) tabModeVoice.addEventListener('click', () => setEntryMode('voice'));
+    if (tabModeCsv) tabModeCsv.addEventListener('click', () => setEntryMode('csv'));
+
+    // -------------------------------------------------------------
+    // 2. Web Speech Recognition Foundation
+    // -------------------------------------------------------------
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const isSpeechSupported = !!SpeechRecognition;
+
+    const voiceUnsupportedAlert = document.getElementById('voice-unsupported-alert');
+    const voiceControlsToolbar = document.getElementById('voice-controls-toolbar');
+    const voiceLanguageSelect = document.getElementById('voice-language-select');
+    const btnVoiceRecord = document.getElementById('btn-voice-record');
+    const iconMicReady = document.getElementById('icon-mic-ready');
+    const iconMicListening = document.getElementById('icon-mic-listening');
+    const labelVoiceRecord = document.getElementById('label-voice-record');
+    const voiceStatusBadge = document.getElementById('voice-status-badge');
+    const voiceStatusText = document.getElementById('voice-status-text');
+    const voiceInterimText = document.getElementById('voice-interim-text');
+    const voiceTranscriptInput = document.getElementById('voice-transcript-input');
+    const btnClearTranscript = document.getElementById('btn-clear-transcript');
+
+    let recognition = null;
+    let isListening = false;
+    let finalTranscript = '';
+
+    // Update Status Badge UI (Ready, Listening, Processing, Error)
+    function updateVoiceStatus(status, message) {
+        if (!voiceStatusBadge || !voiceStatusText) return;
+
+        const dot = voiceStatusBadge.querySelector('.status-indicator-dot');
+        voiceStatusBadge.className = 'status-pill status-' + status;
+
+        if (status === 'ready') {
+            voiceStatusBadge.style.background = '#f1f5f9';
+            voiceStatusBadge.style.color = '#475569';
+            voiceStatusBadge.style.border = '1px solid #cbd5e1';
+            if (dot) dot.style.background = '#64748b';
+            voiceStatusText.textContent = message || 'Ready';
+        } else if (status === 'listening') {
+            voiceStatusBadge.style.background = '#fef2f2';
+            voiceStatusBadge.style.color = '#b91c1c';
+            voiceStatusBadge.style.border = '1px solid #fecaca';
+            if (dot) dot.style.background = '#ef4444';
+            voiceStatusText.textContent = message || 'Listening...';
+        } else if (status === 'processing') {
+            voiceStatusBadge.style.background = '#f0f9ff';
+            voiceStatusBadge.style.color = '#0284c7';
+            voiceStatusBadge.style.border = '1px solid #bae6fd';
+            if (dot) dot.style.background = '#0284c7';
+            voiceStatusText.textContent = message || 'Processing speech...';
+        } else if (status === 'error') {
+            voiceStatusBadge.style.background = '#fff7ed';
+            voiceStatusBadge.style.color = '#c2410c';
+            voiceStatusBadge.style.border = '1px solid #fed7aa';
+            if (dot) dot.style.background = '#ea580c';
+            voiceStatusText.textContent = message || 'Error';
+        }
+    }
+
+    function setRecordButtonVisuals(listening) {
+        if (!btnVoiceRecord) return;
+        if (listening) {
+            btnVoiceRecord.style.background = '#dc2626';
+            btnVoiceRecord.style.borderColor = '#b91c1c';
+            btnVoiceRecord.classList.add('mic-listening-pulse');
+            if (iconMicReady) iconMicReady.style.display = 'none';
+            if (iconMicListening) iconMicListening.style.display = 'inline-block';
+            if (labelVoiceRecord) labelVoiceRecord.textContent = 'Stop Listening';
+        } else {
+            btnVoiceRecord.style.background = '';
+            btnVoiceRecord.style.borderColor = '';
+            btnVoiceRecord.classList.remove('mic-listening-pulse');
+            if (iconMicReady) iconMicReady.style.display = 'inline-block';
+            if (iconMicListening) iconMicListening.style.display = 'none';
+            if (labelVoiceRecord) labelVoiceRecord.textContent = 'Start Listening';
+        }
+    }
+
+    function initSpeechRecognition() {
+        if (!isSpeechSupported) {
+            if (voiceUnsupportedAlert) voiceUnsupportedAlert.style.display = 'block';
+            if (btnVoiceRecord) {
+                btnVoiceRecord.disabled = true;
+                btnVoiceRecord.style.opacity = '0.5';
+                btnVoiceRecord.style.cursor = 'not-allowed';
+            }
+            updateVoiceStatus('error', 'Web Speech API not supported');
+            return null;
+        }
+
+        if (recognition) return recognition;
+
+        recognition = new SpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = true;
+        recognition.maxAlternatives = 1;
+
+        recognition.onstart = function() {
+            isListening = true;
+            updateVoiceStatus('listening', 'Listening... speak medicine & stock');
+            setRecordButtonVisuals(true);
+            if (voiceInterimText) voiceInterimText.textContent = '';
+        };
+
+        recognition.onresult = function(event) {
+            let interim = '';
+            for (let i = event.resultIndex; i < event.results.length; ++i) {
+                const segment = event.results[i][0].transcript;
+                if (event.results[i].isFinal) {
+                    finalTranscript += (finalTranscript ? ' ' : '') + segment.trim();
+                } else {
+                    interim += segment;
+                }
+            }
+
+            if (voiceTranscriptInput) {
+                voiceTranscriptInput.value = finalTranscript;
+            }
+            if (voiceInterimText) {
+                voiceInterimText.textContent = interim ? `"${interim}"` : '';
+            }
+        };
+
+        recognition.onerror = function(event) {
+            isListening = false;
+            setRecordButtonVisuals(false);
+            if (voiceInterimText) voiceInterimText.textContent = '';
+
+            let errorDesc = 'Error occurred during speech recognition.';
+            if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+                errorDesc = 'Microphone permission denied. Please allow microphone access.';
+            } else if (event.error === 'no-speech') {
+                errorDesc = 'No speech detected. Click Start Listening and speak again.';
+            } else if (event.error === 'audio-capture') {
+                errorDesc = 'No microphone found. Please connect an audio input device.';
+            } else if (event.error === 'network') {
+                errorDesc = 'Network error occurred during speech recognition.';
+            } else {
+                errorDesc = `Speech error: ${event.error}`;
+            }
+            updateVoiceStatus('error', errorDesc);
+        };
+
+        recognition.onend = function() {
+            isListening = false;
+            setRecordButtonVisuals(false);
+            if (voiceInterimText) voiceInterimText.textContent = '';
+
+            // If not stopped due to error, return to Ready
+            if (!voiceStatusBadge.classList.contains('status-error')) {
+                updateVoiceStatus('ready', 'Ready');
+            }
+        };
+
+        return recognition;
+    }
+
+    function startSpeechRecognition() {
+        const rec = initSpeechRecognition();
+        if (!rec) return;
+
+        // Set selected language dynamically
+        rec.lang = voiceLanguageSelect ? (voiceLanguageSelect.value || 'en-IN') : 'en-IN';
+
+        try {
+            rec.start();
+        } catch (err) {
+            console.warn('SpeechRecognition start error:', err);
+        }
+    }
+
+    function stopSpeechRecognition(updateProcessing = true) {
+        if (!recognition || !isListening) return;
+
+        if (updateProcessing) {
+            updateVoiceStatus('processing', 'Processing speech...');
+        }
+        try {
+            recognition.stop();
+        } catch (err) {
+            console.warn('SpeechRecognition stop error:', err);
+        }
+    }
+
+    // Toggle Microphone Recording
+    if (btnVoiceRecord) {
+        btnVoiceRecord.addEventListener('click', function() {
+            if (isListening) {
+                stopSpeechRecognition(true);
+            } else {
+                startSpeechRecognition();
+            }
+        });
+    }
+
+    // Language change updates recognition language
+    if (voiceLanguageSelect) {
+        voiceLanguageSelect.addEventListener('change', function() {
+            if (recognition) {
+                recognition.lang = this.value || 'en-IN';
+            }
+        });
+    }
+
+    // Clear transcript
+    if (btnClearTranscript) {
+        btnClearTranscript.addEventListener('click', function() {
+            finalTranscript = '';
+            if (voiceTranscriptInput) voiceTranscriptInput.value = '';
+            if (voiceInterimText) voiceInterimText.textContent = '';
+            updateVoiceStatus('ready', 'Ready');
+        });
+    }
+
+    // Keep finalTranscript in sync if user types directly in textarea
+    if (voiceTranscriptInput) {
+        voiceTranscriptInput.addEventListener('input', function() {
+            finalTranscript = this.value;
+        });
+    }
+
+    // Stop recognition cleanly when leaving page
+    window.addEventListener('beforeunload', function() {
+        stopSpeechRecognition(false);
+    });
+
+    // Initial check for speech support on load
+    if (!isSpeechSupported) {
+        if (voiceUnsupportedAlert) voiceUnsupportedAlert.style.display = 'block';
+        if (btnVoiceRecord) {
+            btnVoiceRecord.disabled = true;
+            btnVoiceRecord.style.opacity = '0.5';
+            btnVoiceRecord.style.cursor = 'not-allowed';
+        }
+    }
+
+    // -------------------------------------------------------------
+    // 3. Existing Master Catalogue Autocomplete & Interaction
+    // -------------------------------------------------------------
+    const searchInput = document.getElementById('medicine-search-input');
+    const searchWrapper = document.getElementById('autocomplete-search-wrapper');
+    const dropdown = document.getElementById('autocomplete-dropdown');
+    const hiddenMedicineId = document.getElementById('id_medicine');
+    const selectedMedicineCard = document.getElementById('selected-medicine-card');
+    const btnChangeMedicine = document.getElementById('btn-change-medicine');
+
+    // Preview Elements
+    const previewName = document.getElementById('preview-name');
+    const previewComp = document.getElementById('preview-composition');
+    const previewMfr = document.getElementById('preview-manufacturer');
+    const previewForm = document.getElementById('preview-form');
+    const previewMrp = document.getElementById('preview-mrp');
+
+    let debounceTimer = null;
+    let activeIndex = -1;
+    let currentResults = [];
+
+    // Autocomplete input listener
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            const query = this.value.trim();
+            clearTimeout(debounceTimer);
+            activeIndex = -1;
+
+            if (query.length < 2) {
+                dropdown.style.display = 'none';
+                dropdown.innerHTML = '';
+                return;
+            }
+
+            // Show loading indicator
+            dropdown.style.display = 'block';
+            dropdown.innerHTML = `
+                <div style="padding: 1rem; text-align: center; color: #64748b; font-size: 0.8125rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                    <svg class="spin" style="width: 16px; height: 16px; animation: spin 1s linear infinite;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10" stroke-opacity="0.25"></circle>
+                        <path d="M12 2a10 10 0 0 1 10 10" stroke-opacity="0.85"></path>
+                    </svg>
+                    <span>Searching master catalogue...</span>
+                </div>
+            `;
+
+            debounceTimer = setTimeout(() => {
+                fetch(`{% url 'pharmacy:medicine_autocomplete' %}?q=${encodeURIComponent(query)}`)
+                    .then(response => {
+                        if (!response.ok) throw new Error('Network error');
+                        return response.json();
+                    })
+                    .then(data => {
+                        currentResults = data.results || data.medicines || [];
+                        renderDropdown(currentResults, query);
+                    })
+                    .catch(err => {
+                        dropdown.innerHTML = `
+                            <div style="padding: 0.875rem 1rem; color: #dc2626; font-size: 0.8125rem;">
+                                Unable to fetch suggestions. Please check connection and try again.
+                            </div>
+                        `;
+                    });
+            }, 250);
+        });
+
+        // Keyboard navigation
+        searchInput.addEventListener('keydown', function(e) {
+            const items = dropdown.querySelectorAll('.autocomplete-item');
+            if (dropdown.style.display === 'none' || items.length === 0) return;
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                activeIndex = (activeIndex + 1) % items.length;
+                updateActiveItem(items);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                activeIndex = (activeIndex - 1 + items.length) % items.length;
+                updateActiveItem(items);
+            } else if (e.key === 'Enter') {
+                if (activeIndex >= 0 && activeIndex < items.length) {
+                    e.preventDefault();
+                    selectMedicine(currentResults[activeIndex]);
+                }
+            } else if (e.key === 'Escape') {
+                dropdown.style.display = 'none';
+            }
+        });
+    }
+
+    function updateActiveItem(items) {
+        items.forEach((item, idx) => {
+            if (idx === activeIndex) {
+                item.style.backgroundColor = '#f1f5f9';
+                item.scrollIntoView({ block: 'nearest' });
+            } else {
+                item.style.backgroundColor = 'transparent';
+            }
+        });
+    }
+
+    function renderDropdown(medicines, query) {
+        if (!medicines || medicines.length === 0) {
+            dropdown.innerHTML = `
+                <div style="padding: 1.25rem; text-align: center;">
+                    <div style="font-size: 0.875rem; font-weight: 600; color: #475569;">No matching medicines found</div>
+                    <p style="font-size: 0.75rem; color: #64748b; margin: 0.25rem 0 0.75rem 0;">
+                        No formulation in the catalogue matches "${query}".
+                    </p>
+                    <a href="{% url 'pharmacy:medicine_add' %}" style="display: inline-block; font-size: 0.75rem; font-weight: 600; color: #0284c7; text-decoration: none;">
+                        Add this formulation in Manage Medicines &rarr;
+                    </a>
+                </div>
+            `;
+            dropdown.style.display = 'block';
+            return;
+        }
+
+        let html = '';
+        medicines.forEach((med, idx) => {
+            const dosage = med.dosage_form || 'Medicine';
+            const strength = med.strength ? ` &bull; ${med.strength}` : '';
+            const mfr = med.manufacturer ? med.manufacturer : 'Standard';
+            const mrp = med.mrp ? `₹${parseFloat(med.mrp).toFixed(2)}` : 'N/A';
+            const comp = med.composition ? med.composition : '';
+
+            html += `
+                <div class="autocomplete-item" data-index="${idx}" style="padding: 0.75rem 1rem; border-bottom: 1px solid #f1f5f9; cursor: pointer; transition: background 0.15s ease;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem;">
+                        <strong style="font-size: 0.875rem; color: #0f172a;">${escapeHtml(med.medicine_name)}</strong>
+                        <span style="font-size: 0.75rem; font-weight: 600; color: #0284c7; background: #e0f2fe; padding: 2px 6px; border-radius: 4px; white-space: nowrap;">
+                            ${escapeHtml(dosage)}${escapeHtml(strength)}
+                        </span>
+                    </div>
+                    ${comp ? `<div style="font-size: 0.75rem; color: #64748b; margin-top: 2px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">${escapeHtml(comp)}</div>` : ''}
+                    <div style="display: flex; justify-content: space-between; font-size: 0.6875rem; color: #94a3b8; margin-top: 4px;">
+                        <span>${escapeHtml(mfr)}</span>
+                        <span>MRP: ${mrp}</span>
+                    </div>
+                </div>
+            `;
+        });
+
+        dropdown.innerHTML = html;
+        dropdown.style.display = 'block';
+
+        // Add click events to suggestions
+        dropdown.querySelectorAll('.autocomplete-item').forEach(item => {
+            item.addEventListener('click', function() {
+                const idx = parseInt(this.getAttribute('data-index'), 10);
+                if (currentResults[idx]) {
+                    selectMedicine(currentResults[idx]);
+                }
+            });
+            item.addEventListener('mouseenter', function() {
+                activeIndex = parseInt(this.getAttribute('data-index'), 10);
+                updateActiveItem(dropdown.querySelectorAll('.autocomplete-item'));
+            });
+        });
+    }
+
+    function selectMedicine(med) {
+        hiddenMedicineId.value = med.id;
+
+        previewName.textContent = med.medicine_name;
+        previewComp.textContent = med.composition || 'No composition specified';
+        previewMfr.textContent = med.manufacturer || 'Standard Formulation';
+        previewForm.textContent = `${med.dosage_form || 'Medicine'}${med.strength ? ' • ' + med.strength : ''}`;
+        previewMrp.textContent = med.mrp ? `₹${parseFloat(med.mrp).toFixed(2)}` : 'N/A';
+
+        dropdown.style.display = 'none';
+        searchWrapper.style.display = 'none';
+        selectedMedicineCard.style.display = 'block';
+
+        // If unit field is empty, auto-suggest unit based on dosage_form
+        const unitField = document.getElementById('id_unit');
+        if (unitField && (!unitField.value || unitField.value === 'Units')) {
+            const formLower = (med.dosage_form || '').toLowerCase();
+            if (formLower.includes('tablet')) unitField.value = 'Tablets';
+            else if (formLower.includes('capsule')) unitField.value = 'Capsules';
+            else if (formLower.includes('syrup') || formLower.includes('suspension') || formLower.includes('drop')) unitField.value = 'Bottles';
+            else if (formLower.includes('injection')) unitField.value = 'Vials';
+            else if (formLower.includes('cream') || formLower.includes('ointment') || formLower.includes('gel')) unitField.value = 'Tubes';
+            else if (formLower.includes('inhaler') || formLower.includes('rotacap')) unitField.value = 'Packs';
+        }
+
+        // Focus batch number input
+        const batchInput = document.getElementById('id_batch_number');
+        if (batchInput) batchInput.focus();
+    }
+
+    // Change Medicine button
+    if (btnChangeMedicine) {
+        btnChangeMedicine.addEventListener('click', function() {
+            hiddenMedicineId.value = '';
+            selectedMedicineCard.style.display = 'none';
+            searchWrapper.style.display = 'block';
+            if (searchInput) {
+                searchInput.value = '';
+                searchInput.focus();
+            }
+        });
+    }
+
+    // Close dropdown on click outside
+    document.addEventListener('click', function(e) {
+        if (!searchWrapper.contains(e.target)) {
+            dropdown.style.display = 'none';
+        }
+    });
+
+    // -------------------------------------------------------------
+    // 4. Phase 2: Hinglish Voice Command Parsing & Catalogue Matching
+    // -------------------------------------------------------------
+    const btnProcessVoice = document.getElementById('btn-process-voice');
+    const iconProcessIdle = document.getElementById('icon-process-idle');
+    const iconProcessSpinning = document.getElementById('icon-process-spinning');
+    const labelProcessVoice = document.getElementById('label-process-voice');
+    const voiceProcessError = document.getElementById('voice-process-error');
+    const voiceErrorText = document.getElementById('voice-error-text');
+
+    const voiceReviewSection = document.getElementById('voice-review-section');
+    const voiceCompletionBadge = document.getElementById('voice-completion-badge');
+    const voiceMissingNotice = document.getElementById('voice-missing-notice');
+
+    const voiceFieldMedicine = document.getElementById('voice-field-medicine');
+    const voiceFieldStrength = document.getElementById('voice-field-strength');
+    const voiceFieldQuantity = document.getElementById('voice-field-quantity');
+    const voiceFieldUnit = document.getElementById('voice-field-unit');
+    const voiceFieldBatch = document.getElementById('voice-field-batch');
+    const voiceFieldExpiry = document.getElementById('voice-field-expiry');
+
+    const voiceCandidatesContainer = document.getElementById('voice-candidates-container');
+    const voiceCandidateCount = document.getElementById('voice-candidate-count');
+    const voiceNoMatchAlert = document.getElementById('voice-no-match-alert');
+    const voiceNoMatchText = document.getElementById('voice-no-match-text');
+
+    const btnApplyVoiceDetails = document.getElementById('btn-apply-voice-details');
+    const btnDismissReview = document.getElementById('btn-dismiss-review');
+
+    let activeCandidateMedicine = null;
+    let lastParsedCandidates = [];
+
+    function setProcessLoading(loading) {
+        if (!btnProcessVoice) return;
+        if (loading) {
+            btnProcessVoice.disabled = true;
+            btnProcessVoice.style.opacity = '0.75';
+            btnProcessVoice.style.cursor = 'wait';
+            if (iconProcessIdle) iconProcessIdle.style.display = 'none';
+            if (iconProcessSpinning) iconProcessSpinning.style.display = 'inline-block';
+            if (labelProcessVoice) labelProcessVoice.textContent = 'Processing Voice...';
+        } else {
+            btnProcessVoice.disabled = false;
+            btnProcessVoice.style.opacity = '1';
+            btnProcessVoice.style.cursor = 'pointer';
+            if (iconProcessIdle) iconProcessIdle.style.display = 'inline-block';
+            if (iconProcessSpinning) iconProcessSpinning.style.display = 'none';
+            if (labelProcessVoice) labelProcessVoice.textContent = 'Process Voice Details';
+        }
+    }
+
+    function showVoiceError(message) {
+        if (voiceProcessError && voiceErrorText) {
+            voiceErrorText.textContent = message || 'An unexpected error occurred while parsing transcript.';
+            voiceProcessError.style.display = 'block';
+        }
+    }
+
+    function hideVoiceError() {
+        if (voiceProcessError) {
+            voiceProcessError.style.display = 'none';
+        }
+    }
+
+    function renderCandidateCards(candidates) {
+        if (!voiceCandidatesContainer) return;
+        voiceCandidatesContainer.innerHTML = '';
+        lastParsedCandidates = candidates || [];
+        activeCandidateMedicine = null;
+
+        if (!candidates || candidates.length === 0) {
+            if (voiceNoMatchAlert) voiceNoMatchAlert.style.display = 'block';
+            if (voiceCandidateCount) voiceCandidateCount.textContent = '0 candidates';
+            const medName = voiceFieldMedicine ? voiceFieldMedicine.value.trim() : '';
+            if (voiceNoMatchText) {
+                voiceNoMatchText.textContent = medName
+                    ? `No catalogue formulation matched "${medName}".`
+                    : 'No medicine name detected in transcript to match with catalogue.';
+            }
+            return;
+        }
+
+        if (voiceNoMatchAlert) voiceNoMatchAlert.style.display = 'none';
+        if (voiceCandidateCount) voiceCandidateCount.textContent = `${candidates.length} candidate${candidates.length > 1 ? 's' : ''} found`;
+
+        // Automatically select the top candidate (#1)
+        activeCandidateMedicine = candidates[0];
+
+        candidates.forEach((cand, idx) => {
+            const isSelected = (idx === 0);
+            const card = document.createElement('div');
+            card.className = 'voice-candidate-card';
+            card.setAttribute('data-id', cand.id);
+            card.style.cssText = `
+                background: ${isSelected ? '#f0fdf4' : '#ffffff'};
+                border: 2px solid ${isSelected ? '#22c55e' : '#e2e8f0'};
+                border-radius: 8px;
+                padding: 0.875rem 1rem;
+                cursor: pointer;
+                transition: all 0.2s ease;
+                display: flex;
+                align-items: flex-start;
+                justify-content: space-between;
+                gap: 0.75rem;
+            `;
+
+            const badgeBg = cand.confidence === 'high' ? '#dcfce7' : '#e0e7ff';
+            const badgeColor = cand.confidence === 'high' ? '#15803d' : '#3730a3';
+
+            card.innerHTML = `
+                <div style="display: flex; align-items: flex-start; gap: 0.75rem; flex: 1;">
+                    <input type="radio"
+                           name="voice_candidate_selection"
+                           id="cand_radio_${cand.id}"
+                           value="${cand.id}"
+                           ${isSelected ? 'checked' : ''}
+                           style="margin-top: 3px; cursor: pointer; accent-color: #16a34a;">
+                    <div style="flex: 1;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                            <strong style="font-size: 0.9375rem; color: #0f172a;">${escapeHtml(cand.medicine_name)}</strong>
+                            <span style="font-size: 0.7rem; background: ${badgeBg}; color: ${badgeColor}; padding: 1px 7px; border-radius: 9999px; font-weight: 600;">
+                                ${escapeHtml(cand.match_type)}
+                            </span>
+                        </div>
+                        <div style="font-size: 0.8125rem; color: #475569; margin-top: 0.25rem;">
+                            ${escapeHtml(cand.composition || 'No composition listed')}
+                        </div>
+                        <div style="font-size: 0.75rem; color: #64748b; margin-top: 0.25rem; display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                            <span><strong>Form:</strong> ${escapeHtml(cand.dosage_form || 'Formulation')}</span>
+                            <span><strong>Strength:</strong> ${escapeHtml(cand.strength || 'N/A')}</span>
+                            <span><strong>Mfr:</strong> ${escapeHtml(cand.manufacturer || 'Standard')}</span>
+                            ${cand.mrp ? `<span><strong>MRP:</strong> ₹${parseFloat(cand.mrp).toFixed(2)}</span>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            card.addEventListener('click', function() {
+                // Deselect all
+                voiceCandidatesContainer.querySelectorAll('.voice-candidate-card').forEach(c => {
+                    c.style.background = '#ffffff';
+                    c.style.border = '2px solid #e2e8f0';
+                    const r = c.querySelector('input[type="radio"]');
+                    if (r) r.checked = false;
+                });
+                // Select clicked
+                card.style.background = '#f0fdf4';
+                card.style.border = '2px solid #22c55e';
+                const radio = card.querySelector('input[type="radio"]');
+                if (radio) radio.checked = true;
+                activeCandidateMedicine = cand;
+            });
+
+            voiceCandidatesContainer.appendChild(card);
+        });
+    }
+
+    if (btnProcessVoice) {
+        btnProcessVoice.addEventListener('click', function() {
+            const transcript = voiceTranscriptInput ? voiceTranscriptInput.value.trim() : '';
+            hideVoiceError();
+
+            if (!transcript) {
+                showVoiceError('Please speak into the microphone or enter a voice transcript to process.');
+                return;
+            }
+
+            setProcessLoading(true);
+
+            // Fetch CSRF token from page
+            const csrfInput = document.querySelector('[name=csrfmiddlewaretoken]');
+            const csrfToken = csrfInput ? csrfInput.value : '';
+
+            fetch("{% url 'pharmacy:voice_stock_parse' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken,
+                },
+                body: JSON.stringify({ transcript: transcript })
+            })
+            .then(res => res.json().then(data => ({ ok: res.ok, status: res.status, data: data })))
+            .then(result => {
+                setProcessLoading(false);
+                if (!result.ok || !result.data.success) {
+                    showVoiceError(result.data.error || 'Failed to process voice transcript.');
+                    return;
+                }
+
+                const extracted = result.data.extracted;
+                const candidates = result.data.candidates;
+
+                // Populate extracted fields into editable review inputs
+                if (voiceFieldMedicine) voiceFieldMedicine.value = extracted.medicine_name || '';
+                if (voiceFieldStrength) voiceFieldStrength.value = extracted.strength || '';
+                if (voiceFieldQuantity) voiceFieldQuantity.value = (extracted.quantity !== null && extracted.quantity !== undefined) ? extracted.quantity : '';
+                if (voiceFieldUnit) {
+                    if (extracted.unit) {
+                        voiceFieldUnit.value = extracted.unit;
+                    }
+                }
+                if (voiceFieldBatch) voiceFieldBatch.value = extracted.batch_number || '';
+                if (voiceFieldExpiry) {
+                    voiceFieldExpiry.value = (extracted.expiry_date && extracted.expiry_date.formatted) ? extracted.expiry_date.formatted : '';
+                }
+
+                // Completion status badge & missing alert
+                if (extracted.is_complete) {
+                    if (voiceMissingNotice) voiceMissingNotice.style.display = 'none';
+                    if (voiceCompletionBadge) {
+                        voiceCompletionBadge.textContent = 'All Parameters Detected';
+                        voiceCompletionBadge.style.background = '#dcfce7';
+                        voiceCompletionBadge.style.color = '#15803d';
+                        voiceCompletionBadge.style.borderColor = '#bbf7d0';
+                    }
+                } else {
+                    if (voiceMissingNotice) voiceMissingNotice.style.display = 'block';
+                    if (voiceCompletionBadge) {
+                        const count = extracted.missing_fields ? extracted.missing_fields.length : 0;
+                        voiceCompletionBadge.textContent = `${count} Field${count > 1 ? 's' : ''} Need Confirmation`;
+                        voiceCompletionBadge.style.background = '#fef3c7';
+                        voiceCompletionBadge.style.color = '#92400e';
+                        voiceCompletionBadge.style.borderColor = '#fde68a';
+                    }
+                }
+
+                // Render candidate cards
+                renderCandidateCards(candidates);
+
+                // Show review section with smooth display
+                if (voiceReviewSection) {
+                    voiceReviewSection.style.display = 'block';
+                    voiceReviewSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+            })
+            .catch(err => {
+                setProcessLoading(false);
+                console.error('Voice processing error:', err);
+                showVoiceError('A network error occurred while communicating with the voice parsing service.');
+            });
+        });
+    }
+
+    // Apply Extracted Voice Details to Stock Form
+    if (btnApplyVoiceDetails) {
+        btnApplyVoiceDetails.addEventListener('click', function() {
+            // 1. If an active catalogue candidate was selected, apply it to hidden id and preview card
+            if (activeCandidateMedicine) {
+                selectMedicine(activeCandidateMedicine);
+            }
+
+            // 2. Populate Section 2 form fields with verified/corrected values
+            const batchVal = voiceFieldBatch ? voiceFieldBatch.value.trim() : '';
+            const qtyVal = voiceFieldQuantity ? voiceFieldQuantity.value.trim() : '';
+            const unitVal = voiceFieldUnit ? voiceFieldUnit.value : '';
+            const expVal = voiceFieldExpiry ? voiceFieldExpiry.value : '';
+
+            const idBatch = document.getElementById('id_batch_number');
+            const idQty = document.getElementById('id_quantity');
+            const idUnit = document.getElementById('id_unit');
+            const idExp = document.getElementById('id_expiry_date');
+
+            if (idBatch && batchVal) idBatch.value = batchVal;
+            if (idQty && qtyVal) idQty.value = qtyVal;
+            if (idUnit && unitVal) idUnit.value = unitVal;
+            if (idExp && expVal) idExp.value = expVal;
+
+            // Visual feedback: scroll smoothly to Section 2
+            const section2 = document.querySelector('div[style*="2. Batch Details"]');
+            if (section2) {
+                section2.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        });
+    }
+
+    // Dismiss Review Section
+    if (btnDismissReview) {
+        btnDismissReview.addEventListener('click', function() {
+            if (voiceReviewSection) {
+                voiceReviewSection.style.display = 'none';
+            }
+        });
+    }
+
+    // -------------------------------------------------------------
+    // 5. Flexible CSV Bulk Stock Upload Logic
+    // -------------------------------------------------------------
+    let currentCsvFile = null;
+    let currentCsvHeaders = [];
+    let currentDetectedMapping = {};
+    let currentValidatedRows = [];
+    let lastErrorReportCsv = '';
+
+    const csvDropzone = document.getElementById('csv-dropzone');
+    const csvFileInput = document.getElementById('csv-file-input');
+    const btnBrowseCsv = document.getElementById('btn-browse-csv');
+    const csvFileBar = document.getElementById('csv-file-bar');
+    const csvFilenameLabel = document.getElementById('csv-filename-label');
+    const csvFilesizeLabel = document.getElementById('csv-filesize-label');
+    const btnRemoveCsv = document.getElementById('btn-remove-csv');
+    const btnAnalyzeCsv = document.getElementById('btn-analyze-csv');
+    const iconAnalyzeIdle = document.getElementById('icon-analyze-idle');
+    const iconAnalyzeSpinning = document.getElementById('icon-analyze-spinning');
+    const labelAnalyzeCsv = document.getElementById('label-analyze-csv');
+    const csvUploadError = document.getElementById('csv-upload-error');
+    const csvErrorMessage = document.getElementById('csv-error-message');
+
+    const csvMappingSection = document.getElementById('csv-mapping-section');
+    const csvDetectedFormatBadge = document.getElementById('csv-detected-format-badge');
+    const csvExtraColumnsContainer = document.getElementById('csv-extra-columns-container');
+    const btnCancelMapping = document.getElementById('btn-cancel-mapping');
+    const btnValidateCsv = document.getElementById('btn-validate-csv');
+    const iconValidateIdle = document.getElementById('icon-validate-idle');
+    const iconValidateSpinning = document.getElementById('icon-validate-spinning');
+    const labelValidateCsv = document.getElementById('label-validate-csv');
+
+    const csvPreviewSection = document.getElementById('csv-preview-section');
+    const metricTotalRows = document.getElementById('metric-total-rows');
+    const metricValidRows = document.getElementById('metric-valid-rows');
+    const metricDuplicateRows = document.getElementById('metric-duplicate-rows');
+    const metricUnmatchedRows = document.getElementById('metric-unmatched-rows');
+    const metricInvalidRows = document.getElementById('metric-invalid-rows');
+    const csvPreviewTableBody = document.getElementById('csv-preview-table-body');
+    const btnBackToMapping = document.getElementById('btn-back-to-mapping');
+
+    const btnConfirmImport = document.getElementById('btn-confirm-import');
+    const iconImportIdle = document.getElementById('icon-import-idle');
+    const iconImportSpinning = document.getElementById('icon-import-spinning');
+    const labelConfirmImport = document.getElementById('label-confirm-import');
+    const readyImportLabelCount = document.getElementById('ready-import-label-count');
+
+    const csvResultsSection = document.getElementById('csv-results-section');
+    const resImportedCount = document.getElementById('res-imported-count');
+    const resSkippedCount = document.getElementById('res-skipped-count');
+    const resFailedCount = document.getElementById('res-failed-count');
+    const btnDownloadErrorReport = document.getElementById('btn-download-error-report');
+    const btnUploadAnotherCsv = document.getElementById('btn-upload-another-csv');
+
+    function getCsrfToken() {
+        const el = document.querySelector('[name=csrfmiddlewaretoken]');
+        return el ? el.value : '';
+    }
+
+    function formatBytes(bytes) {
+        if (!bytes || bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+    }
+
+    function showCsvError(msg) {
+        if (csvUploadError && csvErrorMessage) {
+            csvErrorMessage.textContent = msg || 'An error occurred with the CSV file.';
+            csvUploadError.style.display = 'block';
+        }
+    }
+
+    function hideCsvError() {
+        if (csvUploadError) csvUploadError.style.display = 'none';
+    }
+
+    function handleFileSelection(file) {
+        hideCsvError();
+        if (!file) return;
+
+        if (!file.name.toLowerCase().endsWith('.csv')) {
+            showCsvError('Please select a valid CSV file (.csv extension).');
+            return;
+        }
+
+        if (file.size > 10 * 1024 * 1024) {
+            showCsvError('File size exceeds the 10 MB maximum limit.');
+            return;
+        }
+
+        currentCsvFile = file;
+        if (csvFilenameLabel) csvFilenameLabel.textContent = file.name;
+        if (csvFilesizeLabel) csvFilesizeLabel.textContent = formatBytes(file.size);
+
+        if (csvFileBar) csvFileBar.style.display = 'flex';
+        if (csvMappingSection) csvMappingSection.style.display = 'none';
+        if (csvPreviewSection) csvPreviewSection.style.display = 'none';
+        if (csvResultsSection) csvResultsSection.style.display = 'none';
+    }
+
+    // Drag and Drop
+    if (csvDropzone) {
+        csvDropzone.addEventListener('click', function(e) {
+            if (e.target !== btnBrowseCsv && csvFileInput) {
+                csvFileInput.click();
+            }
+        });
+
+        csvDropzone.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            csvDropzone.style.borderColor = '#16a34a';
+            csvDropzone.style.background = '#f0fdf4';
+        });
+
+        csvDropzone.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            csvDropzone.style.borderColor = '#cbd5e1';
+            csvDropzone.style.background = '#f8fafc';
+        });
+
+        csvDropzone.addEventListener('drop', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            csvDropzone.style.borderColor = '#cbd5e1';
+            csvDropzone.style.background = '#f8fafc';
+            if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                handleFileSelection(e.dataTransfer.files[0]);
+            }
+        });
+    }
+
+    if (btnBrowseCsv && csvFileInput) {
+        btnBrowseCsv.addEventListener('click', function(e) {
+            e.stopPropagation();
+            csvFileInput.click();
+        });
+    }
+
+    if (csvFileInput) {
+        csvFileInput.addEventListener('change', function() {
+            if (this.files && this.files.length > 0) {
+                handleFileSelection(this.files[0]);
+            }
+        });
+    }
+
+    if (btnRemoveCsv) {
+        btnRemoveCsv.addEventListener('click', function() {
+            currentCsvFile = null;
+            if (csvFileInput) csvFileInput.value = '';
+            if (csvFileBar) csvFileBar.style.display = 'none';
+            if (csvMappingSection) csvMappingSection.style.display = 'none';
+            if (csvPreviewSection) csvPreviewSection.style.display = 'none';
+            if (csvResultsSection) csvResultsSection.style.display = 'none';
+            hideCsvError();
+        });
+    }
+
+    // Step 1 -> Step 2: Upload and Analyze Columns
+    if (btnAnalyzeCsv) {
+        btnAnalyzeCsv.addEventListener('click', function() {
+            if (!currentCsvFile) {
+                showCsvError('Please select a CSV file first.');
+                return;
+            }
+
+            hideCsvError();
+            if (iconAnalyzeIdle) iconAnalyzeIdle.style.display = 'none';
+            if (iconAnalyzeSpinning) iconAnalyzeSpinning.style.display = 'inline-block';
+            if (labelAnalyzeCsv) labelAnalyzeCsv.textContent = 'Analyzing CSV...';
+            btnAnalyzeCsv.disabled = true;
+
+            const formData = new FormData();
+            formData.append('csv_file', currentCsvFile);
+
+            fetch("{% url 'pharmacy:csv_stock_analyze' %}", {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCsrfToken()
+                },
+                body: formData
+            })
+            .then(res => res.json().then(data => ({ ok: res.ok, status: res.status, data: data })))
+            .then(result => {
+                if (iconAnalyzeIdle) iconAnalyzeIdle.style.display = 'inline-block';
+                if (iconAnalyzeSpinning) iconAnalyzeSpinning.style.display = 'none';
+                if (labelAnalyzeCsv) labelAnalyzeCsv.textContent = 'Upload & Analyze Columns';
+                btnAnalyzeCsv.disabled = false;
+
+                if (!result.ok || !result.data.success) {
+                    showCsvError(result.data.error || 'Failed to analyze CSV file.');
+                    return;
+                }
+
+                const d = result.data;
+                currentCsvHeaders = d.headers || [];
+                currentDetectedMapping = d.detected_mapping || {};
+
+                // Update delimiter/format badge
+                const delimLabel = d.delimiter === ';' ? 'Semicolon (;)' : (d.delimiter === '\t' ? 'Tab (\\t)' : 'Comma (,)');
+                if (csvDetectedFormatBadge) {
+                    csvDetectedFormatBadge.textContent = `Delimiter: ${delimLabel} • ${d.encoding.toUpperCase()} • ${d.total_rows} data row(s)`;
+                }
+
+                // Populate column select dropdowns
+                populateMappingDropdowns(currentCsvHeaders, currentDetectedMapping);
+
+                if (csvMappingSection) {
+                    csvMappingSection.style.display = 'block';
+                    csvMappingSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+            })
+            .catch(err => {
+                if (iconAnalyzeIdle) iconAnalyzeIdle.style.display = 'inline-block';
+                if (iconAnalyzeSpinning) iconAnalyzeSpinning.style.display = 'none';
+                if (labelAnalyzeCsv) labelAnalyzeCsv.textContent = 'Upload & Analyze Columns';
+                btnAnalyzeCsv.disabled = false;
+                console.error(err);
+                showCsvError('A network error occurred while uploading CSV.');
+            });
+        });
+    }
+
+    function populateMappingDropdowns(headers, detected) {
+        const fields = [
+            'medicine_name', 'batch_number', 'expiry_date', 'quantity',
+            'strength', 'unit', 'low_stock_limit',
+            'composition', 'manufacturer', 'dosage_form', 'pack_size', 'mrp'
+        ];
+
+        const mappedColumns = new Set();
+
+        fields.forEach(field => {
+            const selectEl = document.getElementById(`map-col-${field}`);
+            if (!selectEl) return;
+
+            const isRequired = ['medicine_name', 'batch_number', 'expiry_date', 'quantity'].includes(field);
+            selectEl.innerHTML = isRequired
+                ? '<option value="">-- Select Column --</option>'
+                : '<option value="">-- None / Default --</option>';
+
+            const detectedCol = detected[field];
+
+            headers.forEach(h => {
+                const opt = document.createElement('option');
+                opt.value = h;
+                opt.textContent = h;
+                if (detectedCol && detectedCol === h) {
+                    opt.selected = true;
+                    mappedColumns.add(h);
+                }
+                selectEl.appendChild(opt);
+            });
+
+            // Update extra columns container on change
+            selectEl.addEventListener('change', updateExtraColumnsTags);
+        });
+
+        updateExtraColumnsTags();
+    }
+
+    function updateExtraColumnsTags() {
+        if (!csvExtraColumnsContainer) return;
+        const mapped = new Set();
+        document.querySelectorAll('.csv-map-select').forEach(sel => {
+            if (sel.value) mapped.add(sel.value);
+        });
+
+        const unmapped = currentCsvHeaders.filter(h => !mapped.has(h));
+        csvExtraColumnsContainer.innerHTML = '';
+
+        if (unmapped.length === 0) {
+            csvExtraColumnsContainer.innerHTML = '<span style="font-size: 0.75rem; color: #94a3b8; font-style: italic;">All columns are mapped</span>';
+        } else {
+            unmapped.forEach(col => {
+                const tag = document.createElement('span');
+                tag.style.cssText = 'font-size: 0.75rem; background: #e2e8f0; color: #475569; padding: 2px 8px; border-radius: 4px;';
+                tag.textContent = col;
+                csvExtraColumnsContainer.appendChild(tag);
+            });
+        }
+    }
+
+    if (btnCancelMapping) {
+        btnCancelMapping.addEventListener('click', function() {
+            if (csvMappingSection) csvMappingSection.style.display = 'none';
+            if (btnRemoveCsv) btnRemoveCsv.click();
+        });
+    }
+
+    // Step 2 -> Step 3: Validate and Preview Rows
+    if (btnValidateCsv) {
+        btnValidateCsv.addEventListener('click', function() {
+            if (!currentCsvFile) {
+                showCsvError('CSV file reference lost. Please re-upload.');
+                return;
+            }
+
+            // Gather mapping
+            const mapping = {
+                medicine_name: document.getElementById('map-col-medicine_name')?.value || null,
+                batch_number: document.getElementById('map-col-batch_number')?.value || null,
+                expiry_date: document.getElementById('map-col-expiry_date')?.value || null,
+                quantity: document.getElementById('map-col-quantity')?.value || null,
+                strength: document.getElementById('map-col-strength')?.value || null,
+                unit: document.getElementById('map-col-unit')?.value || null,
+                low_stock_limit: document.getElementById('map-col-low_stock_limit')?.value || null,
+                composition: document.getElementById('map-col-composition')?.value || null,
+                manufacturer: document.getElementById('map-col-manufacturer')?.value || null,
+                dosage_form: document.getElementById('map-col-dosage_form')?.value || null,
+                pack_size: document.getElementById('map-col-pack_size')?.value || null,
+                mrp: document.getElementById('map-col-mrp')?.value || null,
+            };
+
+            // Ensure required mappings
+            const missingRequired = [];
+            if (!mapping.medicine_name) missingRequired.push('Medicine Name');
+            if (!mapping.batch_number) missingRequired.push('Batch Number');
+            if (!mapping.expiry_date) missingRequired.push('Expiry Date');
+            if (!mapping.quantity) missingRequired.push('Quantity');
+
+            if (missingRequired.length > 0) {
+                alert(`Please map the following required field(s):\n• ${missingRequired.join('\n• ')}`);
+                return;
+            }
+
+            hideCsvError();
+            if (iconValidateIdle) iconValidateIdle.style.display = 'none';
+            if (iconValidateSpinning) iconValidateSpinning.style.display = 'inline-block';
+            if (labelValidateCsv) labelValidateCsv.textContent = 'Validating Rows...';
+            btnValidateCsv.disabled = true;
+
+            const formData = new FormData();
+            formData.append('csv_file', currentCsvFile);
+            formData.append('mapping', JSON.stringify(mapping));
+
+            fetch("{% url 'pharmacy:csv_stock_validate' %}", {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCsrfToken()
+                },
+                body: formData
+            })
+            .then(res => res.json().then(data => ({ ok: res.ok, status: res.status, data: data })))
+            .then(result => {
+                if (iconValidateIdle) iconValidateIdle.style.display = 'inline-block';
+                if (iconValidateSpinning) iconValidateSpinning.style.display = 'none';
+                if (labelValidateCsv) labelValidateCsv.textContent = 'Validate & Preview Stock Rows';
+                btnValidateCsv.disabled = false;
+
+                if (!result.ok || !result.data.success) {
+                    showCsvError(result.data.error || 'Failed to validate CSV rows.');
+                    return;
+                }
+
+                const d = result.data;
+                currentValidatedRows = d.preview_rows || [];
+                window._currentMatchedRows = d.matched_rows || [];
+                window._currentMissingRows = d.missing_medicine_rows || [];
+                window._currentInvalidRows = d.invalid_rows || [];
+
+                // Update summary metrics
+                if (metricTotalRows) metricTotalRows.textContent = d.total_rows;
+                if (metricValidRows) metricValidRows.textContent = d.valid_count;
+                if (metricDuplicateRows) metricDuplicateRows.textContent = d.duplicate_count;
+                if (metricUnmatchedRows) metricUnmatchedRows.textContent = d.unmatched_count;
+                if (metricInvalidRows) metricInvalidRows.textContent = d.invalid_count;
+
+                // Update filter category count labels
+                const fMatched = document.getElementById('filter-count-matched');
+                const fMissing = document.getElementById('filter-count-missing');
+                const fInvalid = document.getElementById('filter-count-invalid');
+                if (fMatched) fMatched.textContent = window._currentMatchedRows.length;
+                if (fMissing) fMissing.textContent = window._currentMissingRows.length;
+                if (fInvalid) fInvalid.textContent = window._currentInvalidRows.length;
+
+                // Render Preview Sections
+                renderCategoryA(window._currentMatchedRows);
+                renderCategoryB(window._currentMissingRows);
+                renderCategoryC(window._currentInvalidRows);
+                updateImportCounts();
+
+                if (csvPreviewSection) {
+                    csvPreviewSection.style.display = 'block';
+                    csvPreviewSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+            })
+            .catch(err => {
+                if (iconValidateIdle) iconValidateIdle.style.display = 'inline-block';
+                if (iconValidateSpinning) iconValidateSpinning.style.display = 'none';
+                if (labelValidateCsv) labelValidateCsv.textContent = 'Validate & Preview Stock Rows';
+                btnValidateCsv.disabled = false;
+                console.error(err);
+                showCsvError('A network error occurred while validating CSV rows.');
+            });
+        });
+    }
+
+    if (btnBackToMapping) {
+        btnBackToMapping.addEventListener('click', function() {
+            if (csvPreviewSection) csvPreviewSection.style.display = 'none';
+            if (csvMappingSection) {
+                csvMappingSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        });
+    }
+
+    // Render Category A: Matched Catalogue Formulations
+    function renderCategoryA(matchedRows) {
+        const tbody = document.getElementById('csv-matched-table-body');
+        const badge = document.getElementById('cat-a-count-badge');
+        if (badge) badge.textContent = `${matchedRows.length} batch(es)`;
+        if (!tbody) return;
+        tbody.innerHTML = '';
+
+        if (matchedRows.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="9" style="padding: 1.5rem; text-align: center; color: #64748b; font-style: italic;">
+                        No rows matched existing master catalogue formulations.
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        matchedRows.forEach(row => {
+            const tr = document.createElement('tr');
+            tr.style.borderBottom = '1px solid #f1f5f9';
+
+            let badgeHtml = '';
+            let rowBg = '#ffffff';
+
+            if (row.status === 'VALID') {
+                badgeHtml = '<span style="background: #dcfce7; color: #15803d; padding: 2px 6px; border-radius: 4px; font-weight: 600; font-size: 0.7rem;">Valid</span>';
+            } else if (row.status === 'DUPLICATE') {
+                badgeHtml = '<span style="background: #fef3c7; color: #92400e; padding: 2px 6px; border-radius: 4px; font-weight: 600; font-size: 0.7rem;">Duplicate</span>';
+                rowBg = '#fffdfa';
+            } else {
+                badgeHtml = '<span style="background: #fee2e2; color: #991b1b; padding: 2px 6px; border-radius: 4px; font-weight: 600; font-size: 0.7rem;">Issue</span>';
+                rowBg = '#fffafa';
+            }
+
+            tr.style.background = rowBg;
+
+            let matchedCellHtml = '';
+            if (row.matched_medicine) {
+                const candidates = row.candidates || [];
+                if (candidates.length > 1) {
+                    let opts = candidates.map(c => `
+                        <option value="${c.id}" ${c.id === row.matched_medicine.id ? 'selected' : ''}>
+                            ${escapeHtml(c.medicine_name)} (${escapeHtml(c.strength || c.dosage_form || '')})
+                        </option>
+                    `).join('');
+                    matchedCellHtml = `
+                        <select class="form-input row-candidate-select" data-row-idx="${row.row_num}" style="font-size: 0.75rem; padding: 2px 6px; width: 100%; max-width: 220px;">
+                            ${opts}
+                        </select>
+                    `;
+                } else {
+                    matchedCellHtml = `
+                        <strong style="color: #0f172a;">${escapeHtml(row.matched_medicine.medicine_name)}</strong>
+                        <div style="font-size: 0.7rem; color: #64748b;">${escapeHtml(row.matched_medicine.dosage_form || '')} • ${escapeHtml(row.matched_medicine.strength || '')}</div>
+                    `;
+                }
+            }
+
+            let detailsHtml = '';
+            if (row.errors && row.errors.length > 0) {
+                detailsHtml = `<div style="color: #dc2626; font-size: 0.75rem;">${escapeHtml(row.errors.join('; '))}</div>`;
+            } else if (row.warnings && row.warnings.length > 0) {
+                detailsHtml = `<div style="color: #b45309; font-size: 0.75rem;">${escapeHtml(row.warnings.join('; '))}</div>`;
+            } else {
+                detailsHtml = `<span style="color: #16a34a; font-size: 0.75rem;">Ready to import</span>`;
+            }
+
+            tr.innerHTML = `
+                <td style="padding: 0.5rem 0.75rem; color: #64748b; font-weight: 600;">${row.row_num}</td>
+                <td style="padding: 0.5rem 0.75rem;"><strong>${escapeHtml(row.original_medicine)}</strong></td>
+                <td style="padding: 0.5rem 0.75rem;">${matchedCellHtml}</td>
+                <td style="padding: 0.5rem 0.75rem; font-family: monospace;">${escapeHtml(row.batch_number)}</td>
+                <td style="padding: 0.5rem 0.75rem;">${escapeHtml(row.expiry_date_formatted || row.expiry_date_raw)}</td>
+                <td style="padding: 0.5rem 0.75rem; font-weight: 600;">${row.quantity}</td>
+                <td style="padding: 0.5rem 0.75rem;">${escapeHtml(row.unit)}</td>
+                <td style="padding: 0.5rem 0.75rem;">${badgeHtml}</td>
+                <td style="padding: 0.5rem 0.75rem;">${detailsHtml}</td>
+            `;
+
+            tbody.appendChild(tr);
+        });
+
+        // Attach candidate switcher
+        tbody.querySelectorAll('.row-candidate-select').forEach(sel => {
+            sel.addEventListener('change', function() {
+                const rNum = parseInt(this.getAttribute('data-row-idx'), 10);
+                const chosenId = parseInt(this.value, 10);
+                const targetRow = (window._currentMatchedRows || []).find(r => r.row_num === rNum);
+                if (targetRow && targetRow.candidates) {
+                    const picked = targetRow.candidates.find(c => c.id === chosenId);
+                    if (picked) {
+                        targetRow.matched_medicine = picked;
+                    }
+                }
+            });
+        });
+    }
+
+    // Render Category B: Missing Medicines Review & Creation Cards
+    function renderCategoryB(missingRows) {
+        const container = document.getElementById('csv-missing-cards-list');
+        const badge = document.getElementById('cat-b-count-badge');
+        if (badge) badge.textContent = `${missingRows.length} medicine(s) require review`;
+        if (!container) return;
+        container.innerHTML = '';
+
+        if (missingRows.length === 0) {
+            container.innerHTML = `
+                <div style="background: #ffffff; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 1.5rem; text-align: center; color: #64748b; font-style: italic;">
+                    No missing medicines. All CSV items matched existing catalogue records or had formatting errors.
+                </div>
+            `;
+            return;
+        }
+
+        missingRows.forEach(row => {
+            const card = document.createElement('div');
+            card.className = 'missing-medicine-card';
+            card.id = `missing-card-${row.row_num}`;
+            card.setAttribute('data-row-num', row.row_num);
+            card.style.cssText = 'background: #ffffff; border: 1px solid #fed7aa; border-radius: 8px; padding: 1.25rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05);';
+
+            const cat = row.catalogue_data || {};
+            const stockValid = row.stock_is_valid;
+
+            // Header of card: toggle + details
+            let headerHtml = `
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #f1f5f9;">
+                    <div style="display: flex; align-items: center; gap: 0.625rem;">
+                        <input type="checkbox"
+                               class="missing-row-include"
+                               id="chk-include-${row.row_num}"
+                               data-row-num="${row.row_num}"
+                               ${stockValid ? 'checked' : 'disabled'}
+                               style="width: 17px; height: 17px; cursor: ${stockValid ? 'pointer' : 'not-allowed'};">
+                        <div>
+                            <label for="chk-include-${row.row_num}" style="font-weight: 700; color: #0f172a; font-size: 0.9375rem; cursor: ${stockValid ? 'pointer' : 'default'};">
+                                Row #${row.row_num}: ${escapeHtml(row.original_medicine)}
+                            </label>
+                            <div style="font-size: 0.75rem; color: #64748b; display: flex; gap: 0.75rem; margin-top: 0.125rem;">
+                                <span>Batch: <code>${escapeHtml(row.batch_number || 'N/A')}</code></span>
+                                <span>Exp: <strong>${escapeHtml(row.expiry_date_formatted || row.expiry_date_raw || 'N/A')}</strong></span>
+                                <span>Qty: <strong>${row.quantity} ${escapeHtml(row.unit)}</strong></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        ${stockValid
+                            ? '<span style="font-size: 0.7rem; background: #dcfce7; color: #15803d; font-weight: 600; padding: 2px 8px; border-radius: 4px;">Stock Row Valid</span>'
+                            : `<span style="font-size: 0.7rem; background: #fee2e2; color: #991b1b; font-weight: 600; padding: 2px 8px; border-radius: 4px;">Stock Row Invalid: ${escapeHtml((row.stock_errors || []).join('; '))}</span>`
+                        }
+                    </div>
+                </div>
+            `;
+
+            // Inputs form grid
+            let fieldsHtml = `
+                <div id="missing-fields-container-${row.row_num}" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.75rem;">
+                    <div>
+                        <label style="display: block; font-size: 0.75rem; font-weight: 600; color: #0f172a; margin-bottom: 0.25rem;">
+                            Medicine Name <span style="color: #dc2626;">*</span>
+                        </label>
+                        <input type="text"
+                               class="form-input missing-input-name"
+                               data-row-num="${row.row_num}"
+                               value="${escapeHtml(cat.medicine_name || row.original_medicine || '')}"
+                               placeholder="e.g. Paracetamol 500"
+                               style="font-size: 0.8125rem; padding: 0.4rem 0.6rem;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 0.75rem; font-weight: 600; color: #475569; margin-bottom: 0.25rem;">
+                            Composition / Salt <span style="font-weight: 400; color: #94a3b8;">(Optional)</span>
+                        </label>
+                        <input type="text"
+                               class="form-input missing-input-composition"
+                               data-row-num="${row.row_num}"
+                               value="${escapeHtml(cat.composition || '')}"
+                               placeholder="Active Pharmaceutical Ingredients"
+                               style="font-size: 0.8125rem; padding: 0.4rem 0.6rem;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 0.75rem; font-weight: 600; color: #475569; margin-bottom: 0.25rem;">
+                            Manufacturer <span style="font-weight: 400; color: #94a3b8;">(Optional)</span>
+                        </label>
+                        <input type="text"
+                               class="form-input missing-input-manufacturer"
+                               data-row-num="${row.row_num}"
+                               value="${escapeHtml(cat.manufacturer || '')}"
+                               placeholder="Pharma Company"
+                               style="font-size: 0.8125rem; padding: 0.4rem 0.6rem;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 0.75rem; font-weight: 600; color: #475569; margin-bottom: 0.25rem;">
+                            Strength <span style="font-weight: 400; color: #94a3b8;">(Optional)</span>
+                        </label>
+                        <input type="text"
+                               class="form-input missing-input-strength"
+                               data-row-num="${row.row_num}"
+                               value="${escapeHtml(cat.strength || row.original_strength || '')}"
+                               placeholder="e.g. 500 mg"
+                               style="font-size: 0.8125rem; padding: 0.4rem 0.6rem;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 0.75rem; font-weight: 600; color: #475569; margin-bottom: 0.25rem;">
+                            Dosage Form <span style="font-weight: 400; color: #94a3b8;">(Optional)</span>
+                        </label>
+                        <input type="text"
+                               class="form-input missing-input-dosage-form"
+                               data-row-num="${row.row_num}"
+                               value="${escapeHtml(cat.dosage_form || '')}"
+                               placeholder="e.g. Tablet, Syrup"
+                               style="font-size: 0.8125rem; padding: 0.4rem 0.6rem;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 0.75rem; font-weight: 600; color: #475569; margin-bottom: 0.25rem;">
+                            Pack Size <span style="font-weight: 400; color: #94a3b8;">(Optional)</span>
+                        </label>
+                        <input type="text"
+                               class="form-input missing-input-pack-size"
+                               data-row-num="${row.row_num}"
+                               value="${escapeHtml(cat.pack_size || '')}"
+                               placeholder="e.g. 10 Tablets"
+                               style="font-size: 0.8125rem; padding: 0.4rem 0.6rem;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 0.75rem; font-weight: 600; color: #475569; margin-bottom: 0.25rem;">
+                            MRP / Price (₹) <span style="font-weight: 400; color: #94a3b8;">(Optional)</span>
+                        </label>
+                        <input type="number"
+                               step="0.01"
+                               min="0.01"
+                               class="form-input missing-input-mrp"
+                               data-row-num="${row.row_num}"
+                               value="${escapeHtml(cat.mrp || '')}"
+                               placeholder="e.g. 45.00"
+                               style="font-size: 0.8125rem; padding: 0.4rem 0.6rem;">
+                    </div>
+                </div>
+            `;
+
+            let missingReqHtml = `
+                <div id="missing-validation-msg-${row.row_num}" style="margin-top: 0.5rem; font-size: 0.75rem; color: #dc2626; display: none;">
+                    Medicine Name is required for catalogue creation.
+                </div>
+            `;
+
+            card.innerHTML = headerHtml + fieldsHtml + missingReqHtml;
+            container.appendChild(card);
+        });
+
+        // Event listeners for Category B interactions:
+        // 1. Checkbox toggles
+        container.querySelectorAll('.missing-row-include').forEach(chk => {
+            chk.addEventListener('change', updateImportCounts);
+        });
+
+        // 2. Input changes for required validation check
+        container.querySelectorAll('.missing-input-name').forEach(input => {
+            input.addEventListener('input', function() {
+                const rNum = this.getAttribute('data-row-num');
+                validateCardRequiredFields(rNum);
+                updateImportCounts();
+            });
+        });
+
+        // Initial validation check on all missing cards
+        missingRows.forEach(r => validateCardRequiredFields(r.row_num));
+    }
+
+    function validateCardRequiredFields(rNum) {
+        const card = document.getElementById(`missing-card-${rNum}`);
+        if (!card) return true;
+
+        const nameInput = card.querySelector('.missing-input-name');
+        const msg = document.getElementById(`missing-validation-msg-${rNum}`);
+
+        const hasName = nameInput && nameInput.value.trim().length > 0;
+        if (msg) {
+            msg.style.display = hasName ? 'none' : 'block';
+        }
+        return !!hasName;
+    }
+
+    // Render Category C: Invalid Stock Rows
+    function renderCategoryC(invalidRows) {
+        const tbody = document.getElementById('csv-invalid-table-body');
+        const badge = document.getElementById('cat-c-count-badge');
+        if (badge) badge.textContent = `${invalidRows.length} invalid row(s)`;
+        if (!tbody) return;
+        tbody.innerHTML = '';
+
+        if (invalidRows.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="6" style="padding: 1.5rem; text-align: center; color: #64748b; font-style: italic;">
+                        No invalid rows. All CSV records have valid batch numbers, dates, and quantities.
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        invalidRows.forEach(row => {
+            const tr = document.createElement('tr');
+            tr.style.cssText = 'border-bottom: 1px solid #f1f5f9; background: #fffafa;';
+
+            const errStr = (row.errors || []).join('; ') || 'Invalid stock data';
+
+            tr.innerHTML = `
+                <td style="padding: 0.5rem 0.75rem; color: #64748b; font-weight: 600;">${row.row_num}</td>
+                <td style="padding: 0.5rem 0.75rem;"><strong>${escapeHtml(row.original_medicine || 'Missing')}</strong></td>
+                <td style="padding: 0.5rem 0.75rem; font-family: monospace;">${escapeHtml(row.batch_number || '')}</td>
+                <td style="padding: 0.5rem 0.75rem;">${escapeHtml(row.expiry_date_formatted || row.expiry_date_raw || '')}</td>
+                <td style="padding: 0.5rem 0.75rem;">${escapeHtml(String(row.quantity || ''))}</td>
+                <td style="padding: 0.5rem 0.75rem; color: #dc2626; font-size: 0.75rem;">${escapeHtml(errStr)}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function updateImportCounts() {
+        const matchedValidCount = (window._currentMatchedRows || []).filter(r => r.status === 'VALID').length;
+        let missingApprovedCount = 0;
+
+        document.querySelectorAll('.missing-medicine-card').forEach(card => {
+            const chk = card.querySelector('.missing-row-include');
+            if (chk && chk.checked) {
+                missingApprovedCount++;
+            }
+        });
+
+        if (readyImportLabelCount) readyImportLabelCount.textContent = matchedValidCount;
+        const readyCreateEl = document.getElementById('ready-create-label-count');
+        if (readyCreateEl) readyCreateEl.textContent = missingApprovedCount;
+    }
+
+    // Category Filter Buttons
+    document.querySelectorAll('.csv-filter-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.csv-filter-btn').forEach(b => {
+                b.style.background = '#ffffff';
+                b.style.color = '#475569';
+                b.classList.remove('active');
+            });
+            this.style.background = '#0f172a';
+            this.style.color = '#ffffff';
+            this.classList.add('active');
+
+            const filterType = this.getAttribute('data-filter');
+            const secA = document.getElementById('section-category-a');
+            const secB = document.getElementById('section-category-b');
+            const secC = document.getElementById('section-category-c');
+
+            if (filterType === 'all') {
+                if (secA) secA.style.display = 'block';
+                if (secB) secB.style.display = 'block';
+                if (secC) secC.style.display = 'block';
+            } else if (filterType === 'matched') {
+                if (secA) secA.style.display = 'block';
+                if (secB) secB.style.display = 'none';
+                if (secC) secC.style.display = 'none';
+            } else if (filterType === 'missing') {
+                if (secA) secA.style.display = 'none';
+                if (secB) secB.style.display = 'block';
+                if (secC) secC.style.display = 'none';
+            } else if (filterType === 'invalid') {
+                if (secA) secA.style.display = 'none';
+                if (secB) secB.style.display = 'none';
+                if (secC) secC.style.display = 'block';
+            }
+        });
+    });
+
+    // Step 3 -> Step 4: Add to Catalogue & Import Stock
+    if (btnConfirmImport) {
+        btnConfirmImport.addEventListener('click', function() {
+            // 1. Gather Matched Valid Rows
+            const validMatchedRows = (window._currentMatchedRows || [])
+                .filter(r => r.status === 'VALID' && r.matched_medicine)
+                .map(r => ({
+                    row_num: r.row_num,
+                    medicine_id: r.matched_medicine.id,
+                    original_medicine: r.original_medicine,
+                    batch_number: r.batch_number,
+                    expiry_date: r.expiry_date_formatted || r.expiry_date_raw,
+                    quantity: r.quantity,
+                    unit: r.unit,
+                    low_stock_limit: r.low_stock_limit,
+                }));
+
+            // 2. Gather Approved Missing Medicines
+            const newMedicinesToSubmit = [];
+            let validationFailed = false;
+
+            document.querySelectorAll('.missing-medicine-card').forEach(card => {
+                const chk = card.querySelector('.missing-row-include');
+                if (!chk || !chk.checked) return;
+
+                const rNum = parseInt(card.getAttribute('data-row-num'), 10);
+                const originalRow = (window._currentMissingRows || []).find(r => r.row_num === rNum);
+                if (!originalRow) return;
+
+                const useExistingId = card.getAttribute('data-use-existing-id');
+
+                let medName = '', comp = '', mfr = '', str = '', form = '', pack = '', mrp = null;
+
+                if (useExistingId) {
+                    medName = originalRow.original_medicine;
+                } else {
+                    const nameInput = card.querySelector('.missing-input-name');
+                    const compInput = card.querySelector('.missing-input-composition');
+                    const mfrInput = card.querySelector('.missing-input-manufacturer');
+                    const strInput = card.querySelector('.missing-input-strength');
+                    const formInput = card.querySelector('.missing-input-dosage-form');
+                    const packInput = card.querySelector('.missing-input-pack-size');
+                    const mrpInput = card.querySelector('.missing-input-mrp');
+
+                    medName = nameInput ? nameInput.value.trim() : '';
+                    comp = compInput ? compInput.value.trim() : '';
+                    mfr = mfrInput ? mfrInput.value.trim() : '';
+                    str = strInput ? strInput.value.trim() : '';
+                    form = formInput ? formInput.value.trim() : '';
+                    pack = packInput ? packInput.value.trim() : '';
+                    mrp = mrpInput && mrpInput.value.trim() ? mrpInput.value.trim() : null;
+
+                    if (!medName) {
+                        validateCardRequiredFields(rNum);
+                        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        alert(`Row #${rNum}: Medicine Name is required for catalogue creation.`);
+                        validationFailed = true;
+                        return;
+                    }
+                }
+
+                newMedicinesToSubmit.push({
+                    row_num: rNum,
+                    medicine_name: medName,
+                    composition: comp,
+                    manufacturer: mfr,
+                    strength: str,
+                    dosage_form: form,
+                    pack_size: pack,
+                    mrp: mrp,
+                    use_existing_medicine_id: useExistingId ? parseInt(useExistingId, 10) : null,
+                    batch_number: originalRow.batch_number,
+                    expiry_date: originalRow.expiry_date_formatted || originalRow.expiry_date_raw,
+                    quantity: originalRow.quantity,
+                    unit: originalRow.unit,
+                    low_stock_limit: originalRow.low_stock_limit,
+                });
+            });
+
+            if (validationFailed) return;
+
+            const totalImports = validMatchedRows.length + newMedicinesToSubmit.length;
+            if (totalImports === 0) {
+                alert('No valid stock rows or approved missing medicines selected for import.');
+                return;
+            }
+
+            const confirmMsg = `Are you sure you want to proceed with import?\n• Matched stock batches: ${validMatchedRows.length}\n• New catalogue medicines / batches: ${newMedicinesToSubmit.length}`;
+            if (!confirm(confirmMsg)) return;
+
+            hideCsvError();
+            if (iconImportIdle) iconImportIdle.style.display = 'none';
+            if (iconImportSpinning) iconImportSpinning.style.display = 'inline-block';
+            if (labelConfirmImport) labelConfirmImport.textContent = 'Importing Valid Stocks...';
+            btnConfirmImport.disabled = true;
+
+            fetch("{% url 'pharmacy:csv_stock_import' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCsrfToken()
+                },
+                body: JSON.stringify({
+                    matched_rows: validMatchedRows,
+                    new_medicines: newMedicinesToSubmit
+                })
+            })
+            .then(res => res.json().then(data => ({ ok: res.ok, status: res.status, data: data })))
+            .then(result => {
+                if (iconImportIdle) iconImportIdle.style.display = 'inline-block';
+                if (iconImportSpinning) iconImportSpinning.style.display = 'none';
+                if (labelConfirmImport) labelConfirmImport.textContent = 'Confirm & Import Valid Stocks';
+                btnConfirmImport.disabled = false;
+
+                if (!result.ok || !result.data.success) {
+                    showCsvError(result.data.error || 'Failed to import stock batches.');
+                    return;
+                }
+
+                const d = result.data;
+                lastErrorReportCsv = d.error_report_csv || '';
+
+                if (resImportedCount) resImportedCount.textContent = d.stock_batches_imported_count || d.imported_count;
+                const resNewMeds = document.getElementById('res-new-meds-count');
+                const resExistMeds = document.getElementById('res-existing-meds-count');
+                if (resNewMeds) resNewMeds.textContent = d.new_medicines_created_count || 0;
+                if (resExistMeds) resExistMeds.textContent = d.existing_medicines_imported_count || 0;
+
+                if (resSkippedCount) resSkippedCount.textContent = d.skipped_count;
+                if (resFailedCount) resFailedCount.textContent = d.failed_count;
+
+                if (csvPreviewSection) csvPreviewSection.style.display = 'none';
+                if (csvMappingSection) csvMappingSection.style.display = 'none';
+                if (csvResultsSection) {
+                    csvResultsSection.style.display = 'block';
+                    csvResultsSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+            })
+            .catch(err => {
+                if (iconImportIdle) iconImportIdle.style.display = 'inline-block';
+                if (iconImportSpinning) iconImportSpinning.style.display = 'none';
+                if (labelConfirmImport) labelConfirmImport.textContent = 'Add to Catalogue & Import Stock';
+                btnConfirmImport.disabled = false;
+                console.error(err);
+                showCsvError('A network error occurred while executing the stock import.');
+            });
+        });
+    }
+
+    // Download Error Report CSV
+    if (btnDownloadErrorReport) {
+        btnDownloadErrorReport.addEventListener('click', function() {
+            if (!lastErrorReportCsv) {
+                alert('No skipped or failed rows to report.');
+                return;
+            }
+            const blob = new Blob([lastErrorReportCsv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `inventory_skipped_failed_rows_${new Date().toISOString().slice(0, 10)}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+    }
+
+    // Upload Another CSV
+    if (btnUploadAnotherCsv) {
+        btnUploadAnotherCsv.addEventListener('click', function() {
+            if (btnRemoveCsv) btnRemoveCsv.click();
+            if (csvResultsSection) csvResultsSection.style.display = 'none';
+            if (csvDropzone) csvDropzone.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+});
+</script>
+
+<style>
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+@keyframes mic-pulse-animation {
+    0% {
+        box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.5);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(220, 38, 38, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(220, 38, 38, 0);
+    }
+}
+
+.mic-listening-pulse {
+    animation: mic-pulse-animation 1.5s infinite;
+}
+</style>
+{% endblock content %}

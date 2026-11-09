@@ -1,0 +1,162 @@
+{% extends 'pharmacy/base_pharmacy.html' %}
+
+{% block title %}Add Inventory Batch | Pharmacy Portal | MedAccess{% endblock title %}
+{% block header_title %}Add Inventory Batch{% endblock header_title %}
+{% block nav_inventory %}active{% endblock nav_inventory %}
+
+{% block content %}
+<div class="inventory-form-container" style="display: flex; flex-direction: column; gap: 1.5rem; max-width: 800px; margin: 0 auto; width: 100%;">
+
+    <!-- Back Navigation Link -->
+    <div>
+        <a href="{% url 'pharmacy:inventory' %}" style="display: inline-flex; align-items: center; gap: 0.375rem; color: #0284c7; text-decoration: none; font-size: 0.875rem; font-weight: 500;">
+            <svg style="width: 16px; height: 16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            <span>Back to Inventory</span>
+        </a>
+    </div>
+
+    <!-- Header & Information Banner -->
+    <div style="background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 1.5rem; box-shadow: var(--shadow-subtle);">
+        <h1 style="font-size: 1.5rem; font-weight: 700; color: var(--color-text-main); margin: 0;">
+            Add New Inventory Batch
+        </h1>
+        <p style="color: var(--color-text-muted); font-size: 0.875rem; margin-top: 0.375rem; margin-bottom: 0; line-height: 1.5;">
+            Select an approved formulation from the shared catalogue and record its batch number, initial stock, and expiry date for <strong>{{ pharmacy_profile.pharmacy_name }}</strong>.
+        </p>
+    </div>
+
+    <!-- Form -->
+    <form method="post" action="{% url 'pharmacy:inventory_add' %}" novalidate style="display: flex; flex-direction: column; gap: 1.5rem;">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+            <div style="background: #fff7ed; border: 1px solid #fdba74; color: #9a3412; padding: 1rem 1.25rem; border-radius: var(--radius-md); font-size: 0.875rem;">
+                <div style="display: flex; align-items: flex-start; gap: 0.5rem;">
+                    <svg style="width: 20px; height: 20px; color: #ea580c; flex-shrink: 0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                        <line x1="12" y1="9" x2="12" y2="13"></line>
+                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                    </svg>
+                    <div>
+                        <strong style="display: block; margin-bottom: 0.25rem;">Inventory Validation Notice</strong>
+                        {% for err in form.non_field_errors %}
+                            <div>{{ err }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        <!-- Section 1: Medicine & Batch Selection -->
+        <div style="background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 1.5rem; box-shadow: var(--shadow-subtle);">
+            <h2 style="font-size: 1.125rem; font-weight: 600; color: var(--color-text-main); margin-top: 0; margin-bottom: 1.25rem;">
+                Medicine & Batch Details
+            </h2>
+
+            <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+                <!-- Medicine Selection -->
+                <div>
+                    <label for="{{ form.medicine.id_for_label }}" style="display: block; font-size: 0.875rem; font-weight: 600; color: var(--color-text-main); margin-bottom: 0.375rem;">
+                        Select Catalogue Medicine <span style="color: #dc2626;">*</span>
+                    </label>
+                    {{ form.medicine }}
+                    <span style="font-size: 0.75rem; color: var(--color-text-muted); margin-top: 0.375rem; display: block;">
+                        Can't find the medicine in the catalogue? <a href="{% url 'pharmacy:medicine_add' %}" style="color: #0284c7; text-decoration: none; font-weight: 500;">Add new medicine formulation &rarr;</a>
+                    </span>
+                    {% if form.medicine.errors %}
+                        <div style="color: #dc2626; font-size: 0.75rem; margin-top: 0.25rem;">{{ form.medicine.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Batch Number -->
+                <div>
+                    <label for="{{ form.batch_number.id_for_label }}" style="display: block; font-size: 0.875rem; font-weight: 600; color: var(--color-text-main); margin-bottom: 0.375rem;">
+                        Batch / Lot Number <span style="color: #dc2626;">*</span>
+                    </label>
+                    {{ form.batch_number }}
+                    <span style="font-size: 0.75rem; color: var(--color-text-muted); margin-top: 0.25rem; display: block;">
+                        Unique batch identifier stamped on the medicine packaging.
+                    </span>
+                    {% if form.batch_number.errors %}
+                        <div style="color: #dc2626; font-size: 0.75rem; margin-top: 0.25rem;">{{ form.batch_number.errors.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 2: Stock Quantities & Dates -->
+        <div style="background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 1.5rem; box-shadow: var(--shadow-subtle);">
+            <h2 style="font-size: 1.125rem; font-weight: 600; color: var(--color-text-main); margin-top: 0; margin-bottom: 1.25rem;">
+                Stock Levels & Expiry
+            </h2>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.25rem;">
+                <!-- Initial Quantity -->
+                <div>
+                    <label for="{{ form.quantity.id_for_label }}" style="display: block; font-size: 0.875rem; font-weight: 600; color: var(--color-text-main); margin-bottom: 0.375rem;">
+                        Quantity in Stock <span style="color: #dc2626;">*</span>
+                    </label>
+                    {{ form.quantity }}
+                    {% if form.quantity.errors %}
+                        <div style="color: #dc2626; font-size: 0.75rem; margin-top: 0.25rem;">{{ form.quantity.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Unit of Measurement -->
+                <div>
+                    <label for="{{ form.unit.id_for_label }}" style="display: block; font-size: 0.875rem; font-weight: 600; color: var(--color-text-main); margin-bottom: 0.375rem;">
+                        Packaging Unit <span style="color: #dc2626;">*</span>
+                    </label>
+                    {{ form.unit }}
+                    <span style="font-size: 0.75rem; color: var(--color-text-muted); margin-top: 0.25rem; display: block;">
+                        e.g. Units, Tablets, Strips, Bottles
+                    </span>
+                    {% if form.unit.errors %}
+                        <div style="color: #dc2626; font-size: 0.75rem; margin-top: 0.25rem;">{{ form.unit.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Expiry Date -->
+                <div>
+                    <label for="{{ form.expiry_date.id_for_label }}" style="display: block; font-size: 0.875rem; font-weight: 600; color: var(--color-text-main); margin-bottom: 0.375rem;">
+                        Expiry Date <span style="color: #dc2626;">*</span>
+                    </label>
+                    {{ form.expiry_date }}
+                    {% if form.expiry_date.errors %}
+                        <div style="color: #dc2626; font-size: 0.75rem; margin-top: 0.25rem;">{{ form.expiry_date.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Low Stock Limit -->
+                <div>
+                    <label for="{{ form.low_stock_limit.id_for_label }}" style="display: block; font-size: 0.875rem; font-weight: 600; color: var(--color-text-main); margin-bottom: 0.375rem;">
+                        Low Stock Alert Limit <span style="color: #dc2626;">*</span>
+                    </label>
+                    {{ form.low_stock_limit }}
+                    <span style="font-size: 0.75rem; color: var(--color-text-muted); margin-top: 0.25rem; display: block;">
+                        Triggers low-stock warnings when quantity &le; this limit.
+                    </span>
+                    {% if form.low_stock_limit.errors %}
+                        <div style="color: #dc2626; font-size: 0.75rem; margin-top: 0.25rem;">{{ form.low_stock_limit.errors.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Form Actions Footer -->
+        <div style="display: flex; align-items: center; justify-content: flex-end; gap: 1rem; padding: 1rem 0;">
+            <a href="{% url 'pharmacy:inventory' %}" class="btn btn-secondary">
+                Cancel
+            </a>
+            <button type="submit" class="btn btn-primary" style="padding: 0.75rem 2rem; font-weight: 600;">
+                Add Batch to Inventory
+            </button>
+        </div>
+    </form>
+
+</div>
+{% endblock content %}
+

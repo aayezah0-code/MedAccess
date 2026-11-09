@@ -1,0 +1,301 @@
+{% extends 'patient/base_patient.html' %}
+
+{% block title %}Saved Pharmacies | Patient Portal | MedAccess{% endblock title %}
+{% block header_title %}Saved Pharmacies{% endblock header_title %}
+{% block nav_saved_pharmacies %}active{% endblock nav_saved_pharmacies %}
+
+{% block content %}
+<div class="saved-pharmacies-container">
+
+    <!-- Top Action Bar -->
+    <div class="page-top-bar">
+        <div>
+            <h1 class="page-main-heading">Saved Pharmacies</h1>
+            <p class="page-sub-heading">Access your bookmarked pharmacies, direct contact details, and locations.</p>
+        </div>
+        <div>
+            <a href="{% url 'patient:nearby_pharmacies' %}" class="btn btn-primary" style="display:inline-flex; align-items:center; gap:0.5rem; text-decoration:none;">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="22" y1="12" x2="18" y2="12"></line>
+                    <line x1="6" y1="12" x2="2" y2="12"></line>
+                    <line x1="12" y1="6" x2="12" y2="2"></line>
+                    <line x1="12" y1="22" x2="12" y2="18"></line>
+                </svg>
+                <span>Find Nearby Pharmacies</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Saved Pharmacies Grid or Empty State -->
+    {% if saved_pharmacies %}
+        <div class="saved-pharmacies-grid">
+            {% for item in saved_pharmacies %}
+                <div class="saved-pharma-card {% if item.is_medaccess %}saved-pharma-medaccess{% else %}saved-pharma-osm{% endif %}">
+                    <div class="saved-pharma-top">
+                        {% if item.is_medaccess %}
+                            <span class="status-badge status-completed">MedAccess Verified</span>
+                        {% else %}
+                            <span class="status-badge status-uploaded">OpenStreetMap Listing</span>
+                        {% endif %}
+                        <span class="saved-pharma-date">Saved on {{ item.saved_at|date:"M d, Y" }}</span>
+                    </div>
+
+                    <h2 class="saved-pharma-name">{{ item.display_name }}</h2>
+
+                    <div class="saved-pharma-details">
+                        {% if item.is_medaccess %}
+                            {% if item.pharmacy.pharmacist_name or item.pharmacy.owner_name %}
+                                <p class="saved-pharma-row">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                        <circle cx="12" cy="7" r="4"></circle>
+                                    </svg>
+                                    <span>
+                                        {% if item.pharmacy.pharmacist_name %}
+                                            Pharmacist: <strong>{{ item.pharmacy.pharmacist_name }}</strong>
+                                        {% elif item.pharmacy.owner_name %}
+                                            Owner: <strong>{{ item.pharmacy.owner_name }}</strong>
+                                        {% endif %}
+                                    </span>
+                                </p>
+                            {% endif %}
+                        {% endif %}
+
+                        <p class="saved-pharma-row">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                <circle cx="12" cy="10" r="3"></circle>
+                            </svg>
+                            <span>{{ item.display_address }}</span>
+                        </p>
+
+                        {% if item.display_phone %}
+                            <p class="saved-pharma-row">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                                </svg>
+                                <span>Phone: <strong>{{ item.display_phone }}</strong></span>
+                            </p>
+                        {% endif %}
+
+                        {% if item.is_medaccess and item.pharmacy.email %}
+                            <p class="saved-pharma-row">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                                    <polyline points="22,6 12,13 2,6"></polyline>
+                                </svg>
+                                <span>Email: {{ item.pharmacy.email }}</span>
+                            </p>
+                        {% endif %}
+                    </div>
+
+                    <div class="saved-pharma-actions">
+                        <button type="button" class="btn btn-secondary btn-sm btn-open-saved-modal"
+                                data-name="{{ item.display_name }}"
+                                data-source="{{ item.display_source }}"
+                                data-is-med="{% if item.is_medaccess %}true{% else %}false{% endif %}"
+                                data-address="{{ item.display_address }}"
+                                data-phone="{{ item.display_phone }}"
+                                data-date="{{ item.saved_at|date:'M d, Y' }}"
+                                data-lat="{{ item.display_latitude|default:'' }}"
+                                data-lon="{{ item.display_longitude|default:'' }}"
+                                {% if item.is_medaccess and item.pharmacy.pharmacist_name %}
+                                data-pharmacist="{{ item.pharmacy.pharmacist_name }}"
+                                {% endif %}
+                                {% if item.is_medaccess and item.pharmacy.owner_name %}
+                                data-owner="{{ item.pharmacy.owner_name }}"
+                                {% endif %}>
+                            View Details
+                        </button>
+
+                        {% if item.display_latitude and item.display_longitude %}
+                            <a href="https://www.openstreetmap.org/directions?engine=fossgis_osrm_car&route=%3B{{ item.display_latitude }},{{ item.display_longitude }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg>
+                                Directions
+                            </a>
+                        {% endif %}
+
+                        <form method="post" action="{% url 'patient:remove_saved_pharmacy' item.id %}" class="form-remove-saved" onsubmit="return confirm('Remove {{ item.display_name|escapejs }} from your saved pharmacies?');">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-outline-danger btn-sm">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                Unsave
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-prescriptions-card">
+            <div class="empty-icon-circle">
+                <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                </svg>
+            </div>
+            <h2 class="empty-card-title">No Saved Pharmacies Yet</h2>
+            <p class="empty-card-desc">
+                You haven't bookmarked any pharmacies yet. Search for nearby licensed pharmacies and save your favorites here for quick access.
+            </p>
+            <a href="{% url 'patient:nearby_pharmacies' %}" class="btn btn-primary" style="display:inline-flex; align-items:center; gap:0.5rem; text-decoration:none;">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="22" y1="12" x2="18" y2="12"></line>
+                    <line x1="6" y1="12" x2="2" y2="12"></line>
+                    <line x1="12" y1="6" x2="12" y2="2"></line>
+                    <line x1="12" y1="22" x2="12" y2="18"></line>
+                </svg>
+                <span>Find Nearby Pharmacies</span>
+            </a>
+        </div>
+    {% endif %}
+
+</div>
+
+<!-- Pharmacy Details Modal -->
+<div id="saved-details-modal" class="pharma-modal-backdrop" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="saved-modal-title">
+    <div class="pharma-modal-dialog">
+        <div class="pharma-modal-header">
+            <h3 id="saved-modal-title" class="pharma-modal-title">Pharmacy Details</h3>
+            <button type="button" class="pharma-modal-close" id="btn-close-saved-modal" aria-label="Close dialog">&times;</button>
+        </div>
+        <div class="pharma-modal-body">
+            <div id="saved-modal-badge" style="margin-bottom: 0.5rem;"></div>
+            <div class="modal-detail-row">
+                <span class="modal-detail-label">Source</span>
+                <span id="saved-modal-source" class="modal-detail-value"></span>
+            </div>
+            <div class="modal-detail-row" id="saved-modal-staff-row" style="display:none;">
+                <span class="modal-detail-label" id="saved-modal-staff-label">Staff</span>
+                <span id="saved-modal-staff-val" class="modal-detail-value"></span>
+            </div>
+            <div class="modal-detail-row">
+                <span class="modal-detail-label">Address</span>
+                <span id="saved-modal-address" class="modal-detail-value"></span>
+            </div>
+            <div class="modal-detail-row" id="saved-modal-phone-row">
+                <span class="modal-detail-label">Phone</span>
+                <span id="saved-modal-phone" class="modal-detail-value"></span>
+            </div>
+            <div class="modal-detail-row" id="saved-modal-coords-row">
+                <span class="modal-detail-label">Coordinates</span>
+                <span id="saved-modal-coords" class="modal-detail-value"></span>
+            </div>
+            <div class="modal-detail-row">
+                <span class="modal-detail-label">Saved Date</span>
+                <span id="saved-modal-date" class="modal-detail-value"></span>
+            </div>
+            <div id="saved-modal-notice" class="modal-notice-box"></div>
+        </div>
+        <div class="pharma-modal-footer">
+            <a id="saved-modal-directions" href="#" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm">
+                Open Directions &rarr;
+            </a>
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-close-saved-modal-action">Close</button>
+        </div>
+    </div>
+</div>
+{% endblock content %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('saved-details-modal');
+    const modalTitle = document.getElementById('saved-modal-title');
+    const modalBadge = document.getElementById('saved-modal-badge');
+    const modalSource = document.getElementById('saved-modal-source');
+    const modalStaffRow = document.getElementById('saved-modal-staff-row');
+    const modalStaffLabel = document.getElementById('saved-modal-staff-label');
+    const modalStaffVal = document.getElementById('saved-modal-staff-val');
+    const modalAddress = document.getElementById('saved-modal-address');
+    const modalPhoneRow = document.getElementById('saved-modal-phone-row');
+    const modalPhone = document.getElementById('saved-modal-phone');
+    const modalCoordsRow = document.getElementById('saved-modal-coords-row');
+    const modalCoords = document.getElementById('saved-modal-coords');
+    const modalDate = document.getElementById('saved-modal-date');
+    const modalNotice = document.getElementById('saved-modal-notice');
+    const modalDirections = document.getElementById('saved-modal-directions');
+
+    const btnClose = document.getElementById('btn-close-saved-modal');
+    const btnCloseAction = document.getElementById('btn-close-saved-modal-action');
+
+    function closeModal() {
+        if (modal) modal.style.display = 'none';
+    }
+
+    if (btnClose) btnClose.addEventListener('click', closeModal);
+    if (btnCloseAction) btnCloseAction.addEventListener('click', closeModal);
+    if (modal) {
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) closeModal();
+        });
+    }
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && modal && modal.style.display !== 'none') {
+            closeModal();
+        }
+    });
+
+    document.querySelectorAll('.btn-open-saved-modal').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            const name = this.getAttribute('data-name');
+            const source = this.getAttribute('data-source');
+            const isMed = (this.getAttribute('data-is-med') === 'true');
+            const address = this.getAttribute('data-address');
+            const phone = this.getAttribute('data-phone');
+            const date = this.getAttribute('data-date');
+            const lat = this.getAttribute('data-lat');
+            const lon = this.getAttribute('data-lon');
+            const pharmacist = this.getAttribute('data-pharmacist');
+            const owner = this.getAttribute('data-owner');
+
+            modalTitle.textContent = name;
+            modalBadge.innerHTML = `<span class="status-badge ${isMed ? 'status-completed' : 'status-uploaded'}">${source}</span>`;
+            modalSource.textContent = isMed ? 'MedAccess Verified Business' : 'OpenStreetMap Public Crowd-sourced Listing';
+            modalAddress.textContent = address || 'Address not listed';
+            modalDate.textContent = date;
+
+            if (pharmacist) {
+                modalStaffRow.style.display = 'flex';
+                modalStaffLabel.textContent = 'Pharmacist';
+                modalStaffVal.textContent = pharmacist;
+            } else if (owner) {
+                modalStaffRow.style.display = 'flex';
+                modalStaffLabel.textContent = 'Owner';
+                modalStaffVal.textContent = owner;
+            } else {
+                modalStaffRow.style.display = 'none';
+            }
+
+            if (phone) {
+                modalPhoneRow.style.display = 'flex';
+                modalPhone.innerHTML = `<a href="tel:${phone}" style="color:var(--color-primary); font-weight:600;">${phone}</a>`;
+            } else {
+                modalPhoneRow.style.display = 'none';
+            }
+
+            if (lat && lon) {
+                modalCoordsRow.style.display = 'flex';
+                modalCoords.textContent = `${lat}, ${lon}`;
+                modalDirections.style.display = 'inline-flex';
+                modalDirections.href = `https://www.openstreetmap.org/directions?engine=fossgis_osrm_car&route=%3B${lat},${lon}`;
+            } else {
+                modalCoordsRow.style.display = 'none';
+                modalDirections.style.display = 'none';
+            }
+
+            if (isMed) {
+                modalNotice.className = 'modal-notice-box modal-notice-medaccess';
+                modalNotice.innerHTML = `<strong>Verified MedAccess Partner:</strong> This pharmacy is an authorized, licensed healthcare provider registered on the MedAccess platform.`;
+            } else {
+                modalNotice.className = 'modal-notice-box modal-notice-osm';
+                modalNotice.innerHTML = `<strong>Public Listing Notice:</strong> This entry is sourced from OpenStreetMap public community data. Medicine stock and real-time operational status are not independently verified by MedAccess.`;
+            }
+
+            modal.style.display = 'flex';
+        });
+    });
+});
+</script>
+{% endblock extra_js %}

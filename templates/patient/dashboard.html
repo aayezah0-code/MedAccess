@@ -1,0 +1,218 @@
+{% extends 'patient/base_patient.html' %}
+
+{% block title %}Dashboard | Patient Portal | MedAccess{% endblock title %}
+{% block header_title %}Dashboard{% endblock header_title %}
+{% block nav_dashboard %}active{% endblock nav_dashboard %}
+
+{% block content %}
+
+<!-- Welcome Banner -->
+<div class="welcome-banner">
+    <div class="welcome-banner-content">
+        {% if patient_profile and patient_profile.profile_photo %}
+            <img src="{{ patient_profile.profile_photo.url }}" alt="Profile photo" class="welcome-avatar">
+        {% else %}
+            <div class="welcome-avatar-placeholder">
+                {{ request.user.first_name|first|upper }}{{ request.user.last_name|first|upper|default:request.user.username|first|upper }}
+            </div>
+        {% endif %}
+        <div>
+            <h1>Welcome back, {{ request.user.first_name|default:request.user.username }}!</h1>
+            <p>Manage your prescriptions, find nearby pharmacies, and track your healthcare journey all in one place.</p>
+        </div>
+    </div>
+</div>
+
+<!-- Dashboard Statistics -->
+<div class="dashboard-stats-grid">
+    <!-- Stat 1: Total Prescriptions -->
+    <div class="stat-card">
+        <div class="stat-icon-wrapper stat-icon-primary">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+                <polyline points="10 9 9 9 8 9"></polyline>
+            </svg>
+        </div>
+        <div class="stat-content">
+            <span class="stat-label">Total Prescriptions</span>
+            <span class="stat-value">{{ total_prescriptions }}</span>
+        </div>
+    </div>
+
+    <!-- Stat 2: Saved Pharmacies -->
+    <a href="{% url 'patient:saved_pharmacies' %}" class="stat-card" style="text-decoration: none; color: inherit;">
+        <div class="stat-icon-wrapper stat-icon-secondary">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+            </svg>
+        </div>
+        <div class="stat-content">
+            <span class="stat-label">Saved Pharmacies</span>
+            <span class="stat-value">{{ saved_pharmacies_count }}</span>
+        </div>
+    </a>
+
+    <!-- Stat 3: Profile Completion -->
+    <div class="stat-card">
+        <div class="stat-icon-wrapper stat-icon-accent">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+        </div>
+        <div class="stat-content">
+            <div class="stat-completion-header">
+                <span class="stat-label">Profile Completion</span>
+                <span class="stat-percentage">{{ profile_completion }}%</span>
+            </div>
+            <div class="stat-progress-bar">
+                <div class="stat-progress-fill" style="width: {{ profile_completion }}%;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Prescriptions Section -->
+<div class="dashboard-section">
+    <div class="dashboard-section-header">
+        <h2 class="dashboard-section-title">Recent Prescriptions</h2>
+        {% if recent_prescriptions %}
+            <a href="{% url 'patient:prescriptions_list' %}" class="section-header-link">View All Prescriptions &rarr;</a>
+        {% endif %}
+    </div>
+
+    <div class="dashboard-card">
+        {% if recent_prescriptions %}
+            <div class="prescription-list">
+                {% for prescription in recent_prescriptions %}
+                    <div class="prescription-row">
+                        <div class="prescription-info">
+                            <div class="prescription-file-icon">
+                                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                </svg>
+                            </div>
+                            <div>
+                                <span class="prescription-date">Uploaded on {{ prescription.uploaded_at|date:"M d, Y" }} at {{ prescription.uploaded_at|date:"H:i" }}</span>
+                                <span class="prescription-meta">Prescription #{{ prescription.id }}</span>
+                            </div>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:0.75rem;">
+                            {% if prescription.status == 'COMPLETED' %}
+                                <span class="status-badge status-completed">{{ prescription.get_status_display }}</span>
+                            {% elif prescription.status == 'PROCESSING' %}
+                                <span class="status-badge status-processing">{{ prescription.get_status_display }}</span>
+                            {% elif prescription.status == 'FAILED' %}
+                                <span class="status-badge status-failed">{{ prescription.get_status_display }}</span>
+                            {% else %}
+                                <span class="status-badge status-uploaded">{{ prescription.get_status_display }}</span>
+                            {% endif %}
+                            <a href="{% url 'patient:prescription_detail' prescription.id %}" class="btn-table-action">View Details</a>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="12" y1="18" x2="12" y2="12"></line>
+                    <line x1="9" y1="15" x2="15" y2="15"></line>
+                </svg>
+                <p class="empty-state-title">No Prescriptions Uploaded</p>
+                <p class="empty-state-desc">You haven't uploaded any prescriptions yet. Once uploaded, your latest prescriptions and their processing status will appear here.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Quick Navigation Section -->
+<div class="dashboard-section">
+    <div class="dashboard-section-header">
+        <h2 class="dashboard-section-title">Quick Actions</h2>
+    </div>
+
+    <div class="quick-nav-grid">
+        <!-- Action 1: Upload Prescription -->
+        <a href="{% url 'patient:upload_prescription' %}" class="quick-nav-card quick-nav-card-link">
+            <div class="quick-nav-card-top">
+                <div class="quick-nav-icon">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                </div>
+                <span class="view-profile-badge">Upload</span>
+            </div>
+            <h3 class="quick-nav-title">Upload Prescription</h3>
+            <p class="quick-nav-desc">Upload a photo of your prescription to find available medicines at nearby pharmacies.</p>
+        </a>
+
+        <!-- Action 2: Nearby Pharmacies -->
+        <a href="{% url 'patient:nearby_pharmacies' %}" class="quick-nav-card quick-nav-card-link">
+            <div class="quick-nav-card-top">
+                <div class="quick-nav-icon">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                        <circle cx="12" cy="10" r="3"></circle>
+                    </svg>
+                </div>
+                <span class="view-profile-badge">Find</span>
+            </div>
+            <h3 class="quick-nav-title">Nearby Pharmacies</h3>
+            <p class="quick-nav-desc">Search and discover licensed pharmacies close to your current location.</p>
+        </a>
+
+        <!-- Action 3: Saved Pharmacies -->
+        <a href="{% url 'patient:saved_pharmacies' %}" class="quick-nav-card quick-nav-card-link">
+            <div class="quick-nav-card-top">
+                <div class="quick-nav-icon">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                </div>
+                <span class="view-profile-badge">Saved</span>
+            </div>
+            <h3 class="quick-nav-title">Saved Pharmacies</h3>
+            <p class="quick-nav-desc">View your bookmarked pharmacies, direct contact details and store addresses.</p>
+        </a>
+
+        <!-- Action 3: My Prescriptions -->
+        <a href="{% url 'patient:prescriptions_list' %}" class="quick-nav-card quick-nav-card-link">
+            <div class="quick-nav-card-top">
+                <div class="quick-nav-icon">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                    </svg>
+                </div>
+                <span class="view-profile-badge">View</span>
+            </div>
+            <h3 class="quick-nav-title">My Prescriptions</h3>
+            <p class="quick-nav-desc">View your complete prescription history and extracted medicines list.</p>
+        </a>
+
+        <!-- Action 4: Profile Settings -->
+        <a href="{% url 'patient:profile' %}" class="quick-nav-card quick-nav-card-link">
+            <div class="quick-nav-card-top">
+                <div class="quick-nav-icon">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    </svg>
+                </div>
+                <span class="view-profile-badge">Manage</span>
+            </div>
+            <h3 class="quick-nav-title">Profile Settings</h3>
+            <p class="quick-nav-desc">Update your medical details, blood group, allergies, and contact information.</p>
+        </a>
+    </div>
+</div>
+
+{% endblock content %}

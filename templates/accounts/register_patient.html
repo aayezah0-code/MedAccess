@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+
+{% block title %}Patient Registration | MedAccess{% endblock title %}
+
+{% block content %}
+<div class="auth-card">
+    <div class="auth-header">
+        <h1 class="auth-title">Patient Registration</h1>
+        <p class="auth-subtitle">Create your personal MedAccess healthcare account</p>
+    </div>
+
+    <form method="post" action="{% url 'accounts:register_patient' %}" novalidate>
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+            <div class="alert alert-error" style="margin-bottom: 1rem;">
+                {% for error in form.non_field_errors %}
+                    <div>{{ error }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <div class="form-grid">
+            <div class="form-grid-2">
+                <div class="form-group">
+                    <label class="form-label" for="{{ form.first_name.id_for_label }}">First Name</label>
+                    {{ form.first_name }}
+                    {% if form.first_name.errors %}
+                        {% for error in form.first_name.errors %}
+                            <span class="field-error">{{ error }}</span>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="{{ form.last_name.id_for_label }}">Last Name</label>
+                    {{ form.last_name }}
+                    {% if form.last_name.errors %}
+                        {% for error in form.last_name.errors %}
+                            <span class="field-error">{{ error }}</span>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="{{ form.username.id_for_label }}">Username</label>
+                {{ form.username }}
+                {% if form.username.errors %}
+                    {% for error in form.username.errors %}
+                        <span class="field-error">{{ error }}</span>
+                    {% endfor %}
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="{{ form.email.id_for_label }}">Email Address</label>
+                {{ form.email }}
+                {% if form.email.errors %}
+                    {% for error in form.email.errors %}
+                        <span class="field-error">{{ error }}</span>
+                    {% endfor %}
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="{{ form.phone_number.id_for_label }}">Phone Number (Optional)</label>
+                {{ form.phone_number }}
+                {% if form.phone_number.errors %}
+                    {% for error in form.phone_number.errors %}
+                        <span class="field-error">{{ error }}</span>
+                    {% endfor %}
+                {% endif %}
+            </div>
+
+            <div class="form-grid-2">
+                <div class="form-group">
+                    <label class="form-label" for="{{ form.password.id_for_label }}">Password</label>
+                    {{ form.password }}
+                    {% if form.password.errors %}
+                        {% for error in form.password.errors %}
+                            <span class="field-error">{{ error }}</span>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="{{ form.confirm_password.id_for_label }}">Confirm Password</label>
+                    {{ form.confirm_password }}
+                    {% if form.confirm_password.errors %}
+                        {% for error in form.confirm_password.errors %}
+                            <span class="field-error">{{ error }}</span>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block" style="margin-top: 0.5rem;">
+                Create Patient Account
+            </button>
+        </div>
+    </form>
+
+    <div class="auth-footer-text">
+        <p>Already have an account? <a href="{% url 'accounts:login' %}">Sign in here</a></p>
+    </div>
+</div>
+{% endblock content %}
+

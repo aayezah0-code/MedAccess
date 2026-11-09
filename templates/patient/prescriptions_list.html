@@ -1,0 +1,441 @@
+{% extends 'patient/base_patient.html' %}
+
+{% block title %}My Prescriptions | Patient Portal | MedAccess{% endblock title %}
+{% block header_title %}My Prescriptions{% endblock header_title %}
+{% block nav_prescriptions %}active{% endblock nav_prescriptions %}
+
+{% block content %}
+<div class="prescriptions-container">
+
+    <!-- Top Action Bar -->
+    <div class="page-top-bar">
+        <div>
+            <h1 class="page-main-heading">Prescription Records</h1>
+            <p class="page-sub-heading">View and track all doctor's prescriptions uploaded to your MedAccess account.</p>
+        </div>
+        <div>
+            <a href="{% url 'patient:upload_prescription' %}" class="btn btn-primary btn-upload-cta">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                <span>Upload New Prescription</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Prescriptions List / Grid -->
+    {% if prescriptions %}
+        <div class="prescriptions-grid">
+            {% for prescription in prescriptions %}
+                <div class="rx-card" id="rx-card-{{ prescription.id }}">
+                    <div class="rx-card-thumb-wrapper">
+                        {% if prescription.is_pdf or prescription.prescription_image.name|lower|slice:"-4:" == ".pdf" %}
+                            <div class="rx-card-thumb-pdf" title="PDF Prescription Document">
+                                <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="rx-pdf-svg">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                                    <polyline points="10 9 9 9 8 9"></polyline>
+                                </svg>
+                                <span class="rx-pdf-label">PDF Document</span>
+                            </div>
+                        {% elif prescription.prescription_image %}
+                            <img src="{{ prescription.prescription_image.url }}" alt="Prescription #{{ prescription.id }}" class="rx-card-thumb">
+                        {% else %}
+                            <div class="rx-card-thumb-placeholder">
+                                <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                </svg>
+                            </div>
+                        {% endif %}
+
+                        <div class="rx-status-overlay">
+                            {% if prescription.status == 'COMPLETED' %}
+                                <span class="status-badge status-completed">Analysis completed</span>
+                            {% elif prescription.status == 'PROCESSING' %}
+                                <span class="status-badge status-processing">Analyzing prescription</span>
+                            {% elif prescription.status == 'FAILED' %}
+                                <span class="status-badge status-failed">Automatic extraction unsuccessful – Manual entry available</span>
+                            {% else %}
+                                <span class="status-badge status-uploaded">Uploaded – Awaiting analysis</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="rx-card-body">
+                        <div class="rx-card-header">
+                            <span class="rx-card-id">Prescription #{{ prescription.id }}</span>
+                        </div>
+                        <p class="rx-card-date">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg>
+                            <span>{{ prescription.uploaded_at|date:"M d, Y \a\t h:i A" }}</span>
+                        </p>
+
+                        <!-- Extracted Medicines Section -->
+                        <div class="rx-card-ai-preview">
+                            <div class="rx-ai-preview-header">
+                                <span class="rx-ai-preview-label">Extracted Medicines</span>
+                            </div>
+
+                            {% if prescription.status == 'COMPLETED' %}
+                                {% if prescription.preview_medicines %}
+                                    <div class="rx-med-chips-list">
+                                        {% for med_name in prescription.preview_medicines %}
+                                            <span class="rx-med-chip" title="{{ med_name }}">{{ med_name }}</span>
+                                        {% endfor %}
+                                        {% if prescription.more_medicines_count > 0 %}
+                                            <span class="rx-med-chip rx-med-chip-more">+{{ prescription.more_medicines_count }} more</span>
+                                        {% endif %}
+                                    </div>
+                                {% else %}
+                                    <p class="rx-no-meds-msg">No medicines identified</p>
+                                {% endif %}
+
+                                {% if prescription.confirmation_summary %}
+                                    <div class="rx-card-conf-status">
+                                        <span class="rx-conf-badge rx-conf-{{ prescription.confirmation_status }}">
+                                            {{ prescription.confirmation_summary }}
+                                        </span>
+                                    </div>
+                                {% endif %}
+                            {% elif prescription.status == 'PROCESSING' %}
+                                <p class="rx-preview-status-hint">Analyzing prescription document...</p>
+                            {% elif prescription.status == 'FAILED' %}
+                                <p class="rx-preview-status-hint">Manual entry available on details page</p>
+                            {% else %}
+                                <p class="rx-preview-status-hint">Awaiting analysis...</p>
+                            {% endif %}
+                        </div>
+
+                        <div class="rx-card-footer">
+                            <button type="button" class="btn btn-secondary rx-details-btn rx-modal-open-btn" data-modal-target="rx-modal-{{ prescription.id }}" aria-haspopup="dialog" aria-controls="rx-modal-{{ prescription.id }}">
+                                <span>View Details</span>
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="9 18 15 12 9 6"></polyline>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Prescription Details Modal for #{{ prescription.id }} -->
+                <div id="rx-modal-{{ prescription.id }}" class="rx-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="rx-modal-title-{{ prescription.id }}" aria-hidden="true">
+                    <div class="rx-modal-dialog">
+                        
+                        <!-- Modal Header -->
+                        <div class="rx-modal-header">
+                            <div class="rx-modal-header-left">
+                                <h2 id="rx-modal-title-{{ prescription.id }}" class="rx-modal-title">Prescription #{{ prescription.id }}</h2>
+                                {% if prescription.status == 'COMPLETED' %}
+                                    <span class="status-badge status-completed">Analysis completed</span>
+                                {% elif prescription.status == 'PROCESSING' %}
+                                    <span class="status-badge status-processing">Analyzing prescription</span>
+                                {% elif prescription.status == 'FAILED' %}
+                                    <span class="status-badge status-failed">Automatic extraction unsuccessful – Manual entry available</span>
+                                {% else %}
+                                    <span class="status-badge status-uploaded">Uploaded – Awaiting analysis</span>
+                                {% endif %}
+                                {% if prescription.confirmation_summary %}
+                                    <span class="rx-conf-pill rx-conf-{{ prescription.confirmation_status }}">{{ prescription.confirmation_summary }}</span>
+                                {% endif %}
+                            </div>
+                            <button type="button" class="rx-modal-close-btn" data-modal-close aria-label="Close dialog">
+                                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+                        </div>
+
+                        <!-- Modal Body -->
+                        <div class="rx-modal-body">
+                            
+                            <!-- Left Column: Document Preview -->
+                            <div class="rx-modal-doc-col">
+                                <div class="rx-modal-section-header">
+                                    <h3 class="rx-modal-subheading">Prescription Document</h3>
+                                    <a href="{{ prescription.prescription_image.url }}" target="_blank" rel="noopener noreferrer" class="link-external" title="Open full document in new tab">
+                                        <span>View Full Size</span>
+                                        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                            <polyline points="15 3 21 3 21 9"></polyline>
+                                            <line x1="10" y1="14" x2="21" y2="3"></line>
+                                        </svg>
+                                    </a>
+                                </div>
+
+                                <div class="rx-modal-doc-box">
+                                    {% if prescription.is_pdf or prescription.prescription_image.name|lower|slice:"-4:" == ".pdf" %}
+                                        <div class="rx-modal-pdf-view">
+                                            <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="rx-pdf-svg">
+                                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                                <polyline points="14 2 14 8 20 8"></polyline>
+                                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                                                <polyline points="10 9 9 9 8 9"></polyline>
+                                            </svg>
+                                            <p class="rx-modal-pdf-title">PDF Medical Document</p>
+                                            <a href="{{ prescription.prescription_image.url }}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm rx-modal-pdf-btn">
+                                                <span>Open PDF Document</span>
+                                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                                            </a>
+                                        </div>
+                                    {% elif prescription.prescription_image %}
+                                        <a href="{{ prescription.prescription_image.url }}" target="_blank" rel="noopener noreferrer" title="Click to view full size">
+                                            <img src="{{ prescription.prescription_image.url }}" alt="Prescription #{{ prescription.id }}" class="rx-modal-preview-img">
+                                        </a>
+                                    {% else %}
+                                        <div class="rx-modal-no-doc">No document attached</div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="rx-modal-meta-box">
+                                    <span class="rx-meta-label">Uploaded Date:</span>
+                                    <span class="rx-meta-value">{{ prescription.uploaded_at|date:"F d, Y \a\t h:i A" }}</span>
+                                </div>
+                            </div>
+
+                            <!-- Right Column: Extracted Information & Details -->
+                            <div class="rx-modal-info-col">
+                                
+                                <!-- Category A: Extracted Medicines Section -->
+                                <div class="rx-modal-medicines-section">
+                                    <div class="rx-modal-section-header">
+                                        <div>
+                                            <h3 class="rx-modal-subheading">Extracted Medicines</h3>
+                                            <p class="rx-modal-section-caption">AI analysis from uploaded document. Always verify details with your doctor or pharmacist.</p>
+                                        </div>
+                                        {% if prescription.extracted_medicines %}
+                                            <span class="rx-count-badge">{{ prescription.extracted_medicines|length }} item{{ prescription.extracted_medicines|length|pluralize }}</span>
+                                        {% endif %}
+                                    </div>
+
+                                    {% if prescription.status == 'COMPLETED' %}
+                                        {% if prescription.extracted_medicines %}
+                                            <div class="rx-modal-meds-table-wrapper">
+                                                <table class="rx-modal-table">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Medicine</th>
+                                                            <th>Strength</th>
+                                                            <th>Dosage</th>
+                                                            <th>Frequency</th>
+                                                            <th>Duration</th>
+                                                            <th>Instructions</th>
+                                                            <th>Status</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {% for med in prescription.extracted_medicines %}
+                                                            <tr class="{% if med.needs_verification %}rx-row-verify-needed{% endif %}">
+                                                                <td class="rx-cell-medname">
+                                                                    <div class="rx-medname-title">{{ med.medicine_name|default:"Unstated" }}</div>
+                                                                    {% if med.needs_verification %}
+                                                                        <div class="rx-verify-inline-alert" title="Clinical Uncertainty Warning">
+                                                                            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="rx-verify-warn-icon">
+                                                                                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                                                                                <line x1="12" y1="9" x2="12" y2="13"></line>
+                                                                                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                                                                            </svg>
+                                                                            <span>Needs Verification: {{ med.verification_reason|default:"Detail requires physician confirmation" }}</span>
+                                                                        </div>
+                                                                    {% endif %}
+                                                                </td>
+                                                                <td>{{ med.strength|default:"-" }}</td>
+                                                                <td>{{ med.dosage|default:"-" }}</td>
+                                                                <td>{{ med.frequency|default:"-" }}</td>
+                                                                <td>{{ med.duration|default:"-" }}</td>
+                                                                <td>{{ med.instructions|default:"-" }}</td>
+                                                                <td>
+                                                                    {% if med.is_confirmed %}
+                                                                        <span class="rx-badge rx-badge-confirmed">Confirmed</span>
+                                                                    {% else %}
+                                                                        <a href="{% url 'patient:prescription_detail' prescription.id %}" class="btn btn-secondary btn-xs rx-btn-review-sm" title="Review and confirm on prescription details page">
+                                                                            <span>Review</span>
+                                                                        </a>
+                                                                    {% endif %}
+                                                                </td>
+                                                            </tr>
+                                                        {% endfor %}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        {% else %}
+                                            <div class="rx-modal-empty-box">
+                                                <p class="rx-empty-text">No medicines were identified from this prescription document.</p>
+                                            </div>
+                                        {% endif %}
+                                    {% elif prescription.status == 'PROCESSING' %}
+                                        <div class="rx-modal-notice-box rx-notice-processing">
+                                            <p>Prescription analysis is currently in progress. Please refresh in a moment to see extracted details.</p>
+                                        </div>
+                                    {% elif prescription.status == 'FAILED' %}
+                                        <div class="rx-modal-notice-box rx-notice-failed">
+                                            <p>Automatic extraction was unsuccessful for this document. You can manually enter and save your prescribed medicines on the full prescription page.</p>
+                                        </div>
+                                    {% else %}
+                                        <div class="rx-modal-notice-box rx-notice-uploaded">
+                                            <p>Prescription has been uploaded and is queued for analysis.</p>
+                                        </div>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Category B: Confirmed Medicines Section (if any) -->
+                                {% if prescription.confirmed_medicines %}
+                                    <div class="rx-modal-medicines-section rx-modal-confirmed-section">
+                                        <div class="rx-modal-section-header">
+                                            <div>
+                                                <h3 class="rx-modal-subheading">Patient Confirmed Medicines</h3>
+                                                <p class="rx-modal-section-caption">Medicines confirmed by you from AI extraction.</p>
+                                            </div>
+                                            <span class="rx-count-badge">{{ prescription.confirmed_medicines|length }} confirmed</span>
+                                        </div>
+                                        <div class="rx-modal-meds-table-wrapper">
+                                            <table class="rx-modal-table">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Medicine</th>
+                                                        <th>Strength</th>
+                                                        <th>Dosage</th>
+                                                        <th>Frequency</th>
+                                                        <th>Duration</th>
+                                                        <th>Instructions</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for cmed in prescription.confirmed_medicines %}
+                                                        <tr>
+                                                            <td class="rx-cell-medname">
+                                                                <div class="rx-medname-title">{{ cmed.medicine_name }}</div>
+                                                                <span class="rx-source-badge rx-source-ai">Patient Confirmed</span>
+                                                            </td>
+                                                            <td>{{ cmed.strength|default:"-" }}</td>
+                                                            <td>{{ cmed.dosage|default:"-" }}</td>
+                                                            <td>{{ cmed.frequency|default:"-" }}</td>
+                                                            <td>{{ cmed.duration|default:"-" }}</td>
+                                                            <td>{{ cmed.instructions|default:"-" }}</td>
+                                                        </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                {% endif %}
+
+                                <!-- Category C: Manually Added Medicines (if any) -->
+                                {% if prescription.manual_medicines %}
+                                    <div class="rx-modal-medicines-section rx-modal-manual-section">
+                                        <div class="rx-modal-section-header">
+                                            <div>
+                                                <h3 class="rx-modal-subheading">Manually Added Medicines</h3>
+                                                <p class="rx-modal-section-caption">Entered directly into your records.</p>
+                                            </div>
+                                            <span class="rx-count-badge">{{ prescription.manual_medicines|length }} manual</span>
+                                        </div>
+                                        <div class="rx-modal-meds-table-wrapper">
+                                            <table class="rx-modal-table">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Medicine</th>
+                                                        <th>Strength</th>
+                                                        <th>Dosage</th>
+                                                        <th>Frequency</th>
+                                                        <th>Duration</th>
+                                                        <th>Instructions / Qty</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for mmed in prescription.manual_medicines %}
+                                                        <tr>
+                                                            <td class="rx-cell-medname">
+                                                                <div class="rx-medname-title">{{ mmed.medicine_name }}</div>
+                                                                <span class="rx-source-badge rx-source-manual">Manual Entry</span>
+                                                            </td>
+                                                            <td>{{ mmed.strength|default:"-" }}</td>
+                                                            <td>{{ mmed.dosage|default:"-" }}</td>
+                                                            <td>{{ mmed.frequency|default:"-" }}</td>
+                                                            <td>{{ mmed.duration|default:"-" }}</td>
+                                                            <td>{{ mmed.instructions|default:mmed.quantity|default:"-" }}</td>
+                                                        </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                {% endif %}
+
+                                <!-- Unclear or Uncertain Details Section -->
+                                {% if prescription.unclear_details %}
+                                    <div class="rx-modal-unclear-section">
+                                        <div class="rx-unclear-alert-box">
+                                            <div class="rx-unclear-header">
+                                                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <circle cx="12" cy="12" r="10"></circle>
+                                                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                                                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                                                </svg>
+                                                <strong>Unclear or Uncertain Information Noted</strong>
+                                            </div>
+                                            <p class="rx-unclear-sub">The following handwriting or notes could not be deciphered with certainty:</p>
+                                            <ul class="rx-unclear-list">
+                                                {% for item in prescription.unclear_details %}
+                                                    <li>{{ item }}</li>
+                                                {% endfor %}
+                                            </ul>
+                                        </div>
+                                    </div>
+                                {% endif %}
+
+                            </div>
+                        </div>
+
+                        <!-- Modal Footer -->
+                        <div class="rx-modal-footer">
+                            <button type="button" class="btn btn-secondary" data-modal-close>Close</button>
+                            <a href="{% url 'patient:prescription_detail' prescription.id %}" class="btn btn-primary rx-modal-open-full-btn">
+                                <span>Open Full Prescription Page</span>
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                    <polyline points="12 5 19 12 12 19"></polyline>
+                                </svg>
+                            </a>
+                        </div>
+
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-prescriptions-card">
+            <div class="empty-icon-circle">
+                <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                    <polyline points="10 9 9 9 8 9"></polyline>
+                </svg>
+            </div>
+            <h2 class="empty-card-title">No Prescriptions Uploaded Yet</h2>
+            <p class="empty-card-desc">
+                You haven't uploaded any medical prescriptions to your account yet. When you upload a doctor's prescription, it will appear here.
+            </p>
+            <a href="{% url 'patient:upload_prescription' %}" class="btn btn-primary" style="display:inline-flex; align-items:center; gap:0.5rem; text-decoration:none;">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="17 8 12 3 7 8"></polyline>
+                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+                <span>Upload Your First Prescription</span>
+            </a>
+        </div>
+    {% endif %}
+
+</div>
+{% endblock content %}

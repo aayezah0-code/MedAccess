@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+
+{% block title %}Sign In | MedAccess{% endblock title %}
+
+{% block content %}
+<div class="auth-card">
+    <div class="auth-header">
+        <h1 class="auth-title">Welcome to MedAccess</h1>
+        <p class="auth-subtitle">Sign in to your Patient, Pharmacy, or Admin account</p>
+    </div>
+
+    <form method="post" action="{% url 'accounts:login' %}" novalidate>
+        {% csrf_token %}
+        {% if next %}
+            <input type="hidden" name="next" value="{{ next }}">
+        {% endif %}
+
+        {% if form.non_field_errors %}
+            <div class="alert alert-error" style="margin-bottom: 1rem;">
+                {% for error in form.non_field_errors %}
+                    <div>{{ error }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <div class="form-grid">
+            <div class="form-group">
+                <label class="form-label" for="{{ form.username.id_for_label }}">Username</label>
+                {{ form.username }}
+                {% if form.username.errors %}
+                    {% for error in form.username.errors %}
+                        <span class="field-error">{{ error }}</span>
+                    {% endfor %}
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <label class="form-label" for="{{ form.password.id_for_label }}">Password</label>
+                    <a href="{% url 'accounts:password_reset' %}" class="auth-forgot-link" style="font-size: 0.8125rem; color: var(--color-primary); text-decoration: none; font-weight: 500;">Forgot Password?</a>
+                </div>
+                {{ form.password }}
+                {% if form.password.errors %}
+                    {% for error in form.password.errors %}
+                        <span class="field-error">{{ error }}</span>
+                    {% endfor %}
+                {% endif %}
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block" style="margin-top: 0.5rem;">
+                Sign In
+            </button>
+        </div>
+    </form>
+
+    <div class="auth-footer-text">
+        <p>New to MedAccess?</p>
+        <p style="margin-top: 0.35rem;">
+            <a href="{% url 'accounts:register_patient' %}">Register as Patient</a>
+            &bull;
+            <a href="{% url 'accounts:register_pharmacy' %}">Register Pharmacy</a>
+        </p>
+        <p style="margin-top: 0.6rem; font-size: 0.8125rem;">
+            <a href="{% url 'accounts:resend_verification' %}" style="color: var(--color-primary); text-decoration: none; font-weight: 500;">
+                Resend email verification link
+            </a>
+        </p>
+    </div>
+</div>
+{% endblock content %}
+

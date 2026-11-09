@@ -1,0 +1,1411 @@
+{% extends 'patient/base_patient.html' %}
+
+{% block title %}Prescription #{{ prescription.id }} | Patient Portal | MedAccess{% endblock title %}
+{% block header_title %}Prescription Details{% endblock header_title %}
+{% block nav_prescriptions %}active{% endblock nav_prescriptions %}
+
+{% block content %}
+<div class="rx-detail-container">
+
+    <!-- Top Navigation / Breadcrumb -->
+    <div class="rx-detail-nav">
+        <a href="{% url 'patient:prescriptions_list' %}" class="back-link">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            <span>Back to My Prescriptions</span>
+        </a>
+    </div>
+
+    <!-- Summary Header Card -->
+    <div class="rx-summary-card">
+        <div class="rx-summary-left">
+            <div class="rx-detail-icon">
+                <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                    <polyline points="10 9 9 9 8 9"></polyline>
+                </svg>
+            </div>
+            <div>
+                <h1 class="rx-summary-title">Prescription #{{ prescription.id }}</h1>
+                <p class="rx-summary-meta">
+                    Uploaded on {{ prescription.uploaded_at|date:"F d, Y \a\t h:i A" }}
+                </p>
+            </div>
+        </div>
+        <div class="rx-summary-right">
+            {% if prescription.confirmation_summary %}
+                <span class="rx-conf-summary-pill rx-conf-{{ prescription.confirmation_status }}" title="Patient confirmation progress">
+                    {{ prescription.confirmation_summary }}
+                </span>
+            {% endif %}
+            {% if prescription.status == 'COMPLETED' %}
+                <span class="status-badge status-completed">{{ prescription.get_status_display }}</span>
+            {% elif prescription.status == 'PROCESSING' %}
+                <span class="status-badge status-processing">{{ prescription.get_status_display }}</span>
+            {% elif prescription.status == 'FAILED' %}
+                <span class="status-badge status-failed">{{ prescription.get_status_display }}</span>
+            {% else %}
+                <span class="status-badge status-uploaded">{{ prescription.get_status_display }}</span>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Main Content Layout (2 Columns) -->
+    <div class="rx-detail-grid">
+
+        <!-- Column 1: Prescription Document Image / PDF -->
+        <div class="rx-col">
+            <div class="rx-section-card">
+                <div class="rx-section-header">
+                    <h2 class="rx-section-title">Prescription Document</h2>
+                    <a href="{% url 'patient:prescription_secure_image' prescription.id %}" target="_blank" rel="noopener noreferrer" class="link-external">
+                        <span>View Full Size</span>
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                            <polyline points="15 3 21 3 21 9"></polyline>
+                            <line x1="10" y1="14" x2="21" y2="3"></line>
+                        </svg>
+                    </a>
+                </div>
+
+                <div class="rx-image-box">
+                    {% if prescription.prescription_image.name|lower|slice:"-4:" == ".pdf" %}
+                        <div class="rx-pdf-preview" style="text-align: center; padding: 2.5rem 1rem;">
+                            <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="color: var(--color-primary, #0284c7); margin-bottom: 0.75rem;">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                                <polyline points="10 9 9 9 8 9"></polyline>
+                            </svg>
+                            <p style="font-weight: 600; margin-bottom: 0.75rem; color: var(--color-text, #1e293b);">PDF Prescription Document</p>
+                            <a href="{% url 'patient:prescription_secure_image' prescription.id %}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm" style="display: inline-flex; align-items: center; gap: 0.5rem; text-decoration: none;">
+                                <span>Open PDF Document</span>
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                            </a>
+                        </div>
+                    {% else %}
+                        <a href="{% url 'patient:prescription_secure_image' prescription.id %}" target="_blank" rel="noopener noreferrer" title="Click to open image in full size">
+                            <img src="{% url 'patient:prescription_secure_image' prescription.id %}" alt="Prescription #{{ prescription.id }}" class="rx-preview-image">
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Unclear or Uncertain Details Section (if any) -->
+            {% if unclear_details %}
+                <div class="rx-section-card rx-unclear-section-card">
+                    <div class="rx-unclear-alert-box">
+                        <div class="rx-unclear-header">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="8" x2="12" y2="12"></line>
+                                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                            </svg>
+                            <strong>Unclear Information Noted</strong>
+                        </div>
+                        <p class="rx-unclear-sub">The following handwriting or markings could not be deciphered with certainty:</p>
+                        <ul class="rx-unclear-list">
+                            {% for item in unclear_details %}
+                                <li>{{ item }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Column 2: Medicine Review, Confirmed Medicines & Manual Form -->
+        <div class="rx-col">
+
+            <!-- Category A: AI Extracted Suggestions — Pending Patient Confirmation -->
+            {% if prescription.status == 'COMPLETED' %}
+                <div class="rx-section-card rx-review-section-card">
+                    <div class="rx-section-header">
+                        <div>
+                            <h2 class="rx-section-title">
+                                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline-header-icon">
+                                    <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path>
+                                </svg>
+                                AI Extracted — Not Confirmed
+                            </h2>
+                            <p class="rx-section-subtitle">
+                                Review each extracted suggestion against your document. Edit any fields if necessary, then confirm individually.
+                            </p>
+                        </div>
+                        <span class="med-count-pill med-count-pending">{{ unconfirmed_extracted|length }} pending</span>
+                    </div>
+
+                    {% if unconfirmed_extracted %}
+                        <div class="rx-candidates-list">
+                            {% for item in unconfirmed_extracted %}
+                                <div class="rx-candidate-card {% if item.needs_verification %}rx-candidate-flagged{% endif %}" id="candidate-card-{{ item.index }}">
+                                    <div class="rx-candidate-header">
+                                        <div class="rx-candidate-title-group">
+                                            <span class="rx-candidate-num">Suggestion #{{ forloop.counter }}</span>
+                                            <span class="rx-candidate-name">{{ item.medicine_name|default:"Unstated Medicine" }}</span>
+                                        </div>
+                                        <span class="rx-badge rx-badge-unconfirmed">Review Required</span>
+                                    </div>
+
+                                    {% if item.needs_verification %}
+                                        <div class="rx-verify-callout">
+                                            <div class="rx-verify-callout-header">
+                                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                                                    <line x1="12" y1="9" x2="12" y2="13"></line>
+                                                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                                                </svg>
+                                                <strong>Verification Warning: Uncertain Information</strong>
+                                            </div>
+                                            <p class="rx-verify-callout-text">
+                                                {{ item.verification_reason|default:"Handwriting is faint or ambiguous. Please check your document carefully." }}
+                                            </p>
+                                        </div>
+                                    {% endif %}
+
+                                    <!-- Editable Confirmation Form -->
+                                    <form method="post" action="{% url 'patient:confirm_extracted_medicine' prescription.id %}" class="rx-candidate-form js-confirm-extracted-form" data-index="{{ item.index }}">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="extracted_index" value="{{ item.index }}">
+                                        <input type="hidden" name="next" value="{{ request.path }}">
+
+                                        {% if item.needs_verification %}
+                                            <div class="form-group rx-ack-group">
+                                                <label class="rx-verify-ack-label">
+                                                    <input type="checkbox" name="uncertainty_acknowledged" value="1" required class="rx-ack-checkbox">
+                                                    <span>I acknowledge the uncertainty warning above and confirm that the details entered below reflect my prescription.</span>
+                                                </label>
+                                            </div>
+                                        {% endif %}
+
+                                        <div class="form-row-2col">
+                                            <div class="form-group">
+                                                <label class="form-label">Medicine Name <span class="required">*</span></label>
+                                                <input type="text" name="medicine_name" value="{{ item.medicine_name }}" required class="form-input" placeholder="e.g. Paracetamol">
+                                            </div>
+                                            <div class="form-group">
+                                                <label class="form-label">Strength</label>
+                                                <input type="text" name="strength" value="{{ item.strength }}" class="form-input" placeholder="e.g. 500 mg">
+                                            </div>
+                                        </div>
+
+                                        <div class="form-row-2col">
+                                            <div class="form-group">
+                                                <label class="form-label">Dosage</label>
+                                                <input type="text" name="dosage" value="{{ item.dosage }}" class="form-input" placeholder="e.g. 1 tablet">
+                                            </div>
+                                            <div class="form-group">
+                                                <label class="form-label">Frequency</label>
+                                                <input type="text" name="frequency" value="{{ item.frequency }}" class="form-input" placeholder="e.g. 1-0-1, Once daily">
+                                            </div>
+                                        </div>
+
+                                        <div class="form-row-2col">
+                                            <div class="form-group">
+                                                <label class="form-label">Duration</label>
+                                                <input type="text" name="duration" value="{{ item.duration }}" class="form-input" placeholder="e.g. 5 days">
+                                            </div>
+                                            <div class="form-group">
+                                                <label class="form-label">Instructions</label>
+                                                <input type="text" name="instructions" value="{{ item.instructions }}" class="form-input" placeholder="e.g. After meals">
+                                            </div>
+                                        </div>
+
+                                        <div class="form-actions-right">
+                                            <button type="submit" class="btn btn-primary btn-sm rx-btn-confirm-action">
+                                                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                                </svg>
+                                                <span>Confirm & Save Medicine</span>
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% elif total_ai_count > 0 %}
+                        <div class="rx-all-reviewed-box">
+                            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="rx-success-icon">
+                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                            </svg>
+                            <div>
+                                <strong>All AI-extracted medicines have been reviewed and confirmed.</strong>
+                                <p class="rx-reviewed-sub">Any confirmed items are listed in the Prescribed Medicines section below.</p>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="empty-medicines-box">
+                            <p class="empty-medicines-desc">No medicines were identified by AI extraction for this document. You can add medicines manually below.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            {% endif %}
+
+            <!-- Category B & C: Prescribed Medicines (Patient Confirmed & Manually Added) -->
+            <div class="rx-section-card">
+                <div class="rx-section-header">
+                    <div>
+                        <h2 class="rx-section-title">Prescribed Medicines</h2>
+                        <p class="rx-section-subtitle">Confirmed medicines and manual entries saved to your profile.</p>
+                    </div>
+                    <span class="med-count-pill">{{ medicines|length }} added</span>
+                </div>
+
+                {% if medicines %}
+                    <div class="medicines-table-wrapper">
+                        <table class="medicines-table">
+                            <thead>
+                                <tr>
+                                    <th>Medicine Name</th>
+                                    <th>Strength</th>
+                                    <th>Dosage</th>
+                                    <th>Frequency</th>
+                                    <th>Duration</th>
+                                    <th>Instructions</th>
+                                    <th>Source</th>
+                                    <th class="th-actions">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for medicine in medicines %}
+                                    <tr id="med-row-{{ medicine.id }}">
+                                        <td class="med-name">
+                                            <div class="rx-table-medname">{{ medicine.medicine_name }}</div>
+                                            {% if medicine.created_at %}
+                                                <span class="rx-table-date">Added {{ medicine.created_at|date:"M d, Y" }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ medicine.strength|default:"-" }}</td>
+                                        <td>{{ medicine.dosage|default:"-" }}</td>
+                                        <td>{{ medicine.frequency|default:"-" }}</td>
+                                        <td>{{ medicine.duration|default:"-" }}</td>
+                                        <td>
+                                            {% if medicine.instructions %}
+                                                {{ medicine.instructions }}
+                                            {% elif medicine.quantity %}
+                                                Qty: {{ medicine.quantity }}
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if medicine.source == 'AI_CONFIRMED' %}
+                                                <span class="rx-source-badge rx-source-ai" title="Confirmed by patient from AI extraction. Note: This does not constitute medical-professional verification.">
+                                                    Patient Confirmed
+                                                </span>
+                                            {% else %}
+                                                <span class="rx-source-badge rx-source-manual" title="Entered manually by patient.">
+                                                    Manual Entry
+                                                </span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="td-actions">
+                                            <form method="post" action="{% url 'patient:delete_prescription_medicine' prescription.id medicine.id %}" onsubmit="return confirm('Remove {{ medicine.medicine_name }} from prescribed medicines?');" class="inline-delete-form js-delete-medicine-form">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="next" value="{{ request.path }}">
+                                                <button type="submit" class="btn-remove-med" title="Remove medicine" aria-label="Remove {{ medicine.medicine_name }}">
+                                                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                        <polyline points="3 6 5 6 21 6"></polyline>
+                                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                                        <line x1="10" y1="11" x2="10" y2="17"></line>
+                                                        <line x1="14" y1="11" x2="14" y2="17"></line>
+                                                    </svg>
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="empty-medicines-box">
+                        <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="8" x2="12" y2="12"></line>
+                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                        </svg>
+                        <p class="empty-medicines-title">No medicines added yet.</p>
+                        <p class="empty-medicines-desc">
+                            Review AI-extracted suggestions above or manually enter prescribed medicines using the form below.
+                        </p>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Category D: Pharmacy Availability & Prescription Request Section -->
+            {% if prescription.status == 'COMPLETED' and medicines %}
+                <div class="rx-section-card rx-availability-section-card" id="pharmacy-availability-section">
+                    <div class="rx-section-header">
+                        <div>
+                            <h2 class="rx-section-title">
+                                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline-header-icon" style="color: #0284c7;">
+                                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                                    <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                                </svg>
+                                Find Nearby Pharmacies & Request Fulfillment
+                            </h2>
+                            <p class="rx-section-subtitle">
+                                Compare your confirmed medicines against real-time stock at approved MedAccess pharmacies and send an order request.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Search Controls -->
+                    <div class="avail-search-bar">
+                        <div class="avail-control-group">
+                            <label for="avail-radius-select" class="avail-control-label">Search Radius:</label>
+                            <select id="avail-radius-select" class="form-input form-select-sm">
+                                <option value="5">Within 5 km</option>
+                                <option value="10" selected>Within 10 km (Standard)</option>
+                                <option value="15">Within 15 km</option>
+                                <option value="25">Within 25 km</option>
+                            </select>
+                        </div>
+
+                        <div class="avail-action-group">
+                            <button type="button" id="btn-check-availability" class="btn btn-primary btn-sm">
+                                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="11" cy="11" r="8"></circle>
+                                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                </svg>
+                                <span id="btn-check-avail-label">Check Availability</span>
+                            </button>
+
+                            <button type="button" id="btn-use-live-gps" class="btn btn-secondary btn-sm" title="Use current device GPS location">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polygon points="3 11 22 2 13 21 11 13 3 11"></polygon>
+                                </svg>
+                                <span>Use GPS Location</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Location Status / Notice -->
+                    <div id="avail-location-notice" class="avail-location-notice" style="display: none;"></div>
+
+                    <!-- Dynamic Results Container -->
+                    <div id="avail-results-wrapper">
+                        <div class="avail-prompt-box">
+                            <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="color: #64748b; margin-bottom: 0.5rem;">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="16" x2="12" y2="12"></line>
+                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                            </svg>
+                            <p class="avail-prompt-text">
+                                Click <strong>Check Availability</strong> to scan approved pharmacies within your chosen search radius for these {{ medicines|length }} prescribed medicine{{ medicines|length|pluralize }}.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+
+            <!-- Add Prescribed Medicine Form Card (Manual Entry) -->
+            <div class="rx-section-card rx-review-form-card">
+                <div class="rx-section-header">
+                    <div>
+                        <h2 class="rx-section-title">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline-header-icon">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                            </svg>
+                            Add Prescribed Medicine
+                        </h2>
+                        <p class="rx-section-subtitle">
+                            Manually enter medicine details directly from your prescription document.
+                        </p>
+                    </div>
+                </div>
+
+                <form method="post" action="{% url 'patient:confirm_prescription_medicine' prescription.id %}" class="rx-confirm-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ request.path }}">
+
+                    <div class="form-group">
+                        <label for="{{ medicine_form.medicine_name.id_for_label }}" class="form-label">
+                            Medicine Name <span class="required">*</span>
+                        </label>
+                        {{ medicine_form.medicine_name }}
+                    </div>
+
+                    <div class="form-row-2col">
+                        <div class="form-group">
+                            <label for="{{ medicine_form.strength.id_for_label }}" class="form-label">Strength</label>
+                            {{ medicine_form.strength }}
+                        </div>
+                        <div class="form-group">
+                            <label for="{{ medicine_form.dosage.id_for_label }}" class="form-label">Dosage</label>
+                            {{ medicine_form.dosage }}
+                        </div>
+                    </div>
+
+                    <div class="form-row-2col">
+                        <div class="form-group">
+                            <label for="{{ medicine_form.frequency.id_for_label }}" class="form-label">Frequency</label>
+                            {{ medicine_form.frequency }}
+                        </div>
+                        <div class="form-group">
+                            <label for="{{ medicine_form.duration.id_for_label }}" class="form-label">Duration</label>
+                            {{ medicine_form.duration }}
+                        </div>
+                    </div>
+
+                    <div class="form-row-2col">
+                        <div class="form-group">
+                            <label for="{{ medicine_form.instructions.id_for_label }}" class="form-label">Instructions</label>
+                            {{ medicine_form.instructions }}
+                        </div>
+                        <div class="form-group">
+                            <label for="{{ medicine_form.quantity.id_for_label }}" class="form-label">Quantity</label>
+                            {{ medicine_form.quantity }}
+                        </div>
+                    </div>
+
+                    <div class="form-actions-right">
+                        <button type="submit" class="btn btn-primary">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                            <span>Add Medicine</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- Prescription Request Confirmation Modal -->
+<div id="request-confirm-modal" class="rx-modal-backdrop" style="display: none;">
+    <div class="rx-modal-card">
+        <div class="rx-modal-header">
+            <div class="rx-modal-title-group">
+                <h3 class="rx-modal-title">Confirm Prescription Request</h3>
+                <p class="rx-modal-subtitle">Review fulfillment details and confirm sharing your prescription with the selected pharmacy.</p>
+            </div>
+            <button type="button" class="rx-modal-close" id="btn-modal-close" aria-label="Close modal">&times;</button>
+        </div>
+
+        <div class="rx-modal-body">
+            <!-- Selected Pharmacy Profile Summary -->
+            <div class="modal-pharmacy-card">
+                <div class="modal-pharm-icon">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                    </svg>
+                </div>
+                <div class="modal-pharm-info">
+                    <h4 id="modal-pharm-name" class="modal-pharm-title">Pharmacy Name</h4>
+                    <p id="modal-pharm-meta" class="modal-pharm-meta">Tel: - &bull; Distance: -</p>
+                </div>
+                <div id="modal-pharm-overall-badge" style="margin-left: auto;"></div>
+            </div>
+
+            <!-- Partial / Out of stock warning banner -->
+            <div id="modal-partial-warning" class="modal-warning-banner" style="display: none;">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                    <line x1="12" y1="9" x2="12" y2="13"></line>
+                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+                <div>
+                    <strong>Stock Notice:</strong> One or more medicines are partially stocked or currently unavailable at this pharmacy. The pharmacist will review and advise you on supply options or suitable generic formulations.
+                </div>
+            </div>
+
+            <!-- Prescribed Medicines Summary Table -->
+            <div class="modal-meds-summary">
+                <h5 class="modal-section-heading">Confirmed Medicines to be Fulfilled:</h5>
+                <div class="modal-table-wrapper">
+                    <table class="modal-medicines-table">
+                        <thead>
+                            <tr>
+                                <th>Medicine</th>
+                                <th>Prescribed Qty / Note</th>
+                                <th>Stock Status</th>
+                                <th>Inventory Details</th>
+                            </tr>
+                        </thead>
+                        <tbody id="modal-meds-tbody">
+                            <!-- Populated via JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Optional Patient Notes -->
+            <div class="form-group" style="margin-top: 1rem; margin-bottom: 1rem;">
+                <label for="modal-patient-notes" class="form-label">Notes or Instructions for the Pharmacy (Optional):</label>
+                <textarea id="modal-patient-notes" class="form-input" rows="2" placeholder="e.g. Preferred pickup date/time, allergies, or urgent fulfillment request..."></textarea>
+            </div>
+
+            <!-- Mandatory Consent Checkbox -->
+            <div class="modal-consent-box">
+                <label class="consent-checkbox-label">
+                    <input type="checkbox" id="modal-consent-checkbox">
+                    <span class="consent-text">
+                        By confirming, you agree to share this prescription, its medicine details and your contact information with <strong id="modal-pharm-name-consent">the selected pharmacy</strong> for medicine fulfillment.
+                    </span>
+                </label>
+            </div>
+
+            <!-- Submission Feedback Area -->
+            <div id="modal-error-banner" class="modal-error-banner" style="display: none;"></div>
+        </div>
+
+        <div class="rx-modal-footer">
+            <button type="button" id="btn-modal-cancel" class="btn btn-secondary">Cancel</button>
+            <button type="button" id="btn-modal-submit-request" class="btn btn-primary" disabled>
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="22" y1="2" x2="11" y2="13"></line>
+                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                </svg>
+                <span id="btn-modal-submit-label">Confirm & Send Request</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Pharmacy Availability Section Styles */
+.rx-availability-section-card {
+    border-top: 3px solid #0284c7;
+    margin-top: 1.5rem;
+}
+.avail-search-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 0.85rem 1rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+.avail-control-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.avail-control-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #475569;
+}
+.form-select-sm {
+    padding: 0.4rem 0.75rem;
+    font-size: 0.85rem;
+    border-radius: 6px;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+}
+.avail-action-group {
+    display: flex;
+    gap: 0.5rem;
+}
+.avail-location-notice {
+    padding: 0.65rem 0.85rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    margin-bottom: 1rem;
+}
+.avail-location-notice.notice-info {
+    background: #eff6ff;
+    color: #1e40af;
+    border: 1px solid #bfdbfe;
+}
+.avail-location-notice.notice-warning {
+    background: #fffbeb;
+    color: #92400e;
+    border: 1px solid #fde68a;
+}
+.avail-prompt-box {
+    text-align: center;
+    padding: 2.5rem 1.5rem;
+    background: #f8fafc;
+    border: 1px dashed #cbd5e1;
+    border-radius: 12px;
+}
+.avail-prompt-text {
+    font-size: 0.9rem;
+    color: #64748b;
+    max-width: 500px;
+    margin: 0 auto;
+    line-height: 1.5;
+}
+
+/* Pharmacy Cards in Results */
+.pharmacy-result-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+.pharmacy-result-card:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+}
+.pharma-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 0.85rem;
+    border-bottom: 1px solid #f1f5f9;
+    padding-bottom: 0.75rem;
+}
+.pharma-title-group {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+.pharma-avatar-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 8px;
+    background: #e0f2fe;
+    color: #0284c7;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.pharma-name-heading {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0;
+}
+.pharma-meta-sub {
+    font-size: 0.8rem;
+    color: #64748b;
+    margin: 0.2rem 0 0 0;
+}
+.badge-status-overall {
+    padding: 0.3rem 0.7rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    flex-shrink: 0;
+}
+.overall-fully_available { background: #dcfce7; color: #15803d; }
+.overall-partially_available { background: #fef3c7; color: #b45309; }
+.overall-out_of_stock { background: #fee2e2; color: #b91c1c; }
+
+/* Medicine Items List inside Pharmacy Card */
+.pharma-meds-list {
+    margin: 0.75rem 0 1rem 0;
+    border: 1px solid #f1f5f9;
+    border-radius: 8px;
+    overflow: hidden;
+}
+.pharma-med-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.6rem 0.85rem;
+    font-size: 0.82rem;
+    border-bottom: 1px solid #f8fafc;
+}
+.pharma-med-row:last-child { border-bottom: none; }
+.pharma-med-left {
+    display: flex;
+    flex-direction: column;
+}
+.pharma-med-name {
+    font-weight: 600;
+    color: #1e293b;
+}
+.pharma-med-note {
+    font-size: 0.75rem;
+    color: #64748b;
+    margin-top: 0.1rem;
+}
+.pharma-med-right {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+.badge-item-avail {
+    padding: 0.2rem 0.55rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+.badge-item-avail.avail-fully_available, .badge-item-avail.avail-in_stock { background: #dcfce7; color: #166534; }
+.badge-item-avail.avail-partially_available { background: #fef3c7; color: #854d0e; }
+.badge-item-avail.avail-out_of_stock, .badge-item-avail.avail-not_stocked { background: #fee2e2; color: #991b1b; }
+.badge-item-avail.avail-ambiguous { background: #f1f5f9; color: #475569; }
+
+.pharma-card-action-bar {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    padding-top: 0.5rem;
+}
+
+/* Modal Backdrop & Card */
+.rx-modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(15, 23, 42, 0.65);
+    backdrop-filter: blur(4px);
+    z-index: 9999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    opacity: 0;
+    transition: opacity 0.2s ease-out;
+}
+.rx-modal-backdrop.active {
+    display: flex;
+    opacity: 1;
+}
+.rx-modal-card {
+    background: #ffffff;
+    border-radius: 16px;
+    max-width: 650px;
+    width: 100%;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+    animation: modalSlideIn 0.25s ease-out;
+}
+@keyframes modalSlideIn {
+    from { transform: scale(0.96) translateY(12px); opacity: 0; }
+    to { transform: scale(1) translateY(0); opacity: 1; }
+}
+.rx-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid #e2e8f0;
+}
+.rx-modal-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0;
+}
+.rx-modal-subtitle {
+    font-size: 0.82rem;
+    color: #64748b;
+    margin: 0.2rem 0 0 0;
+}
+.rx-modal-close {
+    background: transparent;
+    border: none;
+    font-size: 1.6rem;
+    line-height: 1;
+    color: #94a3b8;
+    cursor: pointer;
+    padding: 0.25rem;
+    transition: color 0.2s;
+}
+.rx-modal-close:hover { color: #0f172a; }
+
+.rx-modal-body {
+    padding: 1.25rem 1.5rem;
+    overflow-y: auto;
+    flex: 1;
+}
+.modal-pharmacy-card {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 0.85rem 1rem;
+    margin-bottom: 1rem;
+}
+.modal-pharm-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: #e0f2fe;
+    color: #0284c7;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.modal-pharm-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0;
+}
+.modal-pharm-meta {
+    font-size: 0.78rem;
+    color: #64748b;
+    margin: 0.15rem 0 0 0;
+}
+.modal-warning-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.65rem;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    padding: 0.75rem 0.9rem;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    margin-bottom: 1rem;
+    line-height: 1.4;
+}
+.modal-meds-summary {
+    margin-bottom: 1rem;
+}
+.modal-section-heading {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #334155;
+    margin: 0 0 0.5rem 0;
+}
+.modal-table-wrapper {
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    overflow: hidden;
+}
+.modal-medicines-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+}
+.modal-medicines-table th {
+    background: #f8fafc;
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+    color: #475569;
+    font-weight: 600;
+    border-bottom: 1px solid #e2e8f0;
+}
+.modal-medicines-table td {
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid #f1f5f9;
+    color: #334155;
+}
+.modal-medicines-table tr:last-child td { border-bottom: none; }
+
+.modal-consent-box {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 8px;
+    padding: 0.85rem 1rem;
+    margin-top: 1rem;
+}
+.consent-checkbox-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.65rem;
+    cursor: pointer;
+}
+.consent-checkbox-label input[type="checkbox"] {
+    width: 17px;
+    height: 17px;
+    margin-top: 2px;
+    accent-color: #0284c7;
+    flex-shrink: 0;
+}
+.consent-text {
+    font-size: 0.82rem;
+    color: #1e3a8a;
+    line-height: 1.45;
+}
+.modal-error-banner {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #991b1b;
+    padding: 0.75rem 0.9rem;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    margin-top: 0.75rem;
+}
+
+.rx-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    padding: 1rem 1.5rem;
+    border-top: 1px solid #e2e8f0;
+    background: #f8fafc;
+}
+</style>
+
+<script>
+(function() {
+    'use strict';
+
+    const prescriptionId = {{ prescription.id }};
+    const checkAvailabilityUrl = "{% url 'patient:check_pharmacies_availability' prescription.id %}";
+    const sendRequestUrl = "{% url 'patient:send_prescription_request' prescription.id %}";
+
+    let cachedPharmacies = [];
+    let selectedPharmacy = null;
+    let userCoords = null;
+
+    const btnCheck = document.getElementById('btn-check-availability');
+    const btnCheckLabel = document.getElementById('btn-check-avail-label');
+    const btnGps = document.getElementById('btn-use-live-gps');
+    const radiusSelect = document.getElementById('avail-radius-select');
+    const resultsWrapper = document.getElementById('avail-results-wrapper');
+    const noticeBox = document.getElementById('avail-location-notice');
+
+    const modal = document.getElementById('request-confirm-modal');
+    const btnModalClose = document.getElementById('btn-modal-close');
+    const btnModalCancel = document.getElementById('btn-modal-cancel');
+    const btnModalSubmit = document.getElementById('btn-modal-submit-request');
+    const btnModalSubmitLabel = document.getElementById('btn-modal-submit-label');
+    const consentCheckbox = document.getElementById('modal-consent-checkbox');
+    const patientNotesInput = document.getElementById('modal-patient-notes');
+    const modalErrorBanner = document.getElementById('modal-error-banner');
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    function showNotice(text, type) {
+        if (!noticeBox) return;
+        noticeBox.className = 'avail-location-notice ' + (type === 'warning' ? 'notice-warning' : 'notice-info');
+        noticeBox.textContent = text;
+        noticeBox.style.display = 'block';
+    }
+
+    function hideNotice() {
+        if (!noticeBox) return;
+        noticeBox.style.display = 'none';
+        noticeBox.textContent = '';
+    }
+
+    function setLoading(isLoading) {
+        if (!btnCheck) return;
+        btnCheck.disabled = isLoading;
+        if (isLoading) {
+            btnCheckLabel.textContent = 'Scanning Stock...';
+            resultsWrapper.innerHTML = `
+                <div class="avail-prompt-box">
+                    <div style="display: inline-block; width: 28px; height: 28px; border: 3px solid #cbd5e1; border-top-color: #0284c7; border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 0.5rem;"></div>
+                    <p class="avail-prompt-text">Scanning registered approved pharmacies and unexpired batch inventory...</p>
+                </div>
+                <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+            `;
+        } else {
+            btnCheckLabel.textContent = 'Check Availability';
+        }
+    }
+
+    async function fetchAvailability(lat, lon) {
+        setLoading(true);
+        hideNotice();
+
+        const radius = radiusSelect ? radiusSelect.value : '10';
+        let url = `${checkAvailabilityUrl}?radius=${encodeURIComponent(radius)}`;
+        if (lat !== undefined && lon !== undefined && lat !== null && lon !== null) {
+            url += `&lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}`;
+        }
+
+        try {
+            const resp = await fetch(url, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+            const data = await resp.json();
+
+            if (resp.status === 400 && data.status === 'location_required') {
+                setLoading(false);
+                showNotice('Location required: MedAccess needs your location to search nearby pharmacies. Click "Use GPS Location" above to detect your current position.', 'warning');
+                resultsWrapper.innerHTML = `
+                    <div class="avail-prompt-box">
+                        <p class="avail-prompt-text">
+                            <strong>Location Not Set:</strong> Please click <strong>Use GPS Location</strong> above or update your address/coordinates in your profile to find pharmacies in your area.
+                        </p>
+                    </div>
+                `;
+                return;
+            }
+
+            if (!resp.ok || data.status !== 'success') {
+                throw new Error(data.message || 'Failed to check pharmacy availability.');
+            }
+
+            cachedPharmacies = data.pharmacies || [];
+            renderPharmacyResults(cachedPharmacies, data.radius_km);
+
+        } catch (err) {
+            console.error('Availability check error:', err);
+            resultsWrapper.innerHTML = `
+                <div class="avail-prompt-box" style="border-color: #fca5a5;">
+                    <p class="avail-prompt-text" style="color: #991b1b;">
+                        <strong>Error checking availability:</strong> ${escapeHtml(err.message)}
+                    </p>
+                </div>
+            `;
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    function renderPharmacyResults(pharmacies, radiusKm) {
+        if (!pharmacies || pharmacies.length === 0) {
+            resultsWrapper.innerHTML = `
+                <div class="avail-prompt-box">
+                    <p class="avail-prompt-text">
+                        No approved MedAccess pharmacies were found within <strong>${radiusKm} km</strong> of your location. Try selecting a larger search radius above.
+                    </p>
+                </div>
+            `;
+            return;
+        }
+
+        let html = '';
+        pharmacies.forEach((p, idx) => {
+            const overallClass = 'overall-' + p.overall_status.toLowerCase();
+            const overallLabel = p.overall_status === 'FULLY_AVAILABLE' ? 'Fully Available' :
+                                 p.overall_status === 'PARTIALLY_AVAILABLE' ? 'Partially Available' : 'Out of Stock';
+
+            html += `
+                <div class="pharmacy-result-card" id="pharma-card-${p.pharmacy_id}">
+                    <div class="pharma-card-header">
+                        <div class="pharma-title-group">
+                            <div class="pharma-avatar-icon">
+                                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                                    <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 class="pharma-name-heading">${escapeHtml(p.pharmacy_name)}</h3>
+                                <p class="pharma-meta-sub">
+                                    <strong>${p.distance_km} km away</strong> &bull;
+                                    ${p.address ? escapeHtml(p.address) : 'Local MedAccess Partner'}
+                                    ${p.phone_number ? ' &bull; Tel: ' + escapeHtml(p.phone_number) : ''}
+                                </p>
+                            </div>
+                        </div>
+                        <span class="badge-status-overall ${overallClass}">${overallLabel}</span>
+                    </div>
+
+                    <!-- Medicine Availability Details -->
+                    <div class="pharma-meds-list">
+            `;
+
+            (p.items || []).forEach(item => {
+                const availClass = 'avail-' + item.availability_status.toLowerCase();
+                let displayStatus = item.availability_status.replace(/_/g, ' ');
+                if (item.availability_status === 'IN_STOCK') displayStatus = 'In Stock (Indeterminate Qty)';
+
+                html += `
+                    <div class="pharma-med-row">
+                        <div class="pharma-med-left">
+                            <span class="pharma-med-name">
+                                ${escapeHtml(item.prescribed_name)}
+                                ${item.prescribed_strength ? `<small style="color: #64748b;">(${escapeHtml(item.prescribed_strength)})</small>` : ''}
+                            </span>
+                            <span class="pharma-med-note">
+                                ${escapeHtml(item.explanation || '')}
+                                ${item.required_quantity_note ? ` &bull; <em>${escapeHtml(item.required_quantity_note)}</em>` : ''}
+                            </span>
+                        </div>
+                        <div class="pharma-med-right">
+                            <span class="badge-item-avail ${availClass}">${displayStatus}</span>
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += `
+                    </div>
+
+                    <div class="pharma-card-action-bar">
+            `;
+
+            if (p.has_active_request) {
+                html += `
+                    <button type="button" class="btn btn-secondary btn-sm" disabled style="opacity: 0.7; cursor: not-allowed;">
+                        <span>Active Request In Progress</span>
+                    </button>
+                `;
+            } else {
+                html += `
+                    <button type="button" class="btn btn-primary btn-sm btn-select-pharmacy" data-pharm-id="${p.pharmacy_id}">
+                        <span>Select Pharmacy & Request Fulfillment &rarr;</span>
+                    </button>
+                `;
+            }
+
+            html += `
+                    </div>
+                </div>
+            `;
+        });
+
+        resultsWrapper.innerHTML = html;
+    }
+
+    function openModal(pharmacy) {
+        if (!pharmacy || !pharmacy.pharmacy_id) return;
+        selectedPharmacy = pharmacy;
+
+        const nameEl = document.getElementById('modal-pharm-name');
+        if (nameEl) nameEl.textContent = pharmacy.pharmacy_name || 'Selected Pharmacy';
+
+        const consentNameEl = document.getElementById('modal-pharm-name-consent');
+        if (consentNameEl) consentNameEl.textContent = pharmacy.pharmacy_name || 'the selected pharmacy';
+
+        const metaEl = document.getElementById('modal-pharm-meta');
+        if (metaEl) {
+            const dist = (pharmacy.distance_km !== undefined && pharmacy.distance_km !== null) ? `${pharmacy.distance_km} km away` : '';
+            const phone = pharmacy.phone_number ? `Tel: ${pharmacy.phone_number}` : '';
+            metaEl.textContent = [dist, phone].filter(Boolean).join(' \u2022 ') || 'Local MedAccess Partner';
+        }
+
+        const overallBadgeEl = document.getElementById('modal-pharm-overall-badge');
+        if (overallBadgeEl) {
+            const statusKey = (pharmacy.overall_status || 'OUT_OF_STOCK').toLowerCase();
+            const overallClass = 'overall-' + statusKey;
+            const overallLabel = pharmacy.overall_status === 'FULLY_AVAILABLE' ? 'Fully Available' :
+                                 pharmacy.overall_status === 'PARTIALLY_AVAILABLE' ? 'Partially Available' : 'Out of Stock';
+            overallBadgeEl.innerHTML = `<span class="badge-status-overall ${overallClass}">${overallLabel}</span>`;
+        }
+
+        // Check if any items are partial / out of stock / ambiguous
+        let hasIncomplete = false;
+        let tbodyHtml = '';
+
+        (pharmacy.items || []).forEach(item => {
+            if (item.availability_status !== 'FULLY_AVAILABLE' && item.availability_status !== 'IN_STOCK') {
+                hasIncomplete = true;
+            }
+
+            const availClass = 'avail-' + (item.availability_status || '').toLowerCase();
+            const displayStatus = (item.availability_status || '').replace(/_/g, ' ');
+
+            tbodyHtml += `
+                <tr>
+                    <td>
+                        <strong>${escapeHtml(item.prescribed_name)}</strong>
+                        ${item.prescribed_strength ? `<br><small style="color: #64748b;">${escapeHtml(item.prescribed_strength)}</small>` : ''}
+                    </td>
+                    <td>${item.required_quantity !== null && item.required_quantity !== undefined ? item.required_quantity + ' units' : 'Indeterminate duration'}</td>
+                    <td><span class="badge-item-avail ${availClass}">${displayStatus}</span></td>
+                    <td style="font-size: 0.78rem; color: #475569;">${escapeHtml(item.explanation || '-')}</td>
+                </tr>
+            `;
+        });
+
+        const tbodyEl = document.getElementById('modal-meds-tbody');
+        if (tbodyEl) tbodyEl.innerHTML = tbodyHtml;
+
+        const partialWarnEl = document.getElementById('modal-partial-warning');
+        if (partialWarnEl) partialWarnEl.style.display = hasIncomplete ? 'flex' : 'none';
+
+        // Reset inputs
+        if (consentCheckbox) consentCheckbox.checked = false;
+        if (btnModalSubmit) btnModalSubmit.disabled = true;
+        if (patientNotesInput) patientNotesInput.value = '';
+        if (modalErrorBanner) {
+            modalErrorBanner.style.display = 'none';
+            modalErrorBanner.textContent = '';
+        }
+
+        if (modal) {
+            modal.classList.add('active');
+            modal.style.display = 'flex';
+            modal.setAttribute('aria-hidden', 'false');
+            document.body.classList.add('modal-open');
+        }
+    }
+
+    function closeModal() {
+        if (modal) {
+            modal.classList.remove('active');
+            modal.style.display = 'none';
+            modal.setAttribute('aria-hidden', 'true');
+        }
+        document.body.classList.remove('modal-open');
+        selectedPharmacy = null;
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    // Event Listeners
+    if (btnCheck) {
+        btnCheck.addEventListener('click', function() {
+            if (userCoords) {
+                fetchAvailability(userCoords.latitude, userCoords.longitude);
+            } else {
+                fetchAvailability(null, null);
+            }
+        });
+    }
+
+    if (btnGps) {
+        btnGps.addEventListener('click', function() {
+            if (!navigator.geolocation) {
+                alert('Geolocation is not supported by your browser.');
+                return;
+            }
+            btnGps.disabled = true;
+            btnGps.querySelector('span').textContent = 'Detecting GPS...';
+
+            navigator.geolocation.getCurrentPosition(
+                function(pos) {
+                    userCoords = {
+                        latitude: pos.coords.latitude,
+                        longitude: pos.coords.longitude
+                    };
+                    btnGps.disabled = false;
+                    btnGps.querySelector('span').textContent = 'GPS Active';
+                    showNotice(`GPS Detected: Coordinates (${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)})`, 'info');
+                    fetchAvailability(userCoords.latitude, userCoords.longitude);
+                },
+                function(err) {
+                    btnGps.disabled = false;
+                    btnGps.querySelector('span').textContent = 'Use GPS Location';
+                    showNotice('Unable to retrieve GPS coordinates: ' + err.message, 'warning');
+                },
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+            );
+        });
+    }
+
+    if (resultsWrapper) {
+        resultsWrapper.addEventListener('click', function(e) {
+            const btn = e.target.closest('.btn-select-pharmacy');
+            if (!btn || btn.disabled) return;
+            const pId = parseInt(btn.getAttribute('data-pharm-id'), 10);
+            if (isNaN(pId)) return;
+            const found = cachedPharmacies.find(p => p.pharmacy_id === pId);
+            if (found) {
+                openModal(found);
+            }
+        });
+    }
+
+    if (btnModalClose) btnModalClose.addEventListener('click', closeModal);
+    if (btnModalCancel) btnModalCancel.addEventListener('click', closeModal);
+
+    if (modal) {
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) closeModal();
+        });
+    }
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && modal && modal.classList.contains('active')) {
+            closeModal();
+        }
+    });
+
+    consentCheckbox.addEventListener('change', function() {
+        btnModalSubmit.disabled = !this.checked;
+    });
+
+    btnModalSubmit.addEventListener('click', async function() {
+        if (!selectedPharmacy || !consentCheckbox.checked) return;
+
+        btnModalSubmit.disabled = true;
+        btnModalSubmitLabel.textContent = 'Sending Request...';
+        modalErrorBanner.style.display = 'none';
+
+        const formData = new FormData();
+        formData.append('pharmacy_id', selectedPharmacy.pharmacy_id);
+        formData.append('consent', 'true');
+        formData.append('patient_notes', patientNotesInput.value.trim());
+
+        const csrftoken = getCookie('csrftoken') || (document.querySelector('[name=csrfmiddlewaretoken]') ? document.querySelector('[name=csrfmiddlewaretoken]').value : '');
+
+        try {
+            const resp = await fetch(sendRequestUrl, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrftoken,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: formData
+            });
+
+            const data = await resp.json();
+
+            if (resp.status === 409) {
+                // Duplicate active request
+                modalErrorBanner.textContent = data.message || 'An active request already exists with this pharmacy.';
+                modalErrorBanner.style.display = 'block';
+                if (data.redirect_url) {
+                    setTimeout(() => { window.location.href = data.redirect_url; }, 2000);
+                }
+                btnModalSubmit.disabled = false;
+                btnModalSubmitLabel.textContent = 'Confirm & Send Request';
+                return;
+            }
+
+            if (!resp.ok || data.status !== 'success') {
+                throw new Error(data.message || 'Failed to submit prescription request.');
+            }
+
+            // Success: redirect to tracking page
+            if (data.redirect_url) {
+                window.location.href = data.redirect_url;
+            } else {
+                window.location.reload();
+            }
+
+        } catch (err) {
+            console.error('Request submission error:', err);
+            modalErrorBanner.textContent = err.message || 'An unexpected error occurred. Please try again.';
+            modalErrorBanner.style.display = 'block';
+            btnModalSubmit.disabled = false;
+            btnModalSubmitLabel.textContent = 'Confirm & Send Request';
+        }
+    });
+
+})();
+</script>
+{% endblock content %}
+

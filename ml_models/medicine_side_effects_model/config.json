@@ -1,0 +1,23 @@
+{
+  "model_name": "Medicine Uses & Side Effects Matcher",
+  "algorithm": "TF-IDF Character N-grams + Cosine Similarity",
+  "analyzer": "char_wb",
+  "ngram_range": [
+    2,
+    5
+  ],
+  "sublinear_tf": true,
+  "vocabulary_size": 51685,
+  "total_records": 11498,
+  "high_confidence_threshold": 0.75,
+  "medium_confidence_threshold": 0.5,
+  "dataset_source": "data/Medicine_Details.csv",
+  "evaluation_metrics": {
+    "exact_name_top1_acc": 1.0,
+    "missing_dosage_form_top1_acc": 0.989,
+    "spelling_typo_top1_acc": 0.95,
+    "short_brand_top1_acc": 1.0,
+    "overall_top3_acc": 0.9924,
+    "false_positive_unknown_mean_sim": 0.295
+  }
+}

@@ -1,0 +1,750 @@
+{% extends 'patient/base_patient.html' %}
+
+{% block title %}Nearby Pharmacies | Patient Portal | MedAccess{% endblock title %}
+{% block header_title %}Nearby Pharmacies{% endblock header_title %}
+{% block nav_nearby_pharmacies %}active{% endblock nav_nearby_pharmacies %}
+
+{% block extra_css %}
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+{% endblock extra_css %}
+
+{% block content %}
+<div class="nearby-container">
+    <input type="hidden" id="global-csrf-token" value="{{ csrf_token }}">
+
+    <!-- Top Controls Header -->
+    <div class="nearby-header-card">
+        <div class="nearby-header-info">
+            <h1 class="nearby-header-title">Find Nearby Pharmacies</h1>
+            <p class="nearby-header-desc">
+                Discover licensed MedAccess Verified pharmacies and public OpenStreetMap pharmacy listings within 10 km.
+            </p>
+        </div>
+
+        <div class="nearby-actions-bar">
+            <!-- Search Near Me Button -->
+            <button type="button" id="btn-detect-location" class="btn btn-primary btn-detect-gps">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="22" y1="12" x2="18" y2="12"></line>
+                    <line x1="6" y1="12" x2="2" y2="12"></line>
+                    <line x1="12" y1="6" x2="12" y2="2"></line>
+                    <line x1="12" y1="22" x2="12" y2="18"></line>
+                </svg>
+                <span>Use My Current Location</span>
+            </button>
+
+            <!-- Search Radius Filter -->
+            <div class="radius-selector-wrapper">
+                <label for="radius-select" class="radius-label">Radius:</label>
+                <select id="radius-select" class="radius-select">
+                    <option value="5">5 km</option>
+                    <option value="10" selected>10 km</option>
+                    <option value="15">15 km</option>
+                    <option value="25">25 km</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Live Status / Feedback Alert -->
+        <div id="location-status-box" class="nearby-status-alert" style="display: none;"></div>
+    </div>
+
+    <!-- Map & Legend Section -->
+    <div class="map-card">
+        <!-- Interactive Leaflet Map -->
+        <div id="pharmacy-map" class="pharmacy-leaflet-map"></div>
+
+        <!-- Map Legend -->
+        <div class="map-legend">
+            <span class="legend-item">
+                <span class="legend-dot dot-patient"></span> Your Location
+            </span>
+            <span class="legend-item">
+                <span class="legend-dot dot-medaccess"></span> MedAccess Verified
+            </span>
+            <span class="legend-item">
+                <span class="legend-dot dot-osm"></span> OpenStreetMap Listing
+            </span>
+        </div>
+    </div>
+
+    <!-- Results Section -->
+    <div class="nearby-results-section">
+        <div class="results-header">
+            <div>
+                <h2 class="results-title">Pharmacies in Your Area</h2>
+                <p id="results-count-text" class="results-count-text">Select your location to discover nearby pharmacies.</p>
+            </div>
+
+            <!-- Filter Buttons -->
+            <div class="filter-pills" id="filter-pills" style="display: none;">
+                <button type="button" class="filter-btn active" data-filter="all">All (<span id="count-all">0</span>)</button>
+                <button type="button" class="filter-btn" data-filter="medaccess">MedAccess Verified (<span id="count-medaccess">0</span>)</button>
+                <button type="button" class="filter-btn" data-filter="osm">OpenStreetMap (<span id="count-osm">0</span>)</button>
+            </div>
+        </div>
+
+        <!-- Initial Placeholder State -->
+        <div id="state-initial" class="nearby-state-box">
+            <div class="state-icon-circle">
+                <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                    <circle cx="12" cy="10" r="3"></circle>
+                </svg>
+            </div>
+            <h3 class="state-title">Location Needed to Find Pharmacies</h3>
+            <p class="state-desc">
+                Click <strong>"Use My Current Location"</strong> above to allow your browser to detect your current position, or we can use your previously saved profile location.
+            </p>
+        </div>
+
+        <!-- Loading State -->
+        <div id="state-loading" class="nearby-state-box" style="display: none;">
+            <div class="loading-spinner"></div>
+            <h3 class="state-title">Searching for Nearby Pharmacies...</h3>
+            <p class="state-desc">Querying MedAccess verified pharmacies and OpenStreetMap records within radius.</p>
+        </div>
+
+        <!-- Empty Results State -->
+        <div id="state-empty" class="nearby-state-box" style="display: none;">
+            <div class="state-icon-circle">
+                <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="8" y1="12" x2="16" y2="12"></line>
+                </svg>
+            </div>
+            <h3 class="state-title">No Pharmacies Found in this Radius</h3>
+            <p class="state-desc">We couldn't find any pharmacies within the selected radius. Try selecting a wider search radius (e.g. 15 km or 25 km).</p>
+        </div>
+
+        <!-- Results Card Grid -->
+        <div id="pharmacies-grid" class="pharmacies-cards-grid" style="display: none;"></div>
+    </div>
+
+</div>
+
+<!-- Data attribute holding saved profile coordinates if present -->
+{% if patient_profile.current_latitude and patient_profile.current_longitude %}
+    <div id="saved-patient-coords"
+         data-lat="{{ patient_profile.current_latitude }}"
+         data-lon="{{ patient_profile.current_longitude }}"
+         style="display:none;"></div>
+{% endif %}
+
+<!-- Pharmacy Details Modal -->
+<div id="pharma-details-modal" class="pharma-modal-backdrop" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="modal-pharma-name">
+    <div class="pharma-modal-dialog">
+        <div class="pharma-modal-header">
+            <h3 id="modal-pharma-name" class="pharma-modal-title">Pharmacy Details</h3>
+            <button type="button" class="pharma-modal-close" id="btn-close-modal" aria-label="Close dialog">&times;</button>
+        </div>
+        <div class="pharma-modal-body">
+            <div id="modal-badge-container" style="margin-bottom: 0.5rem;"></div>
+            <div class="modal-detail-row">
+                <span class="modal-detail-label">Source</span>
+                <span id="modal-source-val" class="modal-detail-value"></span>
+            </div>
+            <div class="modal-detail-row">
+                <span class="modal-detail-label">Distance from Location</span>
+                <span id="modal-distance-val" class="modal-detail-value"></span>
+            </div>
+            <div class="modal-detail-row">
+                <span class="modal-detail-label">Address</span>
+                <span id="modal-address-val" class="modal-detail-value"></span>
+            </div>
+            <div class="modal-detail-row" id="modal-phone-row">
+                <span class="modal-detail-label">Contact Phone</span>
+                <span id="modal-phone-val" class="modal-detail-value"></span>
+            </div>
+            <div class="modal-detail-row">
+                <span class="modal-detail-label">Geographic Coordinates</span>
+                <span id="modal-coords-val" class="modal-detail-value"></span>
+            </div>
+            <div id="modal-notice-box" class="modal-notice-box"></div>
+        </div>
+        <div class="pharma-modal-footer">
+            <a id="modal-directions-btn" href="#" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm">
+                Open Directions &rarr;
+            </a>
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-modal-close-action">Close</button>
+        </div>
+    </div>
+</div>
+
+{% endblock content %}
+
+{% block extra_js %}
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let map = null;
+    let patientMarker = null;
+    let radiusCircle = null;
+    let pharmacyMarkers = [];
+    let currentPharmaciesData = [];
+    let currentFilter = 'all';
+
+    let currentLat = null;
+    let currentLon = null;
+
+    const btnDetect = document.getElementById('btn-detect-location');
+    const radiusSelect = document.getElementById('radius-select');
+    const statusBox = document.getElementById('location-status-box');
+    const stateInitial = document.getElementById('state-initial');
+    const stateLoading = document.getElementById('state-loading');
+    const stateEmpty = document.getElementById('state-empty');
+    const cardsGrid = document.getElementById('pharmacies-grid');
+    const resultsCountText = document.getElementById('results-count-text');
+    const filterPills = document.getElementById('filter-pills');
+
+    const countAll = document.getElementById('count-all');
+    const countMedaccess = document.getElementById('count-medaccess');
+    const countOsm = document.getElementById('count-osm');
+
+    // Pharmacy Details Modal Controls
+    const detailsModal = document.getElementById('pharma-details-modal');
+    const modalPharmaName = document.getElementById('modal-pharma-name');
+    const modalBadgeContainer = document.getElementById('modal-badge-container');
+    const modalSourceVal = document.getElementById('modal-source-val');
+    const modalDistanceVal = document.getElementById('modal-distance-val');
+    const modalAddressVal = document.getElementById('modal-address-val');
+    const modalPhoneRow = document.getElementById('modal-phone-row');
+    const modalPhoneVal = document.getElementById('modal-phone-val');
+    const modalCoordsVal = document.getElementById('modal-coords-val');
+    const modalNoticeBox = document.getElementById('modal-notice-box');
+    const modalDirectionsBtn = document.getElementById('modal-directions-btn');
+    const btnCloseModal = document.getElementById('btn-close-modal');
+    const btnModalCloseAction = document.getElementById('btn-modal-close-action');
+
+    function openPharmaModal(pharma, directionsUrl) {
+        if (!detailsModal) return;
+        const isMed = (pharma.source === 'MEDACCESS');
+
+        modalPharmaName.textContent = pharma.name;
+        modalBadgeContainer.innerHTML = `<span class="status-badge ${isMed ? 'status-completed' : 'status-uploaded'}">${pharma.badge_label}</span>`;
+        modalSourceVal.textContent = isMed ? 'MedAccess Verified Business' : 'OpenStreetMap Public Listing';
+        modalDistanceVal.textContent = pharma.distance_km ? `${pharma.distance_km} km away from your search position` : 'Not calculated';
+        modalAddressVal.textContent = pharma.address || 'Address not listed';
+
+        if (pharma.phone_number) {
+            modalPhoneRow.style.display = 'flex';
+            modalPhoneVal.innerHTML = `<a href="tel:${pharma.phone_number}" style="color:var(--color-primary); font-weight:600;">${pharma.phone_number}</a>`;
+        } else {
+            modalPhoneRow.style.display = 'none';
+        }
+
+        modalCoordsVal.textContent = `${pharma.latitude}, ${pharma.longitude}`;
+        modalDirectionsBtn.href = directionsUrl || `https://www.openstreetmap.org/directions?engine=fossgis_osrm_car&route=%3B${pharma.latitude},${pharma.longitude}`;
+
+        if (isMed) {
+            modalNoticeBox.className = 'modal-notice-box modal-notice-medaccess';
+            modalNoticeBox.innerHTML = `<strong>Verified MedAccess Partner:</strong> This pharmacy is an authorized, licensed healthcare provider registered on the MedAccess platform.`;
+        } else {
+            modalNoticeBox.className = 'modal-notice-box modal-notice-osm';
+            modalNoticeBox.innerHTML = `<strong>Public Listing Notice:</strong> This entry is sourced from OpenStreetMap public community data. Medicine stock and operational hours are not verified by MedAccess.`;
+        }
+
+        detailsModal.style.display = 'flex';
+    }
+
+    function closePharmaModal() {
+        if (detailsModal) detailsModal.style.display = 'none';
+    }
+
+    if (btnCloseModal) btnCloseModal.addEventListener('click', closePharmaModal);
+    if (btnModalCloseAction) btnModalCloseAction.addEventListener('click', closePharmaModal);
+    if (detailsModal) {
+        detailsModal.addEventListener('click', function(e) {
+            if (e.target === detailsModal) closePharmaModal();
+        });
+    }
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && detailsModal && detailsModal.style.display !== 'none') {
+            closePharmaModal();
+        }
+    });
+
+    // Default center: India center (or Mumbai 19.0760, 72.8777) until coordinates are provided
+    const defaultCenter = [19.0760, 72.8777];
+
+    // Initialize Map
+    function initMap(centerLat, centerLon, zoomLevel) {
+        if (!map) {
+            map = L.map('pharmacy-map').setView([centerLat, centerLon], zoomLevel || 13);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                subdomains: ['a', 'b', 'c'],
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors'
+            }).addTo(map);
+
+            setTimeout(function() {
+                if (map) map.invalidateSize();
+            }, 250);
+        } else {
+            map.setView([centerLat, centerLon], zoomLevel || 13);
+            setTimeout(function() {
+                if (map) map.invalidateSize();
+            }, 100);
+        }
+    }
+
+    initMap(defaultCenter[0], defaultCenter[1], 11);
+
+    function showStatus(msg, type) {
+        if (!statusBox) return;
+        statusBox.style.display = 'block';
+        statusBox.textContent = msg;
+        statusBox.className = 'nearby-status-alert status-' + type;
+    }
+
+    function clearStatus() {
+        if (statusBox) statusBox.style.display = 'none';
+    }
+
+    // Custom Marker Icons using pure CSS / HTML divIcon
+    function createMedaccessIcon() {
+        return L.divIcon({
+            className: 'custom-pin-medaccess',
+            html: `<div class="pin-marker pin-medaccess" title="MedAccess Verified">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
+                   </div>`,
+            iconSize: [32, 32],
+            iconAnchor: [16, 32],
+            popupAnchor: [0, -32]
+        });
+    }
+
+    function createOsmIcon() {
+        return L.divIcon({
+            className: 'custom-pin-osm',
+            html: `<div class="pin-marker pin-osm" title="OpenStreetMap Listing">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                   </div>`,
+            iconSize: [28, 28],
+            iconAnchor: [14, 28],
+            popupAnchor: [0, -28]
+        });
+    }
+
+    function fetchPharmacies(lat, lon, radius) {
+        currentLat = lat;
+        currentLon = lon;
+
+        stateInitial.style.display = 'none';
+        stateEmpty.style.display = 'none';
+        cardsGrid.style.display = 'none';
+        stateLoading.style.display = 'block';
+
+        // Clear existing markers
+        pharmacyMarkers.forEach(m => map.removeLayer(m));
+        pharmacyMarkers = [];
+
+        if (patientMarker) map.removeLayer(patientMarker);
+        if (radiusCircle) map.removeLayer(radiusCircle);
+
+        // Center map on patient
+        map.setView([lat, lon], 13);
+
+        // Add patient location marker
+        patientMarker = L.circleMarker([lat, lon], {
+            radius: 9,
+            fillColor: '#0284c7',
+            color: '#ffffff',
+            weight: 3,
+            opacity: 1,
+            fillOpacity: 1
+        }).addTo(map);
+        patientMarker.bindPopup("<b>Your Location</b>").openPopup();
+
+        // Draw search radius circle
+        radiusCircle = L.circle([lat, lon], {
+            radius: radius * 1000,
+            color: '#0284c7',
+            weight: 1.5,
+            dashArray: '4, 4',
+            fillColor: '#0284c7',
+            fillOpacity: 0.05
+        }).addTo(map);
+
+        const apiUrl = `{% url 'patient:nearby_pharmacies_api' %}?lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}&radius=${encodeURIComponent(radius)}`;
+
+        fetch(apiUrl)
+            .then(res => res.json())
+            .then(data => {
+                stateLoading.style.display = 'none';
+
+                if (data.status === 'error') {
+                    showStatus(data.message || 'Error fetching pharmacies.', 'error');
+                    stateEmpty.style.display = 'block';
+                    return;
+                }
+
+                if (data.osm_unavailable) {
+                    showStatus(data.message || data.osm_warning || 'OpenStreetMap public directory is temporarily busy or unreachable. Showing MedAccess verified pharmacies.', 'warning');
+                } else {
+                    clearStatus();
+                }
+
+                currentPharmaciesData = data.pharmacies || [];
+
+                countAll.textContent = data.total_count;
+                countMedaccess.textContent = data.medaccess_count;
+                countOsm.textContent = data.public_count;
+                filterPills.style.display = 'flex';
+
+                if (currentPharmaciesData.length === 0) {
+                    if (data.osm_unavailable) {
+                        resultsCountText.textContent = data.message || `External pharmacy directory is currently unreachable. No local listings available.`;
+                    } else {
+                        resultsCountText.textContent = `No pharmacies found within ${radius} km.`;
+                    }
+                    stateEmpty.style.display = 'block';
+                    return;
+                }
+
+                resultsCountText.textContent = `Showing ${data.total_count} pharmacies within ${radius} km (${data.medaccess_count} MedAccess Verified, ${data.public_count} OpenStreetMap Listings).`;
+
+                renderPharmacies();
+            })
+            .catch(err => {
+                stateLoading.style.display = 'none';
+                showStatus('Network error while fetching nearby pharmacies.', 'error');
+                stateEmpty.style.display = 'block';
+            });
+    }
+
+    function renderPharmacies() {
+        // Clear map markers
+        pharmacyMarkers.forEach(m => map.removeLayer(m));
+        pharmacyMarkers = [];
+
+        cardsGrid.innerHTML = '';
+
+        const filtered = currentPharmaciesData.filter(item => {
+            if (currentFilter === 'medaccess') return item.source === 'MEDACCESS';
+            if (currentFilter === 'osm') return item.source === 'OPENSTREETMAP';
+            return true;
+        });
+
+        if (filtered.length === 0) {
+            cardsGrid.style.display = 'none';
+            stateEmpty.style.display = 'block';
+            return;
+        }
+
+        stateEmpty.style.display = 'none';
+        cardsGrid.style.display = 'grid';
+
+        const bounds = L.latLngBounds([[currentLat, currentLon]]);
+
+        filtered.forEach((pharma, index) => {
+            const isMed = pharma.source === 'MEDACCESS';
+            const icon = isMed ? createMedaccessIcon() : createOsmIcon();
+
+            // OpenStreetMap external directions link
+            const osmDirectionsUrl = `https://www.openstreetmap.org/directions?engine=fossgis_osrm_car&route=${currentLat},${currentLon}%3B${pharma.latitude},${pharma.longitude}`;
+
+            // Create Popup HTML
+            const popupHtml = `
+                <div class="pharma-popup">
+                    <span class="popup-badge ${isMed ? 'badge-medaccess' : 'badge-osm'}">${pharma.badge_label}</span>
+                    <h3 class="popup-title">${pharma.name}</h3>
+                    <p class="popup-distance"><strong>${pharma.distance_km} km away</strong></p>
+                    <p class="popup-address">${pharma.address}</p>
+                    ${pharma.phone_number ? `<p class="popup-phone">Tel: ${pharma.phone_number}</p>` : ''}
+                    <div class="popup-links">
+                        <a href="${osmDirectionsUrl}" target="_blank" rel="noopener noreferrer" class="btn-popup-directions">
+                            Open Directions &rarr;
+                        </a>
+                    </div>
+                </div>
+            `;
+
+            const marker = L.marker([pharma.latitude, pharma.longitude], { icon: icon }).addTo(map);
+            marker.bindPopup(popupHtml);
+            pharmacyMarkers.push(marker);
+            bounds.extend([pharma.latitude, pharma.longitude]);
+
+            // Save / Unsave Action Button for both MedAccess and OSM
+            let saveBtnHtml = '';
+            if (pharma.is_saved) {
+                saveBtnHtml = `
+                    <button type="button" class="btn btn-outline-danger btn-sm btn-toggle-save" data-saved="true" data-idx="${index}">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                        Unsave
+                    </button>
+                `;
+            } else {
+                saveBtnHtml = `
+                    <button type="button" class="btn btn-primary btn-sm btn-toggle-save" data-saved="false" data-idx="${index}">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+                        Save Pharmacy
+                    </button>
+                `;
+            }
+
+            // Create Card HTML
+            const card = document.createElement('div');
+            card.className = `pharma-card ${isMed ? 'pharma-card-medaccess' : ''}`;
+            card.innerHTML = `
+                <div class="pharma-card-top">
+                    <span class="status-badge ${isMed ? 'status-completed' : 'status-uploaded'}">${pharma.badge_label}</span>
+                    <span class="pharma-distance">${pharma.distance_km} km</span>
+                </div>
+                <h3 class="pharma-card-name">${pharma.name}</h3>
+                <p class="pharma-card-address">${pharma.address}</p>
+                ${pharma.phone_number ? `<p class="pharma-card-phone"><strong>Phone:</strong> ${pharma.phone_number}</p>` : ''}
+                <div class="pharma-card-actions">
+                    <button type="button" class="btn btn-secondary btn-sm btn-focus-marker" data-idx="${index}">
+                        Show on Map
+                    </button>
+                    <button type="button" class="btn btn-secondary btn-sm btn-view-details" data-idx="${index}">
+                        Details
+                    </button>
+                    <a href="${osmDirectionsUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm">
+                        Directions
+                    </a>
+                    ${saveBtnHtml}
+                </div>
+            `;
+
+            // Click listener on card "Show on Map" button
+            const btnFocus = card.querySelector('.btn-focus-marker');
+            btnFocus.addEventListener('click', function() {
+                map.setView([pharma.latitude, pharma.longitude], 16);
+                marker.openPopup();
+                window.scrollTo({ top: document.getElementById('pharmacy-map').offsetTop - 80, behavior: 'smooth' });
+            });
+
+            // Click listener on card "Details" button
+            const btnDetails = card.querySelector('.btn-view-details');
+            btnDetails.addEventListener('click', function() {
+                openPharmaModal(pharma, osmDirectionsUrl);
+            });
+
+            // Click listener on Save / Unsave toggle button
+            const btnToggle = card.querySelector('.btn-toggle-save');
+            if (btnToggle) {
+                btnToggle.addEventListener('click', function() {
+                    const isCurrentlySaved = (btnToggle.getAttribute('data-saved') === 'true');
+                    btnToggle.disabled = true;
+
+                    const csrfInput = document.getElementById('global-csrf-token');
+                    const csrfToken = csrfInput ? csrfInput.value : '';
+
+                    if (!isCurrentlySaved) {
+                        // SAVE
+                        btnToggle.textContent = 'Saving...';
+                        let payload = {};
+                        if (isMed) {
+                            payload = { pharmacy_id: pharma.id, source: 'MEDACCESS' };
+                        } else {
+                            payload = {
+                                source: 'OPENSTREETMAP',
+                                osm_id: pharma.osm_id,
+                                osm_type: pharma.osm_type || 'node',
+                                pharmacy_name: pharma.name,
+                                address: pharma.address,
+                                latitude: pharma.latitude,
+                                longitude: pharma.longitude,
+                                phone_number: pharma.phone_number
+                            };
+                        }
+
+                        fetch("{% url 'patient:save_pharmacy' %}", {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': csrfToken,
+                                'X-Requested-With': 'XMLHttpRequest'
+                            },
+                            body: JSON.stringify(payload)
+                        })
+                        .then(r => r.json())
+                        .then(res => {
+                            btnToggle.disabled = false;
+                            if (res.status === 'success' || res.already_saved) {
+                                pharma.is_saved = true;
+                                pharma.saved_id = res.saved_id;
+                                btnToggle.setAttribute('data-saved', 'true');
+                                btnToggle.className = 'btn btn-outline-danger btn-sm btn-toggle-save';
+                                btnToggle.innerHTML = `
+                                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                    Unsave
+                                `;
+                                showStatus(res.message, 'success');
+                            } else {
+                                btnToggle.textContent = 'Save Pharmacy';
+                                showStatus(res.message || 'Could not save pharmacy.', 'error');
+                            }
+                        })
+                        .catch(() => {
+                            btnToggle.disabled = false;
+                            btnToggle.textContent = 'Save Pharmacy';
+                            showStatus('Network error while saving pharmacy.', 'error');
+                        });
+                    } else {
+                        // UNSAVE
+                        btnToggle.textContent = 'Unsaving...';
+                        const payload = {
+                            saved_id: pharma.saved_id,
+                            pharmacy_id: isMed ? pharma.id : null,
+                            osm_id: isMed ? null : pharma.osm_id,
+                            osm_type: isMed ? null : (pharma.osm_type || 'node')
+                        };
+
+                        fetch("{% url 'patient:unsave_pharmacy' %}", {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': csrfToken,
+                                'X-Requested-With': 'XMLHttpRequest'
+                            },
+                            body: JSON.stringify(payload)
+                        })
+                        .then(r => r.json())
+                        .then(res => {
+                            btnToggle.disabled = false;
+                            if (res.status === 'success') {
+                                pharma.is_saved = false;
+                                pharma.saved_id = null;
+                                btnToggle.setAttribute('data-saved', 'false');
+                                btnToggle.className = 'btn btn-primary btn-sm btn-toggle-save';
+                                btnToggle.innerHTML = `
+                                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+                                    Save Pharmacy
+                                `;
+                                showStatus(res.message, 'info');
+                            } else {
+                                btnToggle.textContent = 'Unsave';
+                                showStatus(res.message || 'Could not unsave pharmacy.', 'error');
+                            }
+                        })
+                        .catch(() => {
+                            btnToggle.disabled = false;
+                            btnToggle.textContent = 'Unsave';
+                            showStatus('Network error while unsaving pharmacy.', 'error');
+                        });
+                    }
+                });
+            }
+
+            cardsGrid.appendChild(card);
+        });
+
+        // Fit map bounds to show patient and all nearby markers comfortably
+        if (pharmacyMarkers.length > 0) {
+            map.fitBounds(bounds, { padding: [40, 40], maxZoom: 15 });
+            setTimeout(function() { if (map) map.invalidateSize(); }, 150);
+        }
+    }
+
+    // Filter Pill Switchers
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            currentFilter = this.getAttribute('data-filter');
+            renderPharmacies();
+        });
+    });
+
+    // Radius change listener
+    if (radiusSelect) {
+        radiusSelect.addEventListener('change', function() {
+            if (currentLat && currentLon) {
+                fetchPharmacies(currentLat, currentLon, parseFloat(this.value));
+            }
+        });
+    }
+
+    // Geolocation detection button click
+    if (btnDetect) {
+        btnDetect.addEventListener('click', function() {
+            if (!navigator.geolocation) {
+                showStatus('Geolocation is not supported by your browser.', 'error');
+                return;
+            }
+
+            btnDetect.disabled = true;
+            btnDetect.textContent = 'Detecting position...';
+            showStatus('Requesting current GPS coordinates...', 'info');
+
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    btnDetect.disabled = false;
+                    btnDetect.innerHTML = `
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="22" y1="12" x2="18" y2="12"></line>
+                            <line x1="6" y1="12" x2="2" y2="12"></line>
+                            <line x1="12" y1="6" x2="12" y2="2"></line>
+                            <line x1="12" y1="22" x2="12" y2="18"></line>
+                        </svg>
+                        <span>Use My Current Location</span>
+                    `;
+                    clearStatus();
+
+                    const lat = position.coords.latitude;
+                    const lon = position.coords.longitude;
+                    const radius = parseFloat(radiusSelect.value);
+
+                    fetchPharmacies(lat, lon, radius);
+                },
+                function(err) {
+                    btnDetect.disabled = false;
+                    btnDetect.innerHTML = `
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="22" y1="12" x2="18" y2="12"></line>
+                            <line x1="6" y1="12" x2="2" y2="12"></line>
+                            <line x1="12" y1="6" x2="12" y2="2"></line>
+                            <line x1="12" y1="22" x2="12" y2="18"></line>
+                        </svg>
+                        <span>Use My Current Location</span>
+                    `;
+
+                    let errorMsg = 'Could not retrieve your location.';
+                    if (err.code === err.PERMISSION_DENIED) {
+                        errorMsg = 'Location permission was denied. Please allow location access in your browser or set coordinates in your profile.';
+                    } else if (err.code === err.POSITION_UNAVAILABLE) {
+                        errorMsg = 'Location information is unavailable on your device.';
+                    } else if (err.code === err.TIMEOUT) {
+                        errorMsg = 'Location request timed out. Please try again.';
+                    }
+                    showStatus(errorMsg, 'error');
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 0
+                }
+            );
+        });
+    }
+
+    // Auto-search if patient has saved profile coordinates
+    const savedCoordsEl = document.getElementById('saved-patient-coords');
+    if (savedCoordsEl) {
+        const savedLat = parseFloat(savedCoordsEl.getAttribute('data-lat'));
+        const savedLon = parseFloat(savedCoordsEl.getAttribute('data-lon'));
+        if (!isNaN(savedLat) && !isNaN(savedLon)) {
+            showStatus('Loaded default location from your profile. Click "Use My Current Location" anytime to update.', 'info');
+            fetchPharmacies(savedLat, savedLon, parseFloat(radiusSelect.value));
+        }
+    }
+});
+</script>
+{% endblock extra_js %}
+

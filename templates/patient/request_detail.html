@@ -1,0 +1,572 @@
+{% extends 'patient/base_patient.html' %}
+{% load static %}
+
+{% block title %}Request #{{ prescription_request.id }} | Patient Portal | MedAccess{% endblock title %}
+{% block header_title %}Request Details{% endblock header_title %}
+{% block nav_requests %}active{% endblock nav_requests %}
+
+{% block content %}
+<div class="rx-detail-container">
+
+    <!-- Top Navigation / Breadcrumb -->
+    <div class="rx-detail-nav">
+        <a href="{% url 'patient:requests_list' %}" class="back-link">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            <span>Back to Pharmacy Requests</span>
+        </a>
+    </div>
+
+    <!-- Header Summary Card -->
+    <div class="rx-summary-card">
+        <div class="rx-summary-left">
+            <div class="rx-detail-icon req-detail-icon">
+                <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                    <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+                    <path d="M9 14l2 2 4-4"></path>
+                </svg>
+            </div>
+            <div>
+                <h1 class="rx-summary-title">Fulfillment Request #{{ prescription_request.id }}</h1>
+                <p class="rx-summary-meta">
+                    Submitted to <strong>{{ prescription_request.pharmacy.pharmacy_name }}</strong> on {{ prescription_request.created_at|date:"F d, Y \a\t h:i A" }}
+                </p>
+            </div>
+        </div>
+        <div class="rx-summary-right">
+            {% if prescription_request.status == 'PENDING' %}
+                <span class="status-badge status-pending">Pending Pharmacy Review</span>
+            {% elif prescription_request.status == 'ACCEPTED' %}
+                <span class="status-badge status-accepted">Accepted by Pharmacy</span>
+            {% elif prescription_request.status == 'PROCESSING' %}
+                <span class="status-badge status-processing">Preparing Medicines</span>
+            {% elif prescription_request.status == 'READY_FOR_PICKUP' %}
+                <span class="status-badge status-ready">Ready for Pickup</span>
+            {% elif prescription_request.status == 'COMPLETED' %}
+                <span class="status-badge status-completed">Completed</span>
+            {% elif prescription_request.status == 'REJECTED' %}
+                <span class="status-badge status-rejected">Rejected</span>
+            {% elif prescription_request.status == 'CANCELLED' %}
+                <span class="status-badge status-cancelled">Cancelled</span>
+            {% endif %}
+
+            <span class="badge-avail-pill avail-{{ prescription_request.initial_availability_status|lower }}">
+                {{ prescription_request.get_initial_availability_status_display }}
+            </span>
+        </div>
+    </div>
+
+    <!-- Status Tracker Bar -->
+    <div class="order-progress-card">
+        <div class="progress-track">
+            <div class="step-item step-completed">
+                <div class="step-circle">1</div>
+                <div class="step-text">Submitted</div>
+            </div>
+            <div class="step-connector {% if prescription_request.status in 'ACCEPTED PROCESSING READY_FOR_PICKUP COMPLETED' %}step-connector-active{% endif %}"></div>
+
+            <div class="step-item {% if prescription_request.status in 'ACCEPTED PROCESSING READY_FOR_PICKUP COMPLETED' %}step-completed{% elif prescription_request.status == 'PENDING' %}step-current{% endif %}">
+                <div class="step-circle">2</div>
+                <div class="step-text">Accepted</div>
+            </div>
+            <div class="step-connector {% if prescription_request.status in 'PROCESSING READY_FOR_PICKUP COMPLETED' %}step-connector-active{% endif %}"></div>
+
+            <div class="step-item {% if prescription_request.status in 'PROCESSING READY_FOR_PICKUP COMPLETED' %}step-completed{% elif prescription_request.status == 'ACCEPTED' %}step-current{% endif %}">
+                <div class="step-circle">3</div>
+                <div class="step-text">Preparing</div>
+            </div>
+            <div class="step-connector {% if prescription_request.status in 'READY_FOR_PICKUP COMPLETED' %}step-connector-active{% endif %}"></div>
+
+            <div class="step-item {% if prescription_request.status in 'READY_FOR_PICKUP COMPLETED' %}step-completed{% elif prescription_request.status == 'PROCESSING' %}step-current{% endif %}">
+                <div class="step-circle">4</div>
+                <div class="step-text">Ready for Pickup</div>
+            </div>
+            <div class="step-connector {% if prescription_request.status == 'COMPLETED' %}step-connector-active{% endif %}"></div>
+
+            <div class="step-item {% if prescription_request.status == 'COMPLETED' %}step-completed{% endif %}">
+                <div class="step-circle">5</div>
+                <div class="step-text">Completed</div>
+            </div>
+        </div>
+
+        {% if prescription_request.status == 'CANCELLED' %}
+            <div class="status-terminal-banner banner-cancelled">
+                <strong>Request Cancelled:</strong> You cancelled this request on {{ prescription_request.updated_at|date:"M d, Y" }}. You can submit a new request whenever needed.
+            </div>
+        {% elif prescription_request.status == 'REJECTED' %}
+            <div class="status-terminal-banner banner-rejected">
+                <strong>Request Declined:</strong> The pharmacy was unable to fulfill this request. You can select another nearby approved pharmacy.
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Main Content Layout (2 Columns) -->
+    <div class="rx-detail-grid">
+
+        <!-- Column 1: Pharmacy Info & Prescription Snapshot -->
+        <div class="rx-col">
+            <!-- Pharmacy Card -->
+            <div class="rx-section-card">
+                <div class="rx-section-header">
+                    <h2 class="rx-section-title">Selected Pharmacy</h2>
+                </div>
+                <div class="pharmacy-profile-preview">
+                    <h3 class="pharma-name">{{ prescription_request.pharmacy.pharmacy_name }}</h3>
+                    <div class="pharma-detail-item">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                            <circle cx="12" cy="10" r="3"></circle>
+                        </svg>
+                        <span>{{ prescription_request.pharmacy.address|default:"Address on file" }}</span>
+                    </div>
+                    {% if prescription_request.pharmacy.phone_number %}
+                        <div class="pharma-detail-item">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                            </svg>
+                            <span>{{ prescription_request.pharmacy.phone_number }}</span>
+                        </div>
+                    {% endif %}
+                    {% if prescription_request.pharmacy.pharmacy_license_number %}
+                        <div class="pharma-detail-item">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="4" width="18" height="16" rx="2"></rect>
+                                <line x1="7" y1="8" x2="17" y2="8"></line>
+                                <line x1="7" y1="12" x2="17" y2="12"></line>
+                            </svg>
+                            <span>License: {{ prescription_request.pharmacy.pharmacy_license_number }}</span>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Linked Prescription Card -->
+            <div class="rx-section-card">
+                <div class="rx-section-header">
+                    <h2 class="rx-section-title">Prescription Document</h2>
+                    <a href="{% url 'patient:prescription_detail' prescription_request.prescription_id %}" class="link-external">
+                        <span>View Prescription</span>
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </a>
+                </div>
+                <div class="prescription-linked-body">
+                    <p class="rx-linked-title">Prescription #{{ prescription_request.prescription_id }}</p>
+                    <p class="rx-linked-meta">Uploaded on {{ prescription_request.prescription.uploaded_at|date:"M d, Y" }}</p>
+                    <div style="margin-top: 0.75rem;">
+                        <a href="{% url 'patient:prescription_secure_image' prescription_request.prescription_id %}" target="_blank" class="btn btn-secondary btn-sm" style="display: inline-flex; align-items: center; gap: 0.4rem;">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                            <span>Open Secure Document</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Direct Patient-Pharmacy Chat Card -->
+            <div class="rx-section-card rx-chat-card">
+                <div class="rx-chat-header">
+                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                        <div class="rx-chat-header-icon">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <h2 style="font-size: 0.95rem; font-weight: 700; color: #0f172a; margin: 0;">Chat with Pharmacy</h2>
+                            <p style="margin: 0.15rem 0 0 0; font-size: 0.75rem; color: #64748b;">
+                                {{ prescription_request.pharmacy.pharmacy_name }}
+                            </p>
+                        </div>
+                    </div>
+                    <div>
+                        {% if prescription_request.status in 'COMPLETED REJECTED CANCELLED' %}
+                            <span class="chat-status-pill chat-status-archived" title="This conversation is preserved as a permanent historical record.">
+                                Archived
+                            </span>
+                        {% else %}
+                            <span class="chat-status-pill chat-status-active" title="Messaging is live between you and the pharmacy.">
+                                <span class="chat-pulse-dot"></span> Live Chat
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Messages Container -->
+                <div id="chat-messages-container"
+                     class="rx-chat-messages"
+                     data-messages-url="{% url 'patient:request_messages' prescription_request.id %}"
+                     data-is-writable="{% if prescription_request.status in 'COMPLETED REJECTED CANCELLED' %}false{% else %}true{% endif %}">
+                    <div class="chat-loading-state" id="chat-loading-state">
+                        <div class="chat-spinner"></div>
+                        <span>Loading messages...</span>
+                    </div>
+                </div>
+
+                <!-- Input Area or Archived Notice -->
+                {% if prescription_request.status in 'COMPLETED REJECTED CANCELLED' %}
+                    <div class="chat-archived-notice">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                        </svg>
+                        <span>This request is <strong>{{ prescription_request.get_status_display }}</strong>. Messaging is archived and read-only.</span>
+                    </div>
+                {% else %}
+                    <form id="chat-send-form" class="rx-chat-form">
+                        {% csrf_token %}
+                        <div class="chat-input-wrapper">
+                            <textarea id="chat-input-text"
+                                      class="chat-textarea"
+                                      rows="2"
+                                      maxlength="1000"
+                                      placeholder="Type a message to the pharmacy (Enter to send, Shift+Enter for new line)..."
+                                      required></textarea>
+                            <div class="chat-form-footer">
+                                <span id="chat-char-counter" class="chat-char-counter">0 / 1000</span>
+                                <button type="submit" id="chat-send-btn" class="chat-send-btn" disabled>
+                                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                                    </svg>
+                                    <span>Send</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div id="chat-error-message" class="chat-inline-error" style="display: none;"></div>
+                    </form>
+                {% endif %}
+            </div>
+
+            <!-- Notes Section -->
+            {% if prescription_request.patient_notes or prescription_request.pharmacy_notes %}
+                <div class="rx-section-card">
+                    <div class="rx-section-header">
+                        <h2 class="rx-section-title">Request Notes</h2>
+                    </div>
+                    {% if prescription_request.patient_notes %}
+                        <div class="notes-block">
+                            <strong>Your Message:</strong>
+                            <p>{{ prescription_request.patient_notes }}</p>
+                        </div>
+                    {% endif %}
+                    {% if prescription_request.pharmacy_notes %}
+                        <div class="notes-block pharma-notes">
+                            <strong>Pharmacy Message:</strong>
+                            <p>{{ prescription_request.pharmacy_notes }}</p>
+                        </div>
+                    {% endif %}
+                </div>
+            {% endif %}
+
+            <!-- Actions Card -->
+            {% if prescription_request.status == 'PENDING' %}
+                <div class="rx-section-card">
+                    <div class="rx-section-header">
+                        <h2 class="rx-section-title">Actions</h2>
+                    </div>
+                    <form method="post" action="{% url 'patient:cancel_prescription_request' prescription_request.id %}" onsubmit="return confirm('Are you sure you want to cancel this pending request?');">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline-danger" style="width: 100%; justify-content: center;">
+                            <span>Cancel Fulfillment Request</span>
+                        </button>
+                    </form>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Column 2: Medicine Items Historical Snapshot -->
+        <div class="rx-col">
+            <div class="rx-section-card">
+                <div class="rx-section-header">
+                    <div>
+                        <h2 class="rx-section-title">Prescribed Medicines Snapshot</h2>
+                        <p class="rx-section-subtitle">Preserved medicine details and inventory evaluation at request time.</p>
+                    </div>
+                    <span class="med-count-pill">{{ items|length }} medicines</span>
+                </div>
+
+                <div class="medicines-table-wrapper">
+                    <table class="medicines-table">
+                        <thead>
+                            <tr>
+                                <th>Medicine Details</th>
+                                <th>Dosage & Duration</th>
+                                <th>Availability Status</th>
+                                <th>Inventory Note</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in items %}
+                                <tr>
+                                    <td class="med-name">
+                                        <div class="rx-table-medname">{{ item.prescribed_name_snapshot }}</div>
+                                        {% if item.prescribed_strength_snapshot %}
+                                            <span class="rx-table-date">Strength: {{ item.prescribed_strength_snapshot }}</span>
+                                        {% endif %}
+                                        {% if item.matched_catalogue_medicine %}
+                                            <div class="matched-catalogue-ref" title="Catalogue canonical: {{ item.matched_catalogue_medicine.medicine_name }}">
+                                                Matched: {{ item.matched_catalogue_medicine.medicine_name }}
+                                            </div>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="med-dosage-block">
+                                            {% if item.prescribed_dosage_snapshot %}<span>Dosage: {{ item.prescribed_dosage_snapshot }}</span><br>{% endif %}
+                                            {% if item.prescribed_frequency_snapshot %}<span>Freq: {{ item.prescribed_frequency_snapshot }}</span><br>{% endif %}
+                                            {% if item.prescribed_duration_snapshot %}<span>Duration: {{ item.prescribed_duration_snapshot }}</span>{% endif %}
+                                            {% if not item.prescribed_dosage_snapshot and not item.prescribed_frequency_snapshot and not item.prescribed_duration_snapshot %}
+                                                <span class="text-muted">Not specified</span>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if item.availability_status == 'FULLY_AVAILABLE' %}
+                                            <span class="req-item-badge badge-fully-avail">Fully Available</span>
+                                        {% elif item.availability_status == 'IN_STOCK' %}
+                                            <span class="req-item-badge badge-in-stock">In Stock</span>
+                                        {% elif item.availability_status == 'PARTIALLY_AVAILABLE' %}
+                                            <span class="req-item-badge badge-partial">Partially Available</span>
+                                        {% elif item.availability_status == 'OUT_OF_STOCK' %}
+                                            <span class="req-item-badge badge-out">Out of Stock</span>
+                                        {% elif item.availability_status == 'NOT_STOCKED' %}
+                                            <span class="req-item-badge badge-not-stocked">Not Stocked</span>
+                                        {% elif item.availability_status == 'AMBIGUOUS' %}
+                                            <span class="req-item-badge badge-ambiguous">Ambiguous</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="inv-explanation-text">
+                                            {{ item.explanation|default:"Evaluation saved." }}
+                                            {% if item.required_quantity_note %}
+                                                <div class="req-qty-note">{{ item.required_quantity_note }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="4" style="text-align: center; padding: 2rem; color: #64748b;">
+                                        No item snapshots recorded for this request.
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<style>
+.req-detail-icon {
+    background: #e0f2fe;
+    color: #0284c7;
+}
+.status-badge.status-pending { background: #fef3c7; color: #92400e; }
+.status-badge.status-accepted { background: #dbeafe; color: #1e40af; }
+.status-badge.status-processing { background: #ede9fe; color: #5b21b6; }
+.status-badge.status-ready { background: #ccfbf1; color: #115e59; }
+.status-badge.status-completed { background: #dcfce7; color: #166534; }
+.status-badge.status-rejected { background: #fee2e2; color: #991b1b; }
+.status-badge.status-cancelled { background: #f1f5f9; color: #475569; }
+
+.badge-avail-pill {
+    padding: 0.35rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+.badge-avail-pill.avail-fully_available { background: #dcfce7; color: #15803d; }
+.badge-avail-pill.avail-partially_available { background: #fef3c7; color: #b45309; }
+.badge-avail-pill.avail-out_of_stock { background: #fee2e2; color: #b91c1c; }
+
+.order-progress-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 1.5rem 1.25rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+.progress-track {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+}
+.step-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+    z-index: 2;
+    min-width: 70px;
+}
+.step-circle {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #f1f5f9;
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    font-weight: 700;
+    border: 2px solid #e2e8f0;
+}
+.step-text {
+    font-size: 0.75rem;
+    color: #64748b;
+    font-weight: 600;
+    text-align: center;
+}
+.step-completed .step-circle {
+    background: #16a34a;
+    color: #ffffff;
+    border-color: #16a34a;
+}
+.step-completed .step-text {
+    color: #16a34a;
+}
+.step-current .step-circle {
+    background: #0284c7;
+    color: #ffffff;
+    border-color: #0284c7;
+}
+.step-current .step-text {
+    color: #0284c7;
+    font-weight: 700;
+}
+.step-connector {
+    flex: 1;
+    height: 3px;
+    background: #e2e8f0;
+    margin: 0 0.5rem;
+    margin-bottom: 1.25rem;
+}
+.step-connector-active {
+    background: #16a34a;
+}
+
+.status-terminal-banner {
+    margin-top: 1.25rem;
+    padding: 0.85rem 1rem;
+    border-radius: 8px;
+    font-size: 0.88rem;
+}
+.banner-cancelled {
+    background: #f1f5f9;
+    color: #334155;
+    border-left: 4px solid #64748b;
+}
+.banner-rejected {
+    background: #fef2f2;
+    color: #991b1b;
+    border-left: 4px solid #ef4444;
+}
+
+.pharmacy-profile-preview {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+.pharma-name {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0 0 0.25rem 0;
+}
+.pharma-detail-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: #475569;
+}
+.pharma-detail-item svg {
+    flex-shrink: 0;
+    margin-top: 2px;
+    color: #64748b;
+}
+
+.prescription-linked-body {
+    padding: 0.25rem 0;
+}
+.rx-linked-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+.rx-linked-meta {
+    font-size: 0.8rem;
+    color: #64748b;
+    margin: 0.15rem 0 0 0;
+}
+
+.notes-block {
+    background: #f8fafc;
+    border-left: 3px solid #0284c7;
+    padding: 0.65rem 0.85rem;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    margin-bottom: 0.75rem;
+}
+.notes-block p { margin: 0.25rem 0 0 0; color: #334155; }
+.notes-block.pharma-notes {
+    border-left-color: #16a34a;
+    background: #f0fdf4;
+}
+
+.req-item-badge {
+    display: inline-block;
+    padding: 0.25rem 0.6rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+.badge-fully-avail, .badge-in-stock { background: #dcfce7; color: #166534; }
+.badge-partial { background: #fef3c7; color: #854d0e; }
+.badge-out, .badge-not-stocked { background: #fee2e2; color: #991b1b; }
+.badge-ambiguous { background: #f1f5f9; color: #475569; }
+
+.matched-catalogue-ref {
+    font-size: 0.75rem;
+    color: #0284c7;
+    font-weight: 500;
+    margin-top: 0.2rem;
+}
+.inv-explanation-text {
+    font-size: 0.8rem;
+    color: #475569;
+    line-height: 1.4;
+}
+.req-qty-note {
+    font-size: 0.75rem;
+    color: #64748b;
+    margin-top: 0.2rem;
+    font-style: italic;
+}
+.med-dosage-block {
+    font-size: 0.8rem;
+    color: #475569;
+    line-height: 1.35;
+}
+</style>
+{% endblock content %}
+
+{% block extra_js %}
+<script src="{% static 'js/request_chat.js' %}"></script>
+{% endblock extra_js %}
+

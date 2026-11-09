@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin Portal | MedAccess{% endblock title %}
+
+{% block content %}
+<div class="auth-card" style="max-width: 680px; margin: 3rem auto; text-align: left;">
+    <div class="auth-header" style="text-align: left; border-bottom: 1px solid var(--border-color, #e2e8f0); padding-bottom: 1.25rem; margin-bottom: 1.5rem;">
+        <span style="display: inline-block; padding: 0.25rem 0.75rem; background: rgba(16, 185, 129, 0.1); color: #059669; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">
+            Authorized Administrator
+        </span>
+        <h1 class="auth-title" style="font-size: 1.5rem; margin: 0 0 0.5rem 0; color: var(--text-primary, #0f172a);">
+            MedAccess Administrative Workspace
+        </h1>
+        <p class="auth-subtitle" style="font-size: 0.875rem; color: var(--text-secondary, #64748b); margin: 0;">
+            Secure administrative console for verified platform administrators.
+        </p>
+    </div>
+
+    <div style="background: var(--card-bg, #ffffff); border-radius: 8px; border: 1px solid var(--border-color, #e2e8f0); padding: 1.25rem; margin-bottom: 1.5rem;">
+        <div style="display: grid; grid-template-columns: 140px 1fr; gap: 0.75rem; font-size: 0.875rem;">
+            <div style="color: var(--text-secondary, #64748b); font-weight: 500;">Admin User:</div>
+            <div style="font-weight: 600; color: var(--text-primary, #0f172a);">{{ admin_user.username }}</div>
+
+            <div style="color: var(--text-secondary, #64748b); font-weight: 500;">Verified Email:</div>
+            <div style="font-family: monospace; color: var(--text-primary, #0f172a);">{{ admin_user.email }}</div>
+
+            <div style="color: var(--text-secondary, #64748b); font-weight: 500;">Role Status:</div>
+            <div>
+                <span style="display: inline-block; padding: 0.125rem 0.5rem; background: #e0f2fe; color: #0369a1; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">
+                    {{ admin_user.role }} &bull; Staff &bull; Superuser
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <div style="display: flex; gap: 1rem; align-items: center; justify-content: flex-end;">
+        <a href="{% url 'admin_portal:dashboard' %}" class="btn btn-primary" style="text-decoration: none;">
+            Admin Dashboard &rarr;
+        </a>
+        <a href="{% url 'admin:index' %}" class="btn btn-outline" style="text-decoration: none;">
+            Django System Admin
+        </a>
+        <form method="post" action="{% url 'accounts:logout' %}" style="margin: 0;">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-secondary">
+                Sign Out
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock content %}
+

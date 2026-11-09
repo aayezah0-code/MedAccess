@@ -1,0 +1,334 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <title>{% block title %}Admin Portal | MedAccess{% endblock title %}</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=3.1.0">
+    <script>
+        (function() {
+            var saved = localStorage.getItem('medaccess_theme');
+            var theme = saved || (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            document.documentElement.setAttribute('data-theme', theme);
+        })();
+    </script>
+    <style>
+        .sidebar-link-disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.625rem 0.875rem;
+            color: var(--color-text-muted, #858096);
+            font-size: 0.875rem;
+            border-radius: var(--radius-md, 8px);
+            margin-bottom: 0.25rem;
+            text-decoration: none;
+            user-select: none;
+        }
+        .sidebar-link-disabled svg {
+            width: 18px;
+            height: 18px;
+            stroke-width: 2;
+            flex-shrink: 0;
+        }
+        .sidebar-badge-soon {
+            margin-left: auto;
+            font-size: 0.625rem;
+            font-weight: 600;
+            padding: 0.125rem 0.45rem;
+            background: var(--color-surface-hover, #f1f5f9);
+            color: var(--color-text-muted, #858096);
+            border-radius: 9999px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .admin-stat-card {
+            background-color: var(--color-surface, #ffffff);
+            border: 1px solid var(--color-border, #e4def3);
+            border-radius: var(--radius-lg, 12px);
+            padding: 1.25rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            box-shadow: var(--shadow-card, 0 1px 3px rgba(0, 0, 0, 0.04));
+            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+        }
+        .admin-stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg, 0 4px 6px -1px rgba(0, 0, 0, 0.06));
+            border-color: var(--color-border-hover, #cac1e7);
+        }
+        .admin-stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .icon-blue { background-color: rgba(37, 99, 235, 0.15); color: #60a5fa; }
+        .icon-green { background-color: rgba(16, 185, 129, 0.15); color: #34d399; }
+        .icon-amber { background-color: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+        .icon-purple { background-color: rgba(149, 133, 200, 0.18); color: var(--color-primary); }
+        .icon-teal { background-color: rgba(20, 184, 166, 0.15); color: #2dd4bf; }
+        .icon-slate { background-color: rgba(100, 116, 139, 0.15); color: var(--color-text-muted); }
+
+        .admin-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.875rem;
+            text-align: left;
+        }
+        .admin-table thead tr {
+            background: var(--color-table-header-bg, #efeaf9);
+            border-bottom: 1px solid var(--color-border, #e4def3);
+            color: var(--color-text-muted, #858096);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .admin-table th, .admin-table td {
+            padding: 0.875rem 1.25rem;
+        }
+        .admin-table tbody tr {
+            border-bottom: 1px solid var(--color-border, #e4def3);
+            transition: background-color 0.15s ease;
+        }
+        .admin-table tbody tr:hover {
+            background-color: var(--color-surface-hover, #f0eaf8);
+        }
+        .status-pill-subtle {
+            display: inline-block;
+            padding: 0.2rem 0.6rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .pill-pending { background-color: rgba(245, 158, 11, 0.18); color: #d97706; }
+        .pill-approved, .pill-completed { background-color: rgba(16, 185, 129, 0.18); color: #059669; }
+        .pill-rejected, .pill-cancelled { background-color: rgba(239, 68, 68, 0.18); color: #dc2626; }
+        .pill-processing { background-color: rgba(59, 130, 246, 0.18); color: #2563eb; }
+    </style>
+    {% block extra_css %}{% endblock extra_css %}
+</head>
+<body class="portal-body" data-portal="admin">
+
+    <!-- Sidebar Navigation -->
+    <aside class="portal-sidebar" id="portal-sidebar">
+
+        <!-- Brand -->
+        <a href="{% url 'landing' %}" class="sidebar-brand">
+            <svg viewBox="0 0 24 24">
+                <path d="M12 2v20M2 12h20M7 7l10 10M17 7L7 17"></path>
+            </svg>
+            MedAccess
+        </a>
+
+        <!-- Main Navigation Entries -->
+        <nav class="sidebar-nav">
+            <p class="sidebar-section-label">Administration</p>
+
+            <!-- 1. Dashboard -->
+            <a href="{% url 'admin_portal:dashboard' %}"
+               class="sidebar-link {% block nav_dashboard %}{% endblock nav_dashboard %}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="7" height="7" rx="1"></rect>
+                    <rect x="14" y="3" width="7" height="7" rx="1"></rect>
+                    <rect x="3" y="14" width="7" height="7" rx="1"></rect>
+                    <rect x="14" y="14" width="7" height="7" rx="1"></rect>
+                </svg>
+                <span>Dashboard</span>
+            </a>
+
+            <!-- 2. Patients -->
+            <a href="{% url 'admin_portal:patient_list' %}"
+               class="sidebar-link {% block nav_patients %}{% endblock nav_patients %}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+                <span>Patients</span>
+            </a>
+
+            <!-- 3. Pharmacies -->
+            <a href="{% url 'admin_portal:pharmacy_list' %}"
+               class="sidebar-link {% block nav_pharmacies %}{% endblock nav_pharmacies %}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 21h18"></path>
+                    <path d="M5 21V7l8-4v18"></path>
+                    <path d="M19 21V11l-6-3"></path>
+                    <path d="M9 9h1"></path>
+                    <path d="M9 13h1"></path>
+                    <path d="M9 17h1"></path>
+                </svg>
+                <span>Pharmacies</span>
+            </a>
+
+            <!-- 4. Medicine Catalogue -->
+            <a href="{% url 'admin_portal:medicine_list' %}?tab=catalogue"
+               class="sidebar-link {% block nav_medicines %}{% endblock nav_medicines %}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M10.5 20.5l10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7z"></path>
+                    <line x1="8.5" y1="8.5" x2="15.5" y2="15.5"></line>
+                </svg>
+                <span>Medicine Catalogue</span>
+            </a>
+
+            <!-- 5. Inventory Overview -->
+            <a href="{% url 'admin_portal:medicine_list' %}?tab=inventory"
+               class="sidebar-link {% block nav_inventory %}{% endblock nav_inventory %}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                    <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                    <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                </svg>
+                <span>Inventory Overview</span>
+            </a>
+
+            <!-- 6. Feedback & Reports -->
+            <a href="{% url 'admin_portal:feedback_list' %}"
+               class="sidebar-link {% block nav_feedback %}{% endblock nav_feedback %}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                </svg>
+                <span>Feedback &amp; Reports</span>
+            </a>
+
+            <p class="sidebar-section-label" style="margin-top: 1.25rem;">Platform Configuration</p>
+
+            <!-- 7. Platform Settings -->
+            <a href="{% url 'admin_portal:settings' %}"
+               class="sidebar-link {% block nav_settings %}{% endblock nav_settings %}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                </svg>
+                <span>Platform Settings</span>
+            </a>
+
+            <!-- 8. Help & Support -->
+            <a href="{% url 'admin_portal:help' %}"
+               class="sidebar-link {% block nav_help %}{% endblock nav_help %}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+                <span>Help &amp; Support</span>
+            </a>
+        </nav>
+
+        <!-- 9. Logout at the bottom -->
+        <div class="sidebar-footer">
+            <form method="post" action="{% url 'accounts:logout' %}" class="sidebar-logout-form">
+                {% csrf_token %}
+                <button type="submit" class="sidebar-logout-btn">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"></path>
+                        <polyline points="16 17 21 12 16 7"></polyline>
+                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
+                    Logout
+                </button>
+            </form>
+        </div>
+
+    </aside>
+
+    <!-- Main Content Area -->
+    <div class="portal-main">
+
+        <!-- Top Header -->
+        <header class="portal-header">
+            <div style="display:flex; align-items:center; gap:0.75rem;">
+                <button class="sidebar-toggle" id="sidebar-toggle-btn" aria-label="Toggle sidebar">
+                    <svg viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+                </button>
+                <span class="portal-header-title">{% block header_title %}Admin Portal{% endblock header_title %}</span>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <!-- Theme Switcher Toggle -->
+                <button type="button" class="theme-toggle-btn" id="theme-toggle-btn" aria-label="Toggle light or dark theme" title="Toggle Theme" onclick="if(window.medaccessToggleTheme)window.medaccessToggleTheme();">
+                    <svg class="theme-icon-sun" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                    <svg class="theme-icon-moon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                </button>
+
+                <span style="display: inline-block; padding: 0.2rem 0.65rem; border-radius: 9999px; background: rgba(149, 133, 200, 0.18); color: var(--color-primary); font-size: 0.75rem; font-weight: 600; border: 1px solid rgba(149, 133, 200, 0.3);">
+                    Authorized Admin
+                </span>
+
+                <div class="portal-header-user">
+                    <div class="portal-avatar-placeholder" style="background-color: #dbeafe; color: #1d4ed8; font-weight: 700;">
+                        {{ request.user.username|slice:":2"|upper }}
+                    </div>
+                    <div style="display: flex; flex-direction: column; text-align: left;">
+                        <span style="font-weight: 600; color: var(--color-text-main);">{{ request.user.username }}</span>
+                        <span style="font-size: 0.75rem; color: var(--color-text-muted);">{{ request.user.email }}</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Page Content -->
+        <main class="portal-content">
+
+            {% if messages %}
+                <div class="portal-messages">
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            {% block content %}{% endblock content %}
+
+        </main>
+    </div>
+
+    <!-- Responsive Sidebar Toggle Script -->
+    <script>
+        (function () {
+            var toggleBtn = document.getElementById('sidebar-toggle-btn');
+            var sidebar = document.getElementById('portal-sidebar');
+
+            if (toggleBtn && sidebar) {
+                toggleBtn.addEventListener('click', function () {
+                    sidebar.classList.toggle('open');
+                });
+
+                document.addEventListener('click', function (event) {
+                    var isInsideSidebar = sidebar.contains(event.target);
+                    var isToggleBtn = toggleBtn.contains(event.target);
+                    if (!isInsideSidebar && !isToggleBtn && sidebar.classList.contains('open')) {
+                        sidebar.classList.remove('open');
+                    }
+                });
+            }
+        })();
+    </script>
+    <script src="{% static 'js/theme_switcher.js' %}?v=3.1.0"></script>
+    {% block extra_js %}{% endblock extra_js %}
+</body>
+</html>
+

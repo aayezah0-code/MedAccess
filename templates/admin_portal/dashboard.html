@@ -1,0 +1,295 @@
+{% extends 'admin_portal/base_admin.html' %}
+
+{% block title %}Dashboard | Admin Portal | MedAccess{% endblock title %}
+{% block header_title %}System Overview & Operational Metrics{% endblock header_title %}
+{% block nav_dashboard %}active{% endblock nav_dashboard %}
+
+{% block content %}
+<div style="max-width: 1400px; margin: 0 auto;">
+
+    <!-- Welcome Header Banner -->
+    <div style="background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); border-radius: var(--radius-lg, 12px); padding: 1.75rem 2rem; color: #ffffff; margin-bottom: 2rem; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div>
+                <span style="display: inline-block; padding: 0.2rem 0.6rem; background: rgba(255, 255, 255, 0.2); border-radius: 9999px; font-size: 0.75rem; font-weight: 600; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;">
+                    Healthcare Administration Console
+                </span>
+                <h1 style="font-size: 1.5rem; font-weight: 700; margin: 0 0 0.35rem 0;">
+                    Welcome back, {{ admin_user.username }}
+                </h1>
+                <p style="margin: 0; font-size: 0.875rem; color: rgba(255, 255, 255, 0.85);">
+                    Live platform overview and operational KPIs across registered patients, partner pharmacies, and prescription workflows.
+                </p>
+            </div>
+            <div style="display: flex; gap: 0.75rem; align-items: center;">
+                <a href="{% url 'admin:index' %}" class="btn btn-secondary" style="background: rgba(255, 255, 255, 0.95); color: #1e40af; border: none; font-weight: 600; text-decoration: none; padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.875rem;">
+                    Django System Admin &rarr;
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 1: User & Healthcare Facility Metrics -->
+    <div style="margin-bottom: 2rem;">
+        <h2 style="font-size: 1.125rem; font-weight: 700; color: var(--color-text-main, #0f172a); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #2563eb;">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            </svg>
+            Registered Users & Healthcare Facilities
+        </h2>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.25rem;">
+            <!-- Stat 1: Total Registered Patients -->
+            <div class="admin-stat-card" id="stat-total-patients">
+                <div class="admin-stat-icon icon-blue">
+                    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                </div>
+                <div class="stat-content">
+                    <span class="stat-label">Total Registered Patients</span>
+                    <span class="stat-value" id="val-total-patients">{{ stats.total_patients }}</span>
+                </div>
+            </div>
+
+            <!-- Stat 2: Total Registered Pharmacies -->
+            <div class="admin-stat-card" id="stat-total-pharmacies">
+                <div class="admin-stat-icon icon-purple">
+                    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 21h18"></path>
+                        <path d="M5 21V7l8-4v18"></path>
+                        <path d="M19 21V11l-6-3"></path>
+                        <path d="M9 9h1"></path>
+                        <path d="M9 13h1"></path>
+                        <path d="M9 17h1"></path>
+                    </svg>
+                </div>
+                <div class="stat-content">
+                    <span class="stat-label">Total Registered Pharmacies</span>
+                    <span class="stat-value" id="val-total-pharmacies">{{ stats.total_pharmacies }}</span>
+                </div>
+            </div>
+
+            <!-- Stat 3: Approved Pharmacies -->
+            <div class="admin-stat-card" id="stat-approved-pharmacies">
+                <div class="admin-stat-icon icon-green">
+                    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
+                </div>
+                <div class="stat-content">
+                    <span class="stat-label">Approved Pharmacies</span>
+                    <span class="stat-value" id="val-approved-pharmacies">{{ stats.approved_pharmacies }}</span>
+                </div>
+            </div>
+
+            <!-- Stat 4: Pending Pharmacy Approvals -->
+            <div class="admin-stat-card" id="stat-pending-pharmacies">
+                <div class="admin-stat-icon icon-amber">
+                    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                </div>
+                <div class="stat-content">
+                    <span class="stat-label">Pending Approvals</span>
+                    <span class="stat-value" id="val-pending-pharmacies">{{ stats.pending_pharmacies }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 2: Prescriptions & Fulfillment Pipeline Metrics -->
+    <div style="margin-bottom: 2rem;">
+        <h2 style="font-size: 1.125rem; font-weight: 700; color: var(--color-text-main, #0f172a); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #0d9488;">
+                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+                <path d="M9 14l2 2 4-4"></path>
+            </svg>
+            Prescriptions & Fulfillment Pipeline
+        </h2>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.25rem;">
+            <!-- Stat 5: Total Prescriptions Uploaded -->
+            <div class="admin-stat-card" id="stat-total-prescriptions">
+                <div class="admin-stat-icon icon-teal">
+                    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                    </svg>
+                </div>
+                <div class="stat-content">
+                    <span class="stat-label">Total Prescriptions</span>
+                    <span class="stat-value" id="val-total-prescriptions">{{ stats.total_prescriptions }}</span>
+                </div>
+            </div>
+
+            <!-- Stat 6: Total Fulfillment Requests -->
+            <div class="admin-stat-card" id="stat-total-requests">
+                <div class="admin-stat-icon icon-blue">
+                    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="16.5" y1="9.4" x2="7.55" y2="4.24"></line>
+                        <polyline points="3.29 7 12 12 20.71 7"></polyline>
+                        <line x1="12" y1="22" x2="12" y2="12"></line>
+                    </svg>
+                </div>
+                <div class="stat-content">
+                    <span class="stat-label">Fulfillment Requests</span>
+                    <span class="stat-value" id="val-total-requests">{{ stats.total_requests }}</span>
+                </div>
+            </div>
+
+            <!-- Stat 7: Completed Requests -->
+            <div class="admin-stat-card" id="stat-completed-requests">
+                <div class="admin-stat-icon icon-green">
+                    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                </div>
+                <div class="stat-content">
+                    <span class="stat-label">Completed Requests</span>
+                    <span class="stat-value" id="val-completed-requests">{{ stats.completed_requests }}</span>
+                </div>
+            </div>
+
+            <!-- Stat 8: Pending Requests -->
+            <div class="admin-stat-card" id="stat-pending-requests">
+                <div class="admin-stat-icon icon-amber">
+                    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                </div>
+                <div class="stat-content">
+                    <span class="stat-label">Pending Requests</span>
+                    <span class="stat-value" id="val-pending-requests">{{ stats.pending_requests }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 3: Recent Activity (Reliable Timestamps) -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(480px, 1fr)); gap: 1.5rem; margin-bottom: 2.5rem;">
+
+        <!-- Recent Fulfillment Requests -->
+        <div style="background: #ffffff; border: 1px solid var(--color-border, #e2e8f0); border-radius: var(--radius-lg, 12px); overflow: hidden; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);">
+            <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--color-border, #e2e8f0); display: flex; justify-content: space-between; align-items: center;">
+                <h3 style="margin: 0; font-size: 1rem; font-weight: 700; color: var(--color-text-main, #0f172a);">
+                    Recent Prescription Requests
+                </h3>
+                <span style="font-size: 0.75rem; color: var(--color-text-muted, #64748b);">Latest 5</span>
+            </div>
+
+            {% if recent_requests %}
+                <div style="overflow-x: auto;">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Patient</th>
+                                <th>Pharmacy</th>
+                                <th>Status</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for req in recent_requests %}
+                                <tr>
+                                    <td style="font-weight: 600; color: #2563eb;">#{{ req.id }}</td>
+                                    <td>{{ req.patient.user.username }}</td>
+                                    <td>{{ req.pharmacy.pharmacy_name }}</td>
+                                    <td>
+                                        {% if req.status == 'COMPLETED' %}
+                                            <span class="status-pill-subtle pill-completed">Completed</span>
+                                        {% elif req.status == 'PENDING' %}
+                                            <span class="status-pill-subtle pill-pending">Pending</span>
+                                        {% elif req.status == 'PROCESSING' or req.status == 'ACCEPTED' or req.status == 'READY_FOR_PICKUP' %}
+                                            <span class="status-pill-subtle pill-processing">{{ req.get_status_display }}</span>
+                                        {% else %}
+                                            <span class="status-pill-subtle pill-rejected">{{ req.get_status_display }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td style="font-size: 0.8125rem; color: var(--color-text-muted, #64748b);">
+                                        {{ req.created_at|date:"M d, H:i" }}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div style="padding: 2.5rem 1.5rem; text-align: center; color: var(--color-text-muted, #64748b); font-size: 0.875rem;">
+                    No prescription fulfillment requests recorded yet.
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Recent Pharmacy Registrations -->
+        <div style="background: #ffffff; border: 1px solid var(--color-border, #e2e8f0); border-radius: var(--radius-lg, 12px); overflow: hidden; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);">
+            <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--color-border, #e2e8f0); display: flex; justify-content: space-between; align-items: center;">
+                <h3 style="margin: 0; font-size: 1rem; font-weight: 700; color: var(--color-text-main, #0f172a);">
+                    Recent Pharmacy Registrations
+                </h3>
+                <span style="font-size: 0.75rem; color: var(--color-text-muted, #64748b);">Latest 5</span>
+            </div>
+
+            {% if recent_pharmacies %}
+                <div style="overflow-x: auto;">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Pharmacy</th>
+                                <th>License #</th>
+                                <th>Location</th>
+                                <th>Status</th>
+                                <th>Registered</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for pharma in recent_pharmacies %}
+                                <tr>
+                                    <td style="font-weight: 600; color: var(--color-text-main, #0f172a);">
+                                        {{ pharma.pharmacy_name }}
+                                    </td>
+                                    <td style="font-family: monospace; font-size: 0.8125rem;">
+                                        {{ pharma.pharmacy_license_number }}
+                                    </td>
+                                    <td>{{ pharma.city }}, {{ pharma.state }}</td>
+                                    <td>
+                                        {% if pharma.approval_status == 'APPROVED' %}
+                                            <span class="status-pill-subtle pill-approved">Approved</span>
+                                        {% elif pharma.approval_status == 'PENDING' %}
+                                            <span class="status-pill-subtle pill-pending">Pending</span>
+                                        {% else %}
+                                            <span class="status-pill-subtle pill-rejected">Rejected</span>
+                                        {% endif %}
+                                    </td>
+                                    <td style="font-size: 0.8125rem; color: var(--color-text-muted, #64748b);">
+                                        {{ pharma.created_at|date:"M d, Y" }}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div style="padding: 2.5rem 1.5rem; text-align: center; color: var(--color-text-muted, #64748b); font-size: 0.875rem;">
+                    No pharmacy profiles registered yet.
+                </div>
+            {% endif %}
+        </div>
+
+    </div>
+
+</div>
+{% endblock content %}
+

@@ -1,0 +1,213 @@
+{% extends 'pharmacy/base_pharmacy.html' %}
+
+{% block title %}Add Medicine | Pharmacy Portal | MedAccess{% endblock title %}
+{% block header_title %}Add Medicine{% endblock header_title %}
+{% block nav_medicines %}active{% endblock nav_medicines %}
+
+{% block content %}
+<div class="medicine-form-container" style="display: flex; flex-direction: column; gap: 1.5rem; max-width: 900px; margin: 0 auto; width: 100%;">
+
+    <!-- Back Navigation Link -->
+    <div>
+        <a href="{% url 'pharmacy:medicines' %}" style="display: inline-flex; align-items: center; gap: 0.375rem; color: #0284c7; text-decoration: none; font-size: 0.875rem; font-weight: 500;">
+            <svg style="width: 16px; height: 16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            <span>Back to Medicine Catalogue</span>
+        </a>
+    </div>
+
+    <!-- Header & Information Banner -->
+    <div style="background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 1.5rem; box-shadow: var(--shadow-subtle);">
+        <h1 style="font-size: 1.5rem; font-weight: 700; color: var(--color-text-main); margin: 0;">
+            Add New Medicine Formulation
+        </h1>
+        <p style="color: var(--color-text-muted); font-size: 0.875rem; margin-top: 0.375rem; margin-bottom: 0; line-height: 1.5;">
+            Create a standardized master record for a pharmaceutical formulation. This record will be accessible across MedAccess pharmacies for stock batch mapping.
+        </p>
+
+        <div style="margin-top: 1rem; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: var(--radius-sm); padding: 0.75rem 1rem; display: flex; align-items: flex-start; gap: 0.625rem;">
+            <svg style="width: 18px; height: 18px; color: #16a34a; flex-shrink: 0; margin-top: 1px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="16" x2="12" y2="12"></line>
+                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+            </svg>
+            <div style="font-size: 0.8125rem; color: #166534; line-height: 1.4;">
+                <strong>Catalogue Notice:</strong> Adding a medicine defines the master pharmaceutical record. It does not create an inventory stock batch. Stock quantities, batches, and expiry dates are tracked under <em>Manage Inventory</em>.
+            </div>
+        </div>
+    </div>
+
+    <!-- Form -->
+    <form method="post" action="{% url 'pharmacy:medicine_add' %}" enctype="multipart/form-data" novalidate style="display: flex; flex-direction: column; gap: 1.5rem;">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+            <div style="background: #fff7ed; border: 1px solid #fdba74; color: #9a3412; padding: 1rem 1.25rem; border-radius: var(--radius-md); font-size: 0.875rem;">
+                <div style="display: flex; align-items: flex-start; gap: 0.5rem;">
+                    <svg style="width: 20px; height: 20px; color: #ea580c; flex-shrink: 0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                        <line x1="12" y1="9" x2="12" y2="13"></line>
+                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                    </svg>
+                    <div>
+                        <strong style="display: block; margin-bottom: 0.25rem;">Duplicate Check Warning</strong>
+                        {% for err in form.non_field_errors %}
+                            <div>{{ err }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        <!-- Section 1: Identification & Formulation -->
+        <div style="background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 1.5rem; box-shadow: var(--shadow-subtle);">
+            <h2 style="font-size: 1.125rem; font-weight: 600; color: var(--color-text-main); margin-top: 0; margin-bottom: 1.25rem;">
+                Medicine Formulation Details
+            </h2>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.25rem;">
+                <!-- Medicine Name -->
+                <div style="grid-column: 1 / -1;">
+                    <label for="{{ form.medicine_name.id_for_label }}" style="display: block; font-size: 0.875rem; font-weight: 600; color: var(--color-text-main); margin-bottom: 0.375rem;">
+                        Brand / Generic Name <span style="color: #dc2626;">*</span>
+                    </label>
+                    {{ form.medicine_name }}
+                    {% if form.medicine_name.errors %}
+                        <div style="color: #dc2626; font-size: 0.75rem; margin-top: 0.25rem;">{{ form.medicine_name.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Dosage Form -->
+                <div>
+                    <label for="{{ form.dosage_form.id_for_label }}" style="display: block; font-size: 0.875rem; font-weight: 600; color: var(--color-text-main); margin-bottom: 0.375rem;">
+                        Dosage Form
+                    </label>
+                    {{ form.dosage_form }}
+                    <span style="font-size: 0.75rem; color: var(--color-text-muted); margin-top: 0.25rem; display: block;">
+                        e.g. Tablet, Capsule, Syrup, Ointment, Injection
+                    </span>
+                    {% if form.dosage_form.errors %}
+                        <div style="color: #dc2626; font-size: 0.75rem; margin-top: 0.25rem;">{{ form.dosage_form.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Strength -->
+                <div>
+                    <label for="{{ form.strength.id_for_label }}" style="display: block; font-size: 0.875rem; font-weight: 600; color: var(--color-text-main); margin-bottom: 0.375rem;">
+                        Strength / Concentration
+                    </label>
+                    {{ form.strength }}
+                    <span style="font-size: 0.75rem; color: var(--color-text-muted); margin-top: 0.25rem; display: block;">
+                        e.g. 650 mg, 500 mg, 5 mg/5ml, 1% w/w
+                    </span>
+                    {% if form.strength.errors %}
+                        <div style="color: #dc2626; font-size: 0.75rem; margin-top: 0.25rem;">{{ form.strength.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Pack Size -->
+                <div>
+                    <label for="{{ form.pack_size.id_for_label }}" style="display: block; font-size: 0.875rem; font-weight: 600; color: var(--color-text-main); margin-bottom: 0.375rem;">
+                        Packaging Specification
+                    </label>
+                    {{ form.pack_size }}
+                    <span style="font-size: 0.75rem; color: var(--color-text-muted); margin-top: 0.25rem; display: block;">
+                        e.g. Strip of 15 Tablets, 100 ml Bottle
+                    </span>
+                    {% if form.pack_size.errors %}
+                        <div style="color: #dc2626; font-size: 0.75rem; margin-top: 0.25rem;">{{ form.pack_size.errors.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 2: Clinical Composition & Manufacturer -->
+        <div style="background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 1.5rem; box-shadow: var(--shadow-subtle);">
+            <h2 style="font-size: 1.125rem; font-weight: 600; color: var(--color-text-main); margin-top: 0; margin-bottom: 1.25rem;">
+                Composition & Manufacturing
+            </h2>
+
+            <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+                <!-- Composition -->
+                <div>
+                    <label for="{{ form.composition.id_for_label }}" style="display: block; font-size: 0.875rem; font-weight: 600; color: var(--color-text-main); margin-bottom: 0.375rem;">
+                        Active Ingredients (Composition)
+                    </label>
+                    {{ form.composition }}
+                    <span style="font-size: 0.75rem; color: var(--color-text-muted); margin-top: 0.25rem; display: block;">
+                        Active pharmaceutical salt or formulation ingredients (e.g. Paracetamol IP 650mg).
+                    </span>
+                    {% if form.composition.errors %}
+                        <div style="color: #dc2626; font-size: 0.75rem; margin-top: 0.25rem;">{{ form.composition.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Manufacturer -->
+                <div>
+                    <label for="{{ form.manufacturer.id_for_label }}" style="display: block; font-size: 0.875rem; font-weight: 600; color: var(--color-text-main); margin-bottom: 0.375rem;">
+                        Pharmaceutical Manufacturer
+                    </label>
+                    {{ form.manufacturer }}
+                    <span style="font-size: 0.75rem; color: var(--color-text-muted); margin-top: 0.25rem; display: block;">
+                        e.g. Micro Labs Ltd, Cipla, Sun Pharma, Abbott Healthcare
+                    </span>
+                    {% if form.manufacturer.errors %}
+                        <div style="color: #dc2626; font-size: 0.75rem; margin-top: 0.25rem;">{{ form.manufacturer.errors.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 3: Pricing & Packaging Visuals -->
+        <div style="background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 1.5rem; box-shadow: var(--shadow-subtle);">
+            <h2 style="font-size: 1.125rem; font-weight: 600; color: var(--color-text-main); margin-top: 0; margin-bottom: 1.25rem;">
+                Pricing & Product Image
+            </h2>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.25rem;">
+                <!-- MRP -->
+                <div>
+                    <label for="{{ form.mrp.id_for_label }}" style="display: block; font-size: 0.875rem; font-weight: 600; color: var(--color-text-main); margin-bottom: 0.375rem;">
+                        Maximum Retail Price (₹ INR) <span style="color: #dc2626;">*</span>
+                    </label>
+                    {{ form.mrp }}
+                    <span style="font-size: 0.75rem; color: var(--color-text-muted); margin-top: 0.25rem; display: block;">
+                        Printed retail price including all taxes (must be greater than 0).
+                    </span>
+                    {% if form.mrp.errors %}
+                        <div style="color: #dc2626; font-size: 0.75rem; margin-top: 0.25rem;">{{ form.mrp.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Product Image -->
+                <div>
+                    <label for="{{ form.medicine_image.id_for_label }}" style="display: block; font-size: 0.875rem; font-weight: 600; color: var(--color-text-main); margin-bottom: 0.375rem;">
+                        Product Packaging Image (Optional)
+                    </label>
+                    {{ form.medicine_image }}
+                    <span style="font-size: 0.75rem; color: var(--color-text-muted); margin-top: 0.25rem; display: block;">
+                        Supported formats: JPG, PNG, WEBP (Max 5 MB).
+                    </span>
+                    {% if form.medicine_image.errors %}
+                        <div style="color: #dc2626; font-size: 0.75rem; margin-top: 0.25rem;">{{ form.medicine_image.errors.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Form Actions Footer -->
+        <div style="display: flex; align-items: center; justify-content: flex-end; gap: 1rem; padding: 1rem 0;">
+            <a href="{% url 'pharmacy:medicines' %}" class="btn btn-secondary">
+                Cancel
+            </a>
+            <button type="submit" class="btn btn-primary" style="padding: 0.75rem 2rem; font-weight: 600;">
+                Add Medicine to Catalogue
+            </button>
+        </div>
+    </form>
+
+</div>
+{% endblock content %}
+

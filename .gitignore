@@ -1,0 +1,43 @@
+# Virtual Environment
+venv/
+env/
+.venv/
+
+# Environment Variables
+.env
+.env.local
+
+# Python Cache & Bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+
+# Django Media & Uploads
+/media/*
+!/media/.gitkeep
+/staticfiles/
+*.sqlite3
+
+# IDE & OS Files
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+/data/
+
+# Large datasets
+/data/
+
+# Unused ML artifacts
+/ml_models/price_prediction_model.pkl
+/ml_models/medicine_side_effects_model/vectorizer.pkl
+/ml_models/medicine_side_effects_model/tfidf_matrix.pkl
+/ml_models/medicine_side_effects_model/medicine_records.pkl
+/ml_models/medicine_side_effects_model/medicine_records.json
+/ml_models/medicine_side_effects_model/medicine_side_effects_training.ipynb
+

@@ -1,0 +1,15 @@
+Hello {{ user.first_name|default:user.username }},
+
+Thank you for registering with MedAccess Healthcare Platform.
+
+To activate your account and verify your email address, please visit the link below:
+{{ verification_url }}
+
+Important Notes:
+- This verification link is time-limited and will expire in {{ expiry_hours }} hours.
+- If you did not create an account on MedAccess, please ignore this email.
+
+Best regards,
+The MedAccess Team
+https://medaccess.com
+
