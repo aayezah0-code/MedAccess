@@ -220,6 +220,23 @@ PREDEFINED_ADMIN_EMAILS = [
     email.strip().lower() for email in _admin_emails_env.split(',') if email.strip()
 ]
 
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        'django.request': {
+            'handlers': ['console'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+    },
+}
+
 
 
 
