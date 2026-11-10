@@ -293,8 +293,17 @@
                         <a href="{% url 'patient:prescription_secure_image' prescription_request.prescription_id %}" target="_blank" rel="noopener noreferrer" title="Click to view full image in new tab">
                             <img src="{% url 'patient:prescription_secure_image' prescription_request.prescription_id %}"
                                  alt="Prescription #{{ prescription_request.prescription_id }}"
-                                 style="max-width: 100%; max-height: 420px; object-fit: contain; display: block; margin: 0 auto;">
+                                 style="max-width: 100%; max-height: 420px; object-fit: contain; display: block; margin: 0 auto;"
+                                 onerror="this.parentElement.style.display='none'; this.parentElement.nextElementSibling.style.display='block';">
                         </a>
+                        <div style="display:none; padding: 2.5rem 1rem; text-align: center; color: var(--color-text-muted);">
+                            <svg style="width: 44px; height: 44px; color: #94a3b8; margin-bottom: 0.75rem;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                            </svg>
+                            <p style="font-weight: 600; color: var(--color-text-main); font-size: 0.875rem; margin: 0 0 0.25rem;">Prescription Document Archived</p>
+                            <p style="font-size: 0.8125rem; margin: 0;">Original uploaded document was archived on the server. Extracted item list and patient request details are available below.</p>
+                        </div>
                     {% endif %}
                 </div>
             </div>

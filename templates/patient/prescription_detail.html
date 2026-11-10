@@ -63,6 +63,7 @@
             <div class="rx-section-card">
                 <div class="rx-section-header">
                     <h2 class="rx-section-title">Prescription Document</h2>
+                    {% if prescription.file_exists %}
                     <a href="{% url 'patient:prescription_secure_image' prescription.id %}" target="_blank" rel="noopener noreferrer" class="link-external">
                         <span>View Full Size</span>
                         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -71,10 +72,12 @@
                             <line x1="10" y1="14" x2="21" y2="3"></line>
                         </svg>
                     </a>
+                    {% endif %}
                 </div>
 
                 <div class="rx-image-box">
                     {% if prescription.prescription_image.name|lower|slice:"-4:" == ".pdf" %}
+                        {% if prescription.file_exists %}
                         <div class="rx-pdf-preview" style="text-align: center; padding: 2.5rem 1rem;">
                             <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="color: var(--color-primary, #0284c7); margin-bottom: 0.75rem;">
                                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -89,10 +92,40 @@
                                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
                             </a>
                         </div>
-                    {% else %}
+                        {% else %}
+                        <div class="rx-modal-fallback-box" style="padding: 2.5rem 1.5rem; text-align: center;">
+                            <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--color-text-muted); margin-bottom: 0.5rem;">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                            </svg>
+                            <p style="font-weight: 600; color: var(--color-text-main); margin: 0 0 0.25rem;">PDF Document Archived</p>
+                            <p style="font-size: 0.8125rem; color: var(--color-text-muted); margin: 0; max-width: 280px; line-height: 1.4;">The original document file was archived on the server. All clinical findings and extracted medicines are preserved below.</p>
+                        </div>
+                        {% endif %}
+                    {% elif prescription.prescription_image and prescription.file_exists %}
                         <a href="{% url 'patient:prescription_secure_image' prescription.id %}" target="_blank" rel="noopener noreferrer" title="Click to open image in full size">
-                            <img src="{% url 'patient:prescription_secure_image' prescription.id %}" alt="Prescription #{{ prescription.id }}" class="rx-preview-image">
+                            <img src="{% url 'patient:prescription_secure_image' prescription.id %}" 
+                                 alt="Prescription #{{ prescription.id }}" 
+                                 class="rx-preview-image"
+                                 onerror="this.parentElement.style.display='none'; this.parentElement.nextElementSibling.style.display='flex';">
                         </a>
+                        <div class="rx-modal-fallback-box" style="display:none; padding: 2.5rem 1.5rem; text-align: center; flex-direction: column; align-items: center;">
+                            <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--color-text-muted); margin-bottom: 0.5rem;">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                            </svg>
+                            <p style="font-weight: 600; color: var(--color-text-main); margin: 0 0 0.25rem;">Prescription Record</p>
+                            <p style="font-size: 0.8125rem; color: var(--color-text-muted); margin: 0; max-width: 280px; line-height: 1.4;">The prescription image file is not on this server instance. All extracted medicines and dosages are saved below.</p>
+                        </div>
+                    {% else %}
+                        <div class="rx-modal-fallback-box" style="padding: 2.5rem 1.5rem; text-align: center; display: flex; flex-direction: column; align-items: center;">
+                            <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--color-text-muted); margin-bottom: 0.5rem;">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                            </svg>
+                            <p style="font-weight: 600; color: var(--color-text-main); margin: 0 0 0.25rem;">Prescription Record</p>
+                            <p style="font-size: 0.8125rem; color: var(--color-text-muted); margin: 0; max-width: 280px; line-height: 1.4;">The original image file was archived on the server. All extracted medicines and dosages are saved below.</p>
+                        </div>
                     {% endif %}
                 </div>
             </div>

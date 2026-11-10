@@ -353,10 +353,16 @@ def prescription_list_view(request):
     if patient_profile:
         prescriptions = patient_profile.prescriptions.order_by('-uploaded_at')
         for rx in prescriptions:
-            # File format detection (PDF vs Image)
+            # File format detection (PDF vs Image) and storage presence check
             rx.is_pdf = bool(
                 rx.prescription_image and rx.prescription_image.name.lower().endswith('.pdf')
             )
+            try:
+                rx.file_exists = bool(
+                    rx.prescription_image and rx.prescription_image.storage.exists(rx.prescription_image.name)
+                )
+            except Exception:
+                rx.file_exists = False
 
             # Categorized medicines and confirmation progress
             summary = enrich_prescription_details(rx)
@@ -395,6 +401,12 @@ def prescription_detail_view(request, pk):
         raise Http404("Patient profile not found.")
 
     prescription = get_object_or_404(Prescription, pk=pk, patient=patient_profile)
+    try:
+        prescription.file_exists = bool(
+            prescription.prescription_image and prescription.prescription_image.storage.exists(prescription.prescription_image.name)
+        )
+    except Exception:
+        prescription.file_exists = False
     summary = enrich_prescription_details(prescription)
     prescription.confirmed_medicines = summary['confirmed_medicines']
     prescription.manual_medicines = summary['manual_medicines']
@@ -1781,6 +1793,11 @@ def prescription_secure_image_view(request, pk):
         raise Http404("Prescription document could not be opened.")
 
     content_type, _ = mimetypes.guess_type(prescription.prescription_image.name)
-    return FileResponse(f, content_type=content_type or 'application/octet-stream')
+    response = FileResponse(f, content_type=content_type or 'application/octet-stream')
+    response['Cache-Control'] = 'private, no-cache, no-store, must-revalidate'
+    response['Pragma'] = 'no-cache'
+    response['Expires'] = '0'
+    response['X-Content-Type-Options'] = 'nosniff'
+    return response
 
 

@@ -52,8 +52,9 @@ class AuthenticationTests(TestCase):
             'confirm_password': 'SecurePatientPass123!',
         }
         response = self.client.post(url, data)
-        self.assertEqual(response.status_code, 302)
-        self.assertRedirects(response, reverse('accounts:login'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'accounts/verify_email_status.html')
+        self.assertEqual(response.context['status'], 'pending')
 
         user = User.objects.get(username='aarav_patient')
         self.assertEqual(user.role, 'PATIENT')
@@ -138,8 +139,9 @@ class AuthenticationTests(TestCase):
             'pincode': '400058',
         }
         response = self.client.post(url, data)
-        self.assertEqual(response.status_code, 302)
-        self.assertRedirects(response, reverse('accounts:login'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'accounts/verify_email_status.html')
+        self.assertEqual(response.context['status'], 'pending')
 
         user = User.objects.get(username='city_meds')
         self.assertEqual(user.role, 'PHARMACY')
@@ -825,8 +827,9 @@ class EmailVerificationTests(TestCase):
             'confirm_password': 'SecurePatient123!',
         }
         response = self.client.post(url, data)
-        self.assertEqual(response.status_code, 302)
-        self.assertRedirects(response, reverse('accounts:login'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'accounts/verify_email_status.html')
+        self.assertEqual(response.context['status'], 'pending')
 
         # User in database is unverified
         new_user = User.objects.get(username='rohan_patient')
@@ -860,8 +863,9 @@ class EmailVerificationTests(TestCase):
             'pincode': '400001',
         }
         response = self.client.post(url, data)
-        self.assertEqual(response.status_code, 302)
-        self.assertRedirects(response, reverse('accounts:login'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'accounts/verify_email_status.html')
+        self.assertEqual(response.context['status'], 'pending')
 
         # User in database is unverified and pending
         new_pharma = User.objects.get(username='metro_chemist')
@@ -1053,5 +1057,63 @@ class EmailVerificationTests(TestCase):
         })
         self.assertEqual(response.status_code, 302)
         self.assertRedirects(response, reverse('landing'))
+
+    # 17. SMTP delivery failure during registration displays pending status gracefully
+    def test_patient_registration_smtp_failure_handled_gracefully(self):
+        from unittest.mock import patch
+        url = reverse('accounts:register_patient')
+        data = {
+            'first_name': 'Kunal',
+            'last_name': 'Mehta',
+            'username': 'kunal_patient',
+            'email': 'kunal@medaccess.test',
+            'phone_number': '9822233344',
+            'password': 'SecurePatient123!',
+            'confirm_password': 'SecurePatient123!',
+        }
+        with patch('accounts.views.send_verification_email', return_value=False):
+            response = self.client.post(url, data)
+            self.assertEqual(response.status_code, 200)
+            self.assertTemplateUsed(response, 'accounts/verify_email_status.html')
+            self.assertEqual(response.context['status'], 'pending')
+            self.assertFalse(response.context['email_sent'])
+            self.assertContains(response, 'could not deliver the verification email right now')
+
+        # User is still created in unverified state
+        user = User.objects.get(username='kunal_patient')
+        self.assertFalse(user.email_verified)
+
+    # 18. SMTP delivery failure during resend verification handled gracefully
+    def test_resend_verification_smtp_failure_handled_gracefully(self):
+        from unittest.mock import patch
+        url = reverse('accounts:resend_verification')
+        with patch('accounts.views.send_verification_email', return_value=False):
+            response = self.client.post(url, {'email': self.patient_unverified.email}, follow=True)
+            self.assertEqual(response.status_code, 200)
+            self.assertContains(response, 'could not deliver the email at this moment')
+
+    # 19. Email verification supports token passed as query parameter
+    def test_verification_via_query_parameter(self):
+        from accounts.utils import generate_verification_token
+        token = generate_verification_token(self.patient_unverified)
+        verify_url = f"{reverse('accounts:verify_email_query')}?token={token}"
+        response = self.client.get(verify_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Email Verified Successfully')
+
+        self.patient_unverified.refresh_from_db()
+        self.assertTrue(self.patient_unverified.email_verified)
+
+    # 20. Verification page preserves anonymous navbar for unauthenticated visitors
+    def test_verify_email_status_preserves_anonymous_navbar(self):
+        from accounts.utils import generate_verification_token
+        token = generate_verification_token(self.patient_unverified)
+        verify_url = reverse('accounts:verify_email', kwargs={'token': token})
+        response = self.client.get(verify_url)
+        self.assertEqual(response.status_code, 200)
+        # Should contain Login link, not Logout button
+        self.assertContains(response, 'Login')
+        self.assertNotContains(response, 'Logout')
+
 
 

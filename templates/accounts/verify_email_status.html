@@ -15,7 +15,7 @@
             <p class="auth-subtitle">Your email address has been confirmed.</p>
         </div>
 
-        {% if user.role == 'PHARMACY' %}
+        {% if target_user.role == 'PHARMACY' or user.role == 'PHARMACY' %}
             <div class="alert alert-info" style="text-align: left; margin-bottom: 1.5rem;">
                 <div>
                     <strong>Pharmacy Notice:</strong> Your email has been verified. Your store account remains in administrative review. You will be able to access the Pharmacy Portal once your license credentials are verified and approved by the admin.

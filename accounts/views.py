@@ -65,14 +65,15 @@ def register_patient_view(request):
                     "Please use the resend verification option to receive your link."
                 )
             return render(
-    request,
-    'accounts/verify_email_status.html',
-    {
-        'status': 'pending',
-        'email': user.email,
-        'email_sent': email_sent,
-    }
-)
+                request,
+                'accounts/verify_email_status.html',
+                {
+                    'status': 'pending',
+                    'email': user.email,
+                    'email_sent': email_sent,
+                    'target_user': user,
+                }
+            )
     else:
         form = PatientRegistrationForm()
 
@@ -116,7 +117,7 @@ def register_pharmacy_view(request):
                     'status': 'pending',
                     'email': user.email,
                     'email_sent': email_sent,
-                    'user': user,
+                    'target_user': user,
                 }
             )
     else:
@@ -259,22 +260,24 @@ def logout_view(request):
 def verify_email_view(request, token=None):
     """
     Verifies a user's email using the signed verification token.
-    Logs unexpected errors for production debugging.
+    Safe from unhandled 500 exceptions; logs full traceback securely.
     """
     try:
-        raw_token = token or request.GET.get('token', '').strip()
+        raw_token = (token or request.GET.get('token') or '').strip()
 
         user, token_status = validate_verification_token(raw_token)
         view_status = token_status
 
         if token_status == 'valid' and user:
             user.email_verified = True
-            user.save(update_fields=['email_verified'])
+            user.save(update_fields=['email_verified', 'updated_at'])
             view_status = 'success'
+            logger.info("User pk=%s email verified successfully", user.pk)
 
         context = {
             'status': view_status,
-            'user': user,
+            'target_user': user,
+            'user': None,  # Prevent shadowing request.user in base.html
         }
 
         return render(
@@ -283,11 +286,19 @@ def verify_email_view(request, token=None):
             context
         )
 
-    except Exception:
+    except Exception as exc:
         logger.exception(
-            "Unexpected error in verify_email_view"
+            "Unexpected error in verify_email_view: %s", type(exc).__name__
         )
-        raise
+        return render(
+            request,
+            'accounts/verify_email_status.html',
+            {
+                'status': 'invalid',
+                'target_user': None,
+                'user': None,
+            }
+        )
 
 
 
@@ -295,7 +306,7 @@ def verify_email_view(request, token=None):
 def resend_verification_view(request):
     """
     Allows unverified users to request a fresh verification link.
-    Logs unexpected errors for production debugging.
+    Safe against unhandled 500 crashes; enforces 60s session rate limiting.
     """
     try:
         if request.method == 'POST':
@@ -312,7 +323,7 @@ def resend_verification_view(request):
                     messages.warning(
                         request,
                         "A verification email was requested recently. "
-                        "Please check your inbox or wait a moment."
+                        "Please check your inbox or wait a moment before requesting another."
                     )
                     return render(
                         request,
@@ -325,20 +336,40 @@ def resend_verification_view(request):
                 request.session['resend_verification_last_time'] = (
                     current_time
                 )
+                request.session.modified = True
 
                 user = User.objects.filter(
                     email__iexact=email
                 ).first()
 
                 if user and not user.email_verified:
-                    send_verification_email(request, user)
-
-                messages.success(
-                    request,
-                    "If an unverified account with this email exists, "
-                    "a new verification link has been sent. "
-                    "Please check your inbox."
-                )
+                    email_sent = send_verification_email(request, user)
+                    if email_sent:
+                        messages.success(
+                            request,
+                            "If an unverified account with this email exists, "
+                            "a new verification link has been sent. "
+                            "Please check your inbox."
+                        )
+                    else:
+                        messages.warning(
+                            request,
+                            "Your account was found, but we could not deliver the email "
+                            "at this moment due to a mail server connection issue. "
+                            "Please try again shortly or contact support."
+                        )
+                elif user and user.email_verified:
+                    messages.info(
+                        request,
+                        "This email address is already verified. You can log in directly."
+                    )
+                else:
+                    messages.success(
+                        request,
+                        "If an unverified account with this email exists, "
+                        "a new verification link has been sent. "
+                        "Please check your inbox."
+                    )
 
                 return redirect('accounts:login')
 
@@ -351,11 +382,19 @@ def resend_verification_view(request):
             {'form': form}
         )
 
-    except Exception:
+    except Exception as exc:
         logger.exception(
-            "Unexpected error in resend_verification_view"
+            "Unexpected error in resend_verification_view: %s", type(exc).__name__
         )
-        raise
+        messages.error(
+            request,
+            "An unexpected error occurred while processing your request. Please try again."
+        )
+        return render(
+            request,
+            'accounts/resend_verification.html',
+            {'form': ResendVerificationForm()}
+        )
 
 
 

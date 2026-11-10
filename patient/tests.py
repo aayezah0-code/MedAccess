@@ -9,7 +9,7 @@ from django.urls import reverse
 from django.db import IntegrityError
 from django.core.files.uploadedfile import SimpleUploadedFile
 from accounts.models import User
-from patient.models import PatientProfile, Prescription, SavedPharmacy, PrescriptionMedicine
+from patient.models import PatientProfile, Prescription, SavedPharmacy, PrescriptionMedicine, PrescriptionRequest
 from pharmacy.models import PharmacyProfile, Feedback
 from patient.services.gemini_vision import (
     GeminiExtractionResult,
@@ -866,8 +866,8 @@ class MyPrescriptionsUITests(TestCase):
         self.assertContains(response, 'rx-card-thumb-pdf')
 
     def test_image_thumbnail_rendering(self):
-        """Image prescription renders an img tag with the image URL."""
-        Prescription.objects.create(
+        """Image prescription renders an img tag with the secure authenticated image URL."""
+        rx = Prescription.objects.create(
             patient=self.patient_profile,
             prescription_image='patient/prescriptions/photo.png',
             status='COMPLETED',
@@ -877,7 +877,7 @@ class MyPrescriptionsUITests(TestCase):
         response = self.client.get(self.list_url)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'rx-card-thumb')
-        self.assertContains(response, 'photo.png')
+        self.assertContains(response, reverse('patient:prescription_secure_image', kwargs={'pk': rx.id}))
 
     def test_patient_ownership_and_access_protection(self):
         """Patient only sees their own prescriptions; other patients' records are excluded."""
@@ -1066,7 +1066,7 @@ class MyPrescriptionsUITests(TestCase):
 
         self.assertContains(response, 'PDF Medical Document')
         self.assertContains(response, 'Open PDF Document')
-        self.assertContains(response, 'report.pdf')
+        self.assertContains(response, reverse('patient:prescription_secure_image', kwargs={'pk': rx.id}))
 
     def test_modal_footer_contains_open_full_prescription_page_link(self):
         """Modal footer contains a link to open the full prescription details page and a Close button."""
@@ -1110,6 +1110,159 @@ class MyPrescriptionsUITests(TestCase):
         self.assertContains(response, f'data-modal-target="rx-modal-{rx2.id}"')
         self.assertContains(response, 'First Prescription Drug')
         self.assertContains(response, 'Second Prescription Drug')
+
+
+class PrescriptionSecureImageSecurityTests(TestCase):
+    """
+    Security and access control audit for the authenticated prescription image endpoint:
+    /patient/prescriptions/<pk>/image/
+    """
+    def setUp(self):
+        self.client = Client()
+
+        # Patient 1 (Owner)
+        self.patient1_user = User.objects.create_user(
+            username='secure_patient1',
+            email='p1@medaccess.test',
+            password='TestPassword123!',
+            role='PATIENT'
+        )
+        self.patient1_user.email_verified = True
+        self.patient1_user.save()
+        self.patient1_profile = PatientProfile.objects.create(
+            user=self.patient1_user
+        )
+
+        # Patient 2 (Attacker / Different Patient)
+        self.patient2_user = User.objects.create_user(
+            username='secure_patient2',
+            email='p2@medaccess.test',
+            password='TestPassword123!',
+            role='PATIENT'
+        )
+        self.patient2_user.email_verified = True
+        self.patient2_user.save()
+        self.patient2_profile = PatientProfile.objects.create(
+            user=self.patient2_user
+        )
+
+        # Pharmacy 1 (Authorized)
+        self.pharmacy1_user = User.objects.create_user(
+            username='secure_pharmacy1',
+            email='pharm1@medaccess.test',
+            password='TestPassword123!',
+            role='PHARMACY'
+        )
+        self.pharmacy1_user.email_verified = True
+        self.pharmacy1_user.save()
+        self.pharmacy1_profile = PharmacyProfile.objects.create(
+            user=self.pharmacy1_user,
+            pharmacy_name='Authorized Pharmacy',
+            owner_name='Owner One',
+            pharmacist_name='Pharmacist One',
+            pharmacy_license_number='PHARM-AUTH-100',
+            gst_number='GST123456',
+            phone_number='9876543212',
+            email='pharm1@medaccess.test',
+            address='123 Auth Street',
+            city='Health City',
+            state='State',
+            pincode='500001'
+        )
+
+        # Pharmacy 2 (Unauthorized)
+        self.pharmacy2_user = User.objects.create_user(
+            username='secure_pharmacy2',
+            email='pharm2@medaccess.test',
+            password='TestPassword123!',
+            role='PHARMACY'
+        )
+        self.pharmacy2_user.email_verified = True
+        self.pharmacy2_user.save()
+        self.pharmacy2_profile = PharmacyProfile.objects.create(
+            user=self.pharmacy2_user,
+            pharmacy_name='Unauthorized Pharmacy',
+            owner_name='Owner Two',
+            pharmacist_name='Pharmacist Two',
+            pharmacy_license_number='PHARM-UNAUTH-200',
+            gst_number='GST654321',
+            phone_number='9876543213',
+            email='pharm2@medaccess.test',
+            address='456 Unauth Street',
+            city='Health City',
+            state='State',
+            pincode='500001'
+        )
+
+        # Real file for prescription
+        dummy_img = SimpleUploadedFile("rx_doc.jpg", b"\xff\xd8\xff\xe0\x00\x10JFIF" + b"\x00" * 32, content_type="image/jpeg")
+        self.prescription = Prescription.objects.create(
+            patient=self.patient1_profile,
+            prescription_image=dummy_img,
+            status='COMPLETED'
+        )
+        self.image_url = reverse('patient:prescription_secure_image', kwargs={'pk': self.prescription.id})
+
+    def tearDown(self):
+        try:
+            if self.prescription.prescription_image and self.prescription.prescription_image.storage.exists(self.prescription.prescription_image.name):
+                self.prescription.prescription_image.storage.delete(self.prescription.prescription_image.name)
+        except Exception:
+            pass
+
+    def test_anonymous_user_redirected_to_login(self):
+        """Unauthenticated request must be redirected to login page."""
+        response = self.client.get(self.image_url)
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('/accounts/login/', response.url)
+
+    def test_patient_can_access_own_prescription_image(self):
+        """Owner patient gets HTTP 200 with private cache-control headers."""
+        self.client.login(username='secure_patient1', password='TestPassword123!')
+        response = self.client.get(self.image_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Type'], 'image/jpeg')
+        self.assertIn('private', response['Cache-Control'])
+        self.assertIn('no-store', response['Cache-Control'])
+        response.close()
+
+    def test_other_patient_denied_access(self):
+        """Different patient attempting to access prescription receives HTTP 403 Forbidden."""
+        self.client.login(username='secure_patient2', password='TestPassword123!')
+        response = self.client.get(self.image_url)
+        self.assertEqual(response.status_code, 403)
+
+    def test_authorized_pharmacy_can_access_prescription_image(self):
+        """Pharmacy with an active request can access the prescription image."""
+        PrescriptionRequest.objects.create(
+            patient=self.patient1_profile,
+            prescription=self.prescription,
+            pharmacy=self.pharmacy1_profile,
+            status='PENDING'
+        )
+        self.client.login(username='secure_pharmacy1', password='TestPassword123!')
+        response = self.client.get(self.image_url)
+        self.assertEqual(response.status_code, 200)
+        response.close()
+
+    def test_unauthorized_pharmacy_denied_access(self):
+        """Pharmacy with no request for this prescription receives HTTP 403 Forbidden."""
+        self.client.login(username='secure_pharmacy2', password='TestPassword123!')
+        response = self.client.get(self.image_url)
+        self.assertEqual(response.status_code, 403)
+
+    def test_missing_file_returns_404_without_path_leak(self):
+        """If image file does not exist on disk, view returns 404 cleanly."""
+        missing_rx = Prescription.objects.create(
+            patient=self.patient1_profile,
+            prescription_image='patient/prescriptions/non_existent.jpg',
+            status='COMPLETED'
+        )
+        missing_url = reverse('patient:prescription_secure_image', kwargs={'pk': missing_rx.id})
+        self.client.login(username='secure_patient1', password='TestPassword123!')
+        response = self.client.get(missing_url)
+        self.assertEqual(response.status_code, 404)
+        missing_rx.delete()
 
 
 

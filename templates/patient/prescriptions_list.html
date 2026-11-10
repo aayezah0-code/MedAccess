@@ -42,13 +42,26 @@
                                 <span class="rx-pdf-label">PDF Document</span>
                             </div>
                         {% elif prescription.prescription_image %}
-                            <img src="{{ prescription.prescription_image.url }}" alt="Prescription #{{ prescription.id }}" class="rx-card-thumb">
+                            <img src="{% url 'patient:prescription_secure_image' prescription.id %}" 
+                                 alt="Prescription #{{ prescription.id }}" 
+                                 class="rx-card-thumb"
+                                 onerror="this.style.display='none'; if(this.nextElementSibling){this.nextElementSibling.style.display='flex';}">
+                            <div class="rx-card-thumb-placeholder rx-card-thumb-archived" style="display:none;" title="Prescription record">
+                                <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                                </svg>
+                                <span class="rx-archived-label">Prescription Record</span>
+                            </div>
                         {% else %}
                             <div class="rx-card-thumb-placeholder">
-                                <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                                <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                                     <polyline points="14 2 14 8 20 8"></polyline>
                                 </svg>
+                                <span class="rx-archived-label">Prescription Record</span>
                             </div>
                         {% endif %}
 
@@ -160,14 +173,16 @@
                             <div class="rx-modal-doc-col">
                                 <div class="rx-modal-section-header">
                                     <h3 class="rx-modal-subheading">Prescription Document</h3>
-                                    <a href="{{ prescription.prescription_image.url }}" target="_blank" rel="noopener noreferrer" class="link-external" title="Open full document in new tab">
-                                        <span>View Full Size</span>
-                                        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                                            <polyline points="15 3 21 3 21 9"></polyline>
-                                            <line x1="10" y1="14" x2="21" y2="3"></line>
-                                        </svg>
-                                    </a>
+                                    {% if prescription.prescription_image %}
+                                        <a href="{% url 'patient:prescription_secure_image' prescription.id %}" target="_blank" rel="noopener noreferrer" class="link-external" title="Open full document in new tab">
+                                            <span>View Full Size</span>
+                                            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                                <polyline points="15 3 21 3 21 9"></polyline>
+                                                <line x1="10" y1="14" x2="21" y2="3"></line>
+                                            </svg>
+                                        </a>
+                                    {% endif %}
                                 </div>
 
                                 <div class="rx-modal-doc-box">
@@ -181,17 +196,35 @@
                                                 <polyline points="10 9 9 9 8 9"></polyline>
                                             </svg>
                                             <p class="rx-modal-pdf-title">PDF Medical Document</p>
-                                            <a href="{{ prescription.prescription_image.url }}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm rx-modal-pdf-btn">
+                                            <a href="{% url 'patient:prescription_secure_image' prescription.id %}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm rx-modal-pdf-btn">
                                                 <span>Open PDF Document</span>
                                                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
                                             </a>
                                         </div>
                                     {% elif prescription.prescription_image %}
-                                        <a href="{{ prescription.prescription_image.url }}" target="_blank" rel="noopener noreferrer" title="Click to view full size">
-                                            <img src="{{ prescription.prescription_image.url }}" alt="Prescription #{{ prescription.id }}" class="rx-modal-preview-img">
+                                        <a href="{% url 'patient:prescription_secure_image' prescription.id %}" target="_blank" rel="noopener noreferrer" title="Click to view full size">
+                                            <img src="{% url 'patient:prescription_secure_image' prescription.id %}" 
+                                                 alt="Prescription #{{ prescription.id }}" 
+                                                 class="rx-modal-preview-img"
+                                                 onerror="this.parentElement.style.display='none'; this.parentElement.nextElementSibling.style.display='flex';">
                                         </a>
+                                        <div class="rx-modal-fallback-box" style="display:none;">
+                                            <svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                                <polyline points="14 2 14 8 20 8"></polyline>
+                                            </svg>
+                                            <p class="rx-modal-fallback-title">Prescription Record</p>
+                                            <p class="rx-modal-fallback-desc">Original file was archived on the server. All extracted medicines and dosages are saved below.</p>
+                                        </div>
                                     {% else %}
-                                        <div class="rx-modal-no-doc">No document attached</div>
+                                        <div class="rx-modal-fallback-box">
+                                            <svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                                <polyline points="14 2 14 8 20 8"></polyline>
+                                            </svg>
+                                            <p class="rx-modal-fallback-title">Prescription Record</p>
+                                            <p class="rx-modal-fallback-desc">No document file attached. All extracted medicines and dosages are saved below.</p>
+                                        </div>
                                     {% endif %}
                                 </div>
 

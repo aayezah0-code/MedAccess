@@ -19,6 +19,7 @@ urlpatterns = [
     path('admin-portal/', include('admin_portal.urls', namespace='admin_portal')),
 ]
 
-# Serve user-uploaded media files in development
+# In development only, serve media files through Django
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+

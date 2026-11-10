@@ -24,6 +24,19 @@ DEBUG = os.getenv('DEBUG', 'True') == 'True'
 allowed_hosts_env = os.getenv('ALLOWED_HOSTS', '127.0.0.1,localhost')
 ALLOWED_HOSTS = [host.strip() for host in allowed_hosts_env.split(',') if host.strip()]
 
+# Render Reverse Proxy & SSL Configuration
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+USE_X_FORWARDED_HOST = True
+
+# CSRF Trusted Origins for HTTPS deployments
+csrf_origins_env = os.getenv('CSRF_TRUSTED_ORIGINS', '')
+if csrf_origins_env:
+    CSRF_TRUSTED_ORIGINS = [o.strip() for o in csrf_origins_env.split(',') if o.strip()]
+else:
+    CSRF_TRUSTED_ORIGINS = [
+        f"https://{host}" for host in ALLOWED_HOSTS if host not in ('127.0.0.1', 'localhost', 'testserver', '*')
+    ]
+
 
 # Application definition
 
@@ -100,6 +113,18 @@ DATABASES = {
     }
 }
 
+# Automated testing database override
+import sys
+if 'test' in sys.argv or any('test' in arg for arg in sys.argv):
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': ':memory:',
+        }
+    }
+    if 'testserver' not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append('testserver')
+
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
@@ -150,7 +175,7 @@ STORAGES = {
 }
 
 # Media files (User uploads)
-MEDIA_URL = 'media/'
+MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 # Default primary key field type
@@ -183,8 +208,15 @@ _email_backend_env = os.getenv('EMAIL_BACKEND')
 _email_host = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
 _email_port = int(os.getenv('EMAIL_PORT', 587))
 _email_use_tls = os.getenv('EMAIL_USE_TLS', 'True').lower() in ('true', '1', 't')
+_email_use_ssl = os.getenv('EMAIL_USE_SSL', 'False').lower() in ('true', '1', 't')
 _email_user = os.getenv('EMAIL_HOST_USER', '').strip()
 _email_password = os.getenv('EMAIL_HOST_PASSWORD', '').strip()
+_email_timeout = int(os.getenv('EMAIL_TIMEOUT', 10))
+
+# Port 465 automatically implies SSL unless explicitly configured otherwise
+if _email_port == 465 and 'EMAIL_USE_TLS' not in os.environ:
+    _email_use_ssl = True
+    _email_use_tls = False
 
 if _email_backend_env:
     EMAIL_BACKEND = _email_backend_env
@@ -200,6 +232,8 @@ else:
 EMAIL_HOST = _email_host
 EMAIL_PORT = _email_port
 EMAIL_USE_TLS = _email_use_tls
+EMAIL_USE_SSL = _email_use_ssl
+EMAIL_TIMEOUT = _email_timeout
 EMAIL_HOST_USER = _email_user
 EMAIL_HOST_PASSWORD = _email_password
 DEFAULT_FROM_EMAIL = os.getenv(
@@ -223,29 +257,35 @@ PREDEFINED_ADMIN_EMAILS = [
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '[{asctime}] {levelname} [{name}:{lineno}] {message}',
+            'style': '{',
+        },
+    },
     'handlers': {
         'console': {
             'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
         },
     },
     'loggers': {
-    'django.request': {
-        'handlers': ['console'],
-        'level': 'ERROR',
-        'propagate': False,
+        'django.request': {
+            'handlers': ['console'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+        'accounts.utils': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'accounts.views': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
     },
-    'accounts.utils': {
-        'handlers': ['console'],
-        'level': 'ERROR',
-        'propagate': False,
-    },
-    'accounts.views': {
-        'handlers': ['console'],
-        'level': 'ERROR',
-        'propagate': False,
-    },
-},
-    
 }
 
 
