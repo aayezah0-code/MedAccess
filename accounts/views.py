@@ -62,45 +62,70 @@ def register_patient_view(request):
                     "Your account has been created, but we could not deliver the verification email right now. "
                     "Please use the resend verification option to receive your link."
                 )
-            return redirect('accounts:login')
+            return render(
+    request,
+    'accounts/verify_email_status.html',
+    {
+        'status': 'pending',
+        'email': user.email,
+        'email_sent': email_sent,
+    }
+)
     else:
         form = PatientRegistrationForm()
 
     return render(request, 'accounts/register_patient.html', {'form': form})
 
 
+
 def register_pharmacy_view(request):
     """
-    Pharmacy registration view.
-    Creates an unverified account with PENDING admin approval status
-    and dispatches a time-limited email verification link.
+    Pharmacy self-registration.
+    Creates an unverified account with pending admin approval
+    and displays the email verification status page.
     """
     if request.user.is_authenticated:
         return redirect('landing')
 
     if request.method == 'POST':
         form = PharmacyRegistrationForm(request.POST)
+
         if form.is_valid():
             user = form.save()
             email_sent = send_verification_email(request, user)
+
             if email_sent:
                 messages.success(
                     request,
-                    "Your account has been created successfully. "
-                    "We have sent a verification link to your registered email address. "
+                    "Your pharmacy account has been created successfully. "
                     "Please verify your email before logging in."
                 )
             else:
                 messages.warning(
                     request,
-                    "Your account has been created, but we could not deliver the verification email right now. "
-                    "Please use the resend verification option to receive your link."
+                    "Your pharmacy account has been created, but we could not "
+                    "send the verification email. Please request a new link."
                 )
-            return redirect('accounts:login')
+
+            return render(
+                request,
+                'accounts/verify_email_status.html',
+                {
+                    'status': 'pending',
+                    'email': user.email,
+                    'email_sent': email_sent,
+                    'user': user,
+                }
+            )
     else:
         form = PharmacyRegistrationForm()
 
-    return render(request, 'accounts/register_pharmacy.html', {'form': form})
+    return render(
+        request,
+        'accounts/register_pharmacy.html',
+        {'form': form}
+    )
+
 
 
 def login_view(request):
