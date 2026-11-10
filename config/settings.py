@@ -229,12 +229,23 @@ LOGGING = {
         },
     },
     'loggers': {
-        'django.request': {
-            'handlers': ['console'],
-            'level': 'ERROR',
-            'propagate': False,
-        },
+    'django.request': {
+        'handlers': ['console'],
+        'level': 'ERROR',
+        'propagate': False,
     },
+    'accounts.utils': {
+        'handlers': ['console'],
+        'level': 'ERROR',
+        'propagate': False,
+    },
+    'accounts.views': {
+        'handlers': ['console'],
+        'level': 'ERROR',
+        'propagate': False,
+    },
+},
+    
 }
 
 

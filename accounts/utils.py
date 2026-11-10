@@ -91,5 +91,5 @@ def send_verification_email(request, user):
         email_message.send(fail_silently=False)
         return True
     except Exception as exc:
-        logger.error("Failed to deliver verification email to %s: %s", user.email, type(exc).__name__)
+        logger.exception("Failed to deliver verification email")
         return False
