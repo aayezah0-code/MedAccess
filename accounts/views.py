@@ -1,4 +1,5 @@
 import time
+import logging
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.views import (
@@ -27,6 +28,7 @@ from .utils import (
     send_verification_email,
     validate_verification_token,
 )
+logger = logging.getLogger(__name__)
 
 
 def landing_view(request):
@@ -253,62 +255,108 @@ def logout_view(request):
     return redirect('landing')
 
 
+
 def verify_email_view(request, token=None):
     """
-    Validates email verification token and marks user account verified.
-    Supports token passed via URL path or query string ?token=...
+    Verifies a user's email using the signed verification token.
+    Logs unexpected errors for production debugging.
     """
-    raw_token = token or request.GET.get('token', '').strip()
-    user, token_status = validate_verification_token(raw_token)
+    try:
+        raw_token = token or request.GET.get('token', '').strip()
 
-    view_status = token_status
-    if token_status == 'valid' and user:
-        user.email_verified = True
-        user.save(update_fields=['email_verified'])
-        view_status = 'success'
+        user, token_status = validate_verification_token(raw_token)
+        view_status = token_status
 
-    context = {
-        'status': view_status,
-        'user': user,
-    }
-    return render(request, 'accounts/verify_email_status.html', context)
+        if token_status == 'valid' and user:
+            user.email_verified = True
+            user.save(update_fields=['email_verified'])
+            view_status = 'success'
+
+        context = {
+            'status': view_status,
+            'user': user,
+        }
+
+        return render(
+            request,
+            'accounts/verify_email_status.html',
+            context
+        )
+
+    except Exception:
+        logger.exception(
+            "Unexpected error in verify_email_view"
+        )
+        raise
+
+
 
 
 def resend_verification_view(request):
     """
     Allows unverified users to request a fresh verification link.
-    Enforces session-based request throttling and generic anti-enumeration messaging.
+    Logs unexpected errors for production debugging.
     """
-    if request.method == 'POST':
-        form = ResendVerificationForm(request.POST)
-        if form.is_valid():
-            current_time = time.time()
-            last_time = request.session.get('resend_verification_last_time', 0)
+    try:
+        if request.method == 'POST':
+            form = ResendVerificationForm(request.POST)
 
-            # Throttling: limit to one request per 60 seconds per session
-            if current_time - last_time < 60:
-                messages.warning(
-                    request,
-                    "A verification email was requested recently. Please check your inbox or wait a moment before requesting another."
+            if form.is_valid():
+                current_time = time.time()
+                last_time = request.session.get(
+                    'resend_verification_last_time', 0
                 )
-                return render(request, 'accounts/resend_verification.html', {'form': form})
 
-            email = form.cleaned_data['email'].strip().lower()
-            request.session['resend_verification_last_time'] = current_time
+                # Limit requests to one per 60 seconds per session
+                if current_time - last_time < 60:
+                    messages.warning(
+                        request,
+                        "A verification email was requested recently. "
+                        "Please check your inbox or wait a moment."
+                    )
+                    return render(
+                        request,
+                        'accounts/resend_verification.html',
+                        {'form': form}
+                    )
 
-            user = User.objects.filter(email__iexact=email).first()
-            if user and not user.email_verified:
-                send_verification_email(request, user)
+                email = form.cleaned_data['email'].strip().lower()
 
-            messages.success(
-                request,
-                "If an unverified account with this email exists, a new verification link has been sent. Please check your inbox."
-            )
-            return redirect('accounts:login')
-    else:
-        form = ResendVerificationForm()
+                request.session['resend_verification_last_time'] = (
+                    current_time
+                )
 
-    return render(request, 'accounts/resend_verification.html', {'form': form})
+                user = User.objects.filter(
+                    email__iexact=email
+                ).first()
+
+                if user and not user.email_verified:
+                    send_verification_email(request, user)
+
+                messages.success(
+                    request,
+                    "If an unverified account with this email exists, "
+                    "a new verification link has been sent. "
+                    "Please check your inbox."
+                )
+
+                return redirect('accounts:login')
+
+        else:
+            form = ResendVerificationForm()
+
+        return render(
+            request,
+            'accounts/resend_verification.html',
+            {'form': form}
+        )
+
+    except Exception:
+        logger.exception(
+            "Unexpected error in resend_verification_view"
+        )
+        raise
+
 
 
 class MedAccessPasswordResetView(PasswordResetView):
