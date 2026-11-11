@@ -5,7 +5,7 @@ from django.core.exceptions import ValidationError
 from django.db.models import Q
 
 from accounts.models import User
-from pharmacy.models import PharmacyProfile, Medicine, Inventory
+from pharmacy.models import PharmacyProfile, Medicine, Inventory, PharmacySupportRequest
 
 
 class PharmacyProfileForm(forms.ModelForm):
@@ -441,6 +441,57 @@ class InventoryBatchCreateForm(forms.ModelForm):
             raise ValidationError("Low stock limit cannot be negative.")
         return limit
 
+
+class PharmacySupportRequestForm(forms.ModelForm):
+    """
+    Validated contact support form for authenticated, approved pharmacy users.
+    Ownership (pharmacy & submitted_by) is assigned strictly in the view.
+    """
+
+    class Meta:
+        model = PharmacySupportRequest
+        fields = ['subject', 'category', 'message']
+        widgets = {
+            'subject': forms.TextInput(attrs={
+                'class': 'form-input',
+                'id': 'support-subject-input',
+                'placeholder': 'Briefly summarize your question or issue',
+                'maxlength': '200',
+                'required': 'required',
+            }),
+            'category': forms.Select(attrs={
+                'class': 'form-select',
+                'id': 'support-category-select',
+                'required': 'required',
+            }),
+            'message': forms.Textarea(attrs={
+                'class': 'form-textarea',
+                'id': 'support-message-textarea',
+                'rows': 5,
+                'maxlength': '2000',
+                'placeholder': 'Describe the issue in detail (include any Request ID, medicine name, or steps that triggered the issue)...',
+                'required': 'required',
+            }),
+        }
+
+    def clean_subject(self):
+        subject = (self.cleaned_data.get('subject') or '').strip()
+        if not subject:
+            raise ValidationError("Please enter a subject for your support request.")
+        if len(subject) < 5:
+            raise ValidationError("Subject must be at least 5 characters long.")
+        return subject
+
+    def clean_message(self):
+        message = (self.cleaned_data.get('message') or '').strip()
+        if not message:
+            raise ValidationError("Please describe your issue or question.")
+        if len(message) < 15:
+            raise ValidationError("Please provide at least 15 characters in your description so our team can assist effectively.")
+        if len(message) > 2000:
+            raise ValidationError("Description cannot exceed 2000 characters.")
+        return message
+
     def clean(self):
         cleaned_data = super().clean()
         medicine = cleaned_data.get('medicine')
@@ -542,3 +593,54 @@ class InventoryBatchUpdateForm(forms.ModelForm):
         if limit < 0:
             raise ValidationError("Low stock limit cannot be negative.")
         return limit
+
+
+class PharmacySupportRequestForm(forms.ModelForm):
+    """
+    Validated contact support form for authenticated, approved pharmacy users.
+    Ownership (pharmacy & submitted_by) is assigned strictly in the view.
+    """
+
+    class Meta:
+        model = PharmacySupportRequest
+        fields = ['subject', 'category', 'message']
+        widgets = {
+            'subject': forms.TextInput(attrs={
+                'class': 'form-input',
+                'id': 'support-subject-input',
+                'placeholder': 'Briefly summarize your question or issue',
+                'maxlength': '200',
+                'required': 'required',
+            }),
+            'category': forms.Select(attrs={
+                'class': 'form-select',
+                'id': 'support-category-select',
+                'required': 'required',
+            }),
+            'message': forms.Textarea(attrs={
+                'class': 'form-textarea',
+                'id': 'support-message-textarea',
+                'rows': 5,
+                'maxlength': '2000',
+                'placeholder': 'Describe the issue in detail (include any Request ID, medicine name, or steps that triggered the issue)...',
+                'required': 'required',
+            }),
+        }
+
+    def clean_subject(self):
+        subject = (self.cleaned_data.get('subject') or '').strip()
+        if not subject:
+            raise ValidationError("Please enter a subject for your support request.")
+        if len(subject) < 5:
+            raise ValidationError("Subject must be at least 5 characters long.")
+        return subject
+
+    def clean_message(self):
+        message = (self.cleaned_data.get('message') or '').strip()
+        if not message:
+            raise ValidationError("Please describe your issue or question.")
+        if len(message) < 15:
+            raise ValidationError("Please provide at least 15 characters in your description so our team can assist effectively.")
+        if len(message) > 2000:
+            raise ValidationError("Description cannot exceed 2000 characters.")
+        return message

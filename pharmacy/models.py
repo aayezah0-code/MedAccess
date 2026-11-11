@@ -137,3 +137,46 @@ class MedicineComposition(models.Model):
     def __str__(self):
         return f"{self.name} - {self.salt_composition[:50]}"
 
+
+class PharmacySupportRequest(models.Model):
+    """
+    Database-backed support request submitted by an authenticated, approved pharmacy user.
+    """
+    CATEGORY_CHOICES = (
+        ('ACCOUNT', 'Account Issue'),
+        ('PRESCRIPTION', 'Prescription Issue'),
+        ('TECHNICAL', 'Technical Issue'),
+        ('OTHER', 'Other'),
+    )
+
+    STATUS_CHOICES = (
+        ('OPEN', 'Open'),
+        ('IN_PROGRESS', 'In Progress'),
+        ('RESOLVED', 'Resolved'),
+    )
+
+    pharmacy = models.ForeignKey(
+        PharmacyProfile,
+        on_delete=models.CASCADE,
+        related_name='support_requests',
+    )
+    submitted_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='pharmacy_support_requests',
+    )
+    subject = models.CharField(max_length=200)
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default='ACCOUNT')
+    message = models.TextField()
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='OPEN')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Pharmacy Support Request'
+        verbose_name_plural = 'Pharmacy Support Requests'
+
+    def __str__(self):
+        return f"[{self.get_category_display()}] {self.subject} ({self.pharmacy.pharmacy_name})"
+

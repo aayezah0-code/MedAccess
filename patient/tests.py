@@ -329,12 +329,19 @@ class PrescriptionUploadTests(TestCase):
         self.assertEqual(response.status_code, 302)
 
     def test_patient_can_view_upload_page(self):
-        """Authenticated patient can view the upload prescription page."""
+        """Authenticated patient can view the upload prescription page with local preview controls."""
         self.client.login(username='rx_patient', password='TestPassword123!')
         response = self.client.get(self.upload_url)
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'patient/upload_prescription.html')
         self.assertContains(response, "Upload Doctor's Prescription")
+        self.assertContains(response, 'id="rx-preview-container"')
+        self.assertContains(response, 'id="rx-preview-img"')
+        self.assertContains(response, 'id="rx-preview-canvas"')
+        self.assertContains(response, 'id="rx-preview-remove-btn"')
+        self.assertContains(response, 'id="rx-client-error"')
+        self.assertContains(response, 'prescription_upload_preview')
+        self.assertContains(response, 'pdf.min.js')
 
     @patch('patient.views.extract_prescription_details')
     def test_patient_can_upload_valid_prescription(self, mock_extract):

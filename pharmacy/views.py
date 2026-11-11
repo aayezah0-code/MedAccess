@@ -13,7 +13,7 @@ from django.views.decorators.http import require_GET, require_POST
 from accounts.decorators import role_required
 from patient.models import PrescriptionRequest, PrescriptionRequestItem
 from patient.services.notification_service import create_request_notification
-from pharmacy.models import Inventory, Medicine, Feedback, MedicineComposition
+from pharmacy.models import Inventory, Medicine, Feedback, MedicineComposition, PharmacySupportRequest
 from pharmacy.services.composition_lookup import lookup_medicine_composition
 from pharmacy.services.price_predictor import predict_medicine_price
 from pharmacy.forms import (
@@ -23,6 +23,7 @@ from pharmacy.forms import (
     InventoryBatchCreateForm,
     InventoryBatchUpdateForm,
     SmartStockEntryForm,
+    PharmacySupportRequestForm,
 )
 from pharmacy.services.voice_stock_parser import parse_voice_command
 from pharmacy.services.catalogue_matcher import match_medicine_catalogue
@@ -1261,5 +1262,204 @@ def pharmacy_resubmit_view(request):
         'is_pending': profile.approval_status == 'PENDING',
     }
     return render(request, 'pharmacy/resubmit.html', context)
+
+
+PHARMACY_SUPPORT_FAQS = [
+    {
+        'slug': 'account-profile',
+        'title': 'Account & Profile',
+        'items': [
+            {
+                'id': 'faq-register-access',
+                'question': 'How do I register and access my pharmacy account?',
+                'keywords': 'register signup approval pending verification email drug license gstin login',
+                'answer': (
+                    'Pharmacies register through the Pharmacy Registration form with store details, '
+                    'owner and pharmacist names, Drug License Number, and GSTIN. After registering, '
+                    'you must click the email verification link sent to your registered email address '
+                    '(or request a new link from Resend Verification Email). Once your email is verified, '
+                    'Central Administration reviews your application: when approved, logging in opens '
+                    'your Pharmacy Portal dashboard.'
+                ),
+            },
+            {
+                'id': 'faq-update-profile',
+                'question': 'How can I update my pharmacy profile?',
+                'keywords': 'profile settings edit address phone email gps coordinates latitude longitude license gst',
+                'answer': (
+                    'Open Settings from the Pharmacy Portal sidebar to update your pharmacy name, owner '
+                    'name, registered pharmacist name, phone number, email address, street address, city, '
+                    'state, PIN code, and GPS latitude/longitude coordinates. For regulatory compliance, '
+                    'Drug License Number, GST Identification Number, and Approval Status are read-only; '
+                    'submit a support request here if statutory details require an administrative update.'
+                ),
+            },
+            {
+                'id': 'faq-login-issue',
+                'question': 'What should I do if I face a login issue?',
+                'keywords': 'login error password reset verification email rejected resubmit pending',
+                'answer': (
+                    'Verify your username and password first, or use the Forgot Password reset link on the '
+                    'login page. If login indicates your email is not verified, click Resend Verification '
+                    'Email to receive a fresh activation link. If your application is PENDING, portal '
+                    'access waits for administrator approval; if REJECTED, use the resubmission link shown '
+                    'on login to review administrator feedback and update your registration.'
+                ),
+            },
+        ],
+    },
+    {
+        'slug': 'prescription-management',
+        'title': 'Prescription Management',
+        'items': [
+            {
+                'id': 'faq-view-requests',
+                'question': 'How can I view prescription requests?',
+                'keywords': 'requests inbox pending accepted processing ready pickup completed filter search',
+                'answer': (
+                    'Select Prescription Requests in the sidebar to view all fulfillment requests sent to '
+                    'your pharmacy. You can filter requests by status tabs (All, Pending, Accepted, '
+                    'Preparing/Processing, Ready for Pickup, Completed, Rejected, Cancelled) or search '
+                    'by Request ID, Prescription ID, patient name, username, or phone number.'
+                ),
+            },
+            {
+                'id': 'faq-review-prescription',
+                'question': "How do I review a patient's prescription?",
+                'keywords': 'review prescription patient allergies chat document live stock inventory match',
+                'answer': (
+                    'Click any request in the Prescription Requests inbox to open its Request Detail '
+                    'workspace. You can review patient fulfillment details (contact phone, address, known '
+                    'drug allergies, and special instructions), view the original prescription image or PDF, '
+                    'message the patient in real time via Chat with Patient, and compare requested medicines '
+                    'against your live non-expired inventory counts.'
+                ),
+            },
+            {
+                'id': 'faq-accept-reject',
+                'question': 'How can I accept or reject a prescription request?',
+                'keywords': 'accept reject decline status transition note reason processing ready completed',
+                'answer': (
+                    'On a Pending request detail page, use the status action controls to Accept or Reject '
+                    'the request. Rejecting a request requires entering a Pharmacy Note (at least 5 characters) '
+                    'explaining the reason for the patient. After accepting, advance the request step-by-step '
+                    'through Processing, Ready for Pickup, and Completed.'
+                ),
+            },
+            {
+                'id': 'faq-check-details',
+                'question': 'How can I check the details of a prescription?',
+                'keywords': 'details medicines dosage strength frequency duration quantity snapshot availability',
+                'answer': (
+                    'Inside the Request Detail page, the Prescription Document card displays the uploaded '
+                    'image or authenticated PDF link, while the requested items table lists each medicine '
+                    'name, strength, dosage, frequency, duration, instructions, initial availability '
+                    'snapshot, and current live stock in your pharmacy.'
+                ),
+            },
+        ],
+    },
+    {
+        'slug': 'technical-issues',
+        'title': 'Technical Issues',
+        'items': [
+            {
+                'id': 'faq-image-loading',
+                'question': 'What should I do if a prescription image is not loading?',
+                'keywords': 'image broken pdf not loading archived storage permission 403 404 document',
+                'answer': (
+                    'Prescription files are protected behind an authenticated document endpoint accessible '
+                    'only to the patient owner and pharmacies with a valid request. Try clicking Open Full '
+                    'Size (or View Authenticated PDF for PDF prescriptions) and confirm your login session '
+                    'is active. If a legacy or archived document is unavailable on storage, the extracted '
+                    'medicine list and request details remain accessible below, and you can report the '
+                    'Request ID using the support form.'
+                ),
+            },
+            {
+                'id': 'faq-inventory-stock',
+                'question': 'Why is a medicine showing out of stock in a prescription request?',
+                'keywords': 'stock batch expiry expired quantity update inventory csv voice smart stock',
+                'answer': (
+                    'Live availability counts on Prescription Requests only include batches matching the '
+                    'catalogue medicine with quantity greater than 0 and an expiry date today or later. '
+                    'Open Manage Inventory or Update Stock (which supports quick entry, voice parsing, and '
+                    'CSV bulk import) to verify batch quantities and expiry dates.'
+                ),
+            },
+        ],
+    },
+    {
+        'slug': 'general-support',
+        'title': 'General Support',
+        'items': [
+            {
+                'id': 'faq-manage-activities',
+                'question': 'How can I manage my pharmacy activities?',
+                'keywords': 'dashboard kpi inventory medicines update stock analytics feedback requests',
+                'answer': (
+                    'Your Dashboard tracks distinct medicines, active batches, low-stock alerts, and '
+                    'out-of-stock counts. From the sidebar you can process orders in Prescription Requests, '
+                    'manage catalogue entries in Manage Medicines, maintain batch expiry/quantities in '
+                    'Manage Inventory and Update Stock, monitor trends in Analytics & Reports, and read '
+                    'patient reviews in Customer Feedback.'
+                ),
+            },
+            {
+                'id': 'faq-contact-support',
+                'question': 'How can I contact the MedAccess support team?',
+                'keywords': 'contact support request ticket form help team category subject message',
+                'answer': (
+                    'Complete the Contact Support form on this page by choosing an Issue Category, entering '
+                    'a clear Subject and Message, and clicking Submit Support Request. Your submission is '
+                    'securely saved to the MedAccess support queue and automatically linked to your logged-in '
+                    'pharmacy profile.'
+                ),
+            },
+        ],
+    },
+]
+
+
+@role_required('PHARMACY')
+def help_support_view(request):
+    """
+    Pharmacy Portal Help & Support center.
+    Provides searchable, categorized FAQs grounded in verified Pharmacy Portal workflows,
+    useful portal navigation links, and a CSRF-protected, database-backed support request form
+    strictly scoped to the authenticated, approved pharmacy profile.
+    """
+    pharmacy_profile = getattr(request.user, 'pharmacy_profile', None)
+    if not pharmacy_profile:
+        raise Http404("Pharmacy profile not found.")
+
+    if request.method == 'POST':
+        form = PharmacySupportRequestForm(request.POST)
+        if form.is_valid():
+            support_request = form.save(commit=False)
+            support_request.pharmacy = pharmacy_profile
+            support_request.submitted_by = request.user
+            support_request.save()
+            messages.success(
+                request,
+                f"Your support request (#{support_request.id}) has been submitted successfully."
+            )
+            return redirect('pharmacy:help_support')
+        else:
+            messages.error(request, "Please correct the highlighted errors in your support request.")
+    else:
+        form = PharmacySupportRequestForm()
+
+    recent_requests = PharmacySupportRequest.objects.filter(pharmacy=pharmacy_profile)[:5]
+    total_faq_count = sum(len(cat['items']) for cat in PHARMACY_SUPPORT_FAQS)
+
+    context = {
+        'pharmacy_profile': pharmacy_profile,
+        'form': form,
+        'faq_categories': PHARMACY_SUPPORT_FAQS,
+        'total_faq_count': total_faq_count,
+        'recent_requests': recent_requests,
+    }
+    return render(request, 'pharmacy/help_support.html', context)
 
 

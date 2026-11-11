@@ -34,4 +34,5 @@ urlpatterns = [
     path('medicines/composition-lookup/api/', views.composition_lookup_api, name='composition_lookup_api'),
     path('medicines/composition-autocomplete/api/', views.composition_autocomplete_api, name='composition_autocomplete_api'),
     path('medicines/predict-price/api/', views.price_prediction_api, name='price_prediction_api'),
+    path('help-support/', views.help_support_view, name='help_support'),
 ]

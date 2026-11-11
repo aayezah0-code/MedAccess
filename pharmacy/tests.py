@@ -4468,6 +4468,204 @@ class PharmacyProfileRejectionReasonTests(TestCase):
         self.assertIsNone(profile.rejection_reason)
 
 
+class PharmacyHelpSupportTests(TestCase):
+    """
+    Tests for Pharmacy Portal Help & Support route, FAQs, authorization,
+    CSRF/ownership security, and database-backed support request submissions.
+    """
+
+    def setUp(self):
+        self.client = Client()
+        self.help_url = reverse('pharmacy:help_support')
+
+        self.approved_user = User.objects.create_user(
+            username='help_pharm_approved',
+            email='help_pharm1@example.com',
+            password='TestPassword123!',
+            role='PHARMACY',
+        )
+        self.approved_user.email_verified = True
+        self.approved_user.save()
+        self.approved_profile = PharmacyProfile.objects.create(
+            user=self.approved_user,
+            pharmacy_name='MedCare Pharmacy',
+            owner_name='Rohan Verma',
+            pharmacist_name='Dr. Sneha Patel',
+            pharmacy_license_number='DL-HELP-001',
+            gst_number='27HELP1111A1Z1',
+            phone_number='9876543210',
+            email='help_pharm1@example.com',
+            address='12 Health Avenue',
+            city='Pune',
+            state='Maharashtra',
+            pincode='411001',
+            approval_status='APPROVED',
+        )
+
+        self.second_pharmacy_user = User.objects.create_user(
+            username='help_pharm_second',
+            email='help_pharm2@example.com',
+            password='TestPassword123!',
+            role='PHARMACY',
+        )
+        self.second_pharmacy_user.email_verified = True
+        self.second_pharmacy_user.save()
+        self.second_pharmacy_profile = PharmacyProfile.objects.create(
+            user=self.second_pharmacy_user,
+            pharmacy_name='CityHealth Chemist',
+            owner_name='Vikram Rao',
+            pharmacist_name='Neha Kapoor',
+            pharmacy_license_number='DL-HELP-002',
+            gst_number='27HELP2222B1Z2',
+            phone_number='9876543211',
+            email='help_pharm2@example.com',
+            address='88 Care Lane',
+            city='Pune',
+            state='Maharashtra',
+            pincode='411002',
+            approval_status='APPROVED',
+        )
+
+        self.pending_user = User.objects.create_user(
+            username='help_pharm_pending',
+            email='help_pending@example.com',
+            password='TestPassword123!',
+            role='PHARMACY',
+        )
+        self.pending_user.email_verified = True
+        self.pending_user.save()
+        PharmacyProfile.objects.create(
+            user=self.pending_user,
+            pharmacy_name='Pending Chemist',
+            owner_name='Amit Joshi',
+            pharmacist_name='Amit Joshi',
+            pharmacy_license_number='DL-HELP-003',
+            gst_number='27HELP3333C1Z3',
+            phone_number='9876543212',
+            email='help_pending@example.com',
+            address='10 Pending St',
+            city='Pune',
+            state='Maharashtra',
+            pincode='411003',
+            approval_status='PENDING',
+        )
+
+        self.patient_user = User.objects.create_user(
+            username='help_patient',
+            email='help_patient@example.com',
+            password='TestPassword123!',
+            role='PATIENT',
+        )
+
+    def test_anonymous_user_redirected_to_login(self):
+        response = self.client.get(self.help_url)
+        self.assertEqual(response.status_code, 302)
+        self.assertIn(reverse('accounts:login'), response.url)
+
+    def test_patient_user_denied_access(self):
+        self.client.login(username='help_patient', password='TestPassword123!')
+        response = self.client.get(self.help_url)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse('landing'))
+
+    def test_pending_pharmacy_denied_access(self):
+        self.client.login(username='help_pharm_pending', password='TestPassword123!')
+        response = self.client.get(self.help_url)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse('landing'))
+
+    def test_approved_pharmacy_renders_help_support_page(self):
+        self.client.login(username='help_pharm_approved', password='TestPassword123!')
+        response = self.client.get(self.help_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'pharmacy/help_support.html')
+        self.assertContains(response, 'Help &amp; Support')
+        self.assertContains(response, "We're here to help you manage your pharmacy activities smoothly.")
+        self.assertContains(response, 'id="faq-search-input"')
+        self.assertContains(response, 'Account &amp; Profile')
+        self.assertContains(response, 'Prescription Management')
+        self.assertContains(response, 'Technical Issues')
+        self.assertContains(response, 'General Support')
+        self.assertContains(response, 'id="pharmacy-support-form"')
+        self.assertContains(response, 'pharmacy_help_support')
+        self.assertNotContains(response, 'Available in next task')
+
+        # Active sidebar link points to help_support
+        html = response.content.decode('utf-8')
+        self.assertIn(f'href="{self.help_url}"', html)
+        self.assertIn('class="sidebar-link active"', html)
+
+    def test_support_form_validation_rejects_blank_or_short_inputs(self):
+        from pharmacy.models import PharmacySupportRequest
+
+        self.client.login(username='help_pharm_approved', password='TestPassword123!')
+        response = self.client.post(self.help_url, {
+            'subject': 'Hi',
+            'category': 'INVALID_CAT',
+            'message': 'Too short',
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(PharmacySupportRequest.objects.count(), 0)
+        self.assertFormError(response.context['form'], 'subject', 'Subject must be at least 5 characters long.')
+        self.assertFormError(
+            response.context['form'],
+            'message',
+            'Please provide at least 15 characters in your description so our team can assist effectively.',
+        )
+        self.assertTrue(response.context['form'].errors.get('category'))
+
+    def test_support_request_submission_scoped_to_authenticated_pharmacy(self):
+        from pharmacy.models import PharmacySupportRequest
+
+        self.client.login(username='help_pharm_approved', password='TestPassword123!')
+        # Attempt to spoof ownership fields via POST
+        response = self.client.post(
+            self.help_url,
+            {
+                'subject': 'Prescription document failed to open',
+                'category': 'PRESCRIPTION',
+                'message': 'Request #42 shows archived document when clicking View Authenticated PDF.',
+                'pharmacy': self.second_pharmacy_profile.id,
+                'submitted_by': self.second_pharmacy_user.id,
+                'status': 'RESOLVED',
+            },
+            follow=True,
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertRedirects(response, self.help_url)
+
+        self.assertEqual(PharmacySupportRequest.objects.count(), 1)
+        ticket = PharmacySupportRequest.objects.first()
+        self.assertEqual(ticket.pharmacy, self.approved_profile)
+        self.assertEqual(ticket.submitted_by, self.approved_user)
+        self.assertEqual(ticket.status, 'OPEN')
+        self.assertEqual(ticket.category, 'PRESCRIPTION')
+        self.assertContains(response, 'Prescription document failed to open')
+
+        # Second pharmacy cannot see first pharmacy's support ticket
+        self.client.logout()
+        self.client.login(username='help_pharm_second', password='TestPassword123!')
+        second_resp = self.client.get(self.help_url)
+        self.assertEqual(second_resp.status_code, 200)
+        self.assertNotContains(second_resp, 'Prescription document failed to open')
+
+    def test_existing_pharmacy_portal_pages_still_work(self):
+        self.client.login(username='help_pharm_approved', password='TestPassword123!')
+        for url_name in [
+            'pharmacy:dashboard',
+            'pharmacy:requests_inbox',
+            'pharmacy:inventory',
+            'pharmacy:medicines',
+            'pharmacy:update_stock',
+            'pharmacy:analytics',
+            'pharmacy:customer_feedback',
+            'pharmacy:settings',
+        ]:
+            resp = self.client.get(reverse(url_name))
+            self.assertEqual(resp.status_code, 200, f"{url_name} returned {resp.status_code}")
+
+
+
 
 
 

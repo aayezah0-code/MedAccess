@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import PharmacyProfile, Medicine, Inventory, Feedback
+from .models import PharmacyProfile, Medicine, Inventory, Feedback, PharmacySupportRequest
 
 
 @admin.register(PharmacyProfile)
@@ -34,3 +34,11 @@ class InventoryAdmin(admin.ModelAdmin):
 class FeedbackAdmin(admin.ModelAdmin):
     list_display = ('pharmacy', 'patient', 'rating', 'created_at')
     list_filter = ('rating', 'created_at')
+
+
+@admin.register(PharmacySupportRequest)
+class PharmacySupportRequestAdmin(admin.ModelAdmin):
+    list_display = ('subject', 'pharmacy', 'category', 'status', 'created_at')
+    list_filter = ('category', 'status', 'created_at')
+    search_fields = ('subject', 'message', 'pharmacy__pharmacy_name', 'submitted_by__username')
+    readonly_fields = ('pharmacy', 'submitted_by', 'created_at', 'updated_at')

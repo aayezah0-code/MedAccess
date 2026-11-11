@@ -1,0 +1,311 @@
+{% extends 'pharmacy/base_pharmacy.html' %}
+{% load static %}
+
+{% block title %}Help & Support | Pharmacy Portal | MedAccess{% endblock title %}
+{% block header_title %}Help & Support{% endblock header_title %}
+{% block nav_help %}active{% endblock nav_help %}
+
+{% block content %}
+<div class="help-support-container">
+
+    <!-- 1. Help & Support Hero Header + FAQ Search -->
+    <section class="help-hero-card" aria-labelledby="help-page-heading">
+        <div class="help-hero-content">
+            <div class="help-hero-intro">
+                <span class="help-hero-pill">Pharmacy Support Center</span>
+                <h1 id="help-page-heading" class="help-hero-title">Help &amp; Support</h1>
+                <p class="help-hero-subtitle">
+                    We're here to help you manage your pharmacy activities smoothly.
+                </p>
+
+                <!-- FAQ Keyword Search Bar -->
+                <div class="help-search-box">
+                    <label for="faq-search-input" class="sr-only">Search FAQs by keywords</label>
+                    <span class="help-search-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                    </span>
+                    <input type="search"
+                           id="faq-search-input"
+                           class="help-search-input"
+                           placeholder="Search FAQs by keywords (e.g., prescription, profile, stock, login)..."
+                           autocomplete="off"
+                           aria-controls="faq-accordion-root">
+                    <button type="button"
+                            id="faq-search-clear"
+                            class="help-search-clear"
+                            aria-label="Clear FAQ search"
+                            style="display: none;">
+                        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="help-search-meta">
+                    <span id="faq-results-count">Showing all {{ total_faq_count }} help topics</span>
+                </div>
+            </div>
+
+            <!-- Welcoming Healthcare Support SVG Illustration -->
+            <div class="help-hero-illustration" aria-hidden="true">
+                <div class="help-hero-illustration-frame">
+                    <svg viewBox="0 0 120 120" width="96" height="96" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="20" y="26" width="80" height="68" rx="14" stroke="currentColor" stroke-opacity="0.35"></rect>
+                        <path d="M60 40v28M46 54h28" stroke-width="4.5"></path>
+                        <circle cx="92" cy="30" r="14" fill="var(--color-surface)" stroke="currentColor"></circle>
+                        <path d="M87 30c0-2.8 2.2-5 5-5s5 2.2 5 5c0 2.1-1.3 3.4-3.1 4.2-.9.4-1.9 1.2-1.9 2.3"></path>
+                        <line x1="92" y1="40" x2="92.01" y2="40" stroke-width="2.5"></line>
+                        <path d="M36 78h48" stroke-opacity="0.45"></path>
+                        <path d="M44 85h32" stroke-opacity="0.3"></path>
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 2. Main Responsive Workspace Grid: FAQs (Left) + Contact & Info (Right) -->
+    <div class="help-workspace-grid">
+
+        <!-- Left Column: Categorized FAQ Accordions -->
+        <section class="help-faq-section" aria-labelledby="faq-section-heading">
+            <div class="help-section-header">
+                <div>
+                    <h2 id="faq-section-heading" class="help-section-title">Frequently Asked Questions</h2>
+                    <p class="help-section-desc">
+                        Guidance tailored to actual MedAccess Pharmacy Portal workflows.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Category Filter Tabs -->
+            <div class="faq-category-tabs" role="tablist" aria-label="FAQ categories">
+                <button type="button" class="faq-cat-tab is-active" data-faq-filter="all" role="tab" aria-selected="true">
+                    All Topics
+                </button>
+                {% for category in faq_categories %}
+                    <button type="button" class="faq-cat-tab" data-faq-filter="{{ category.slug }}" role="tab" aria-selected="false">
+                        {{ category.title }}
+                    </button>
+                {% endfor %}
+            </div>
+
+            <!-- Accordion Categories -->
+            <div id="faq-accordion-root" class="faq-categories-stack">
+                {% for category in faq_categories %}
+                    <div class="faq-category-group" data-faq-category="{{ category.slug }}">
+                        <div class="faq-category-header">
+                            <span class="faq-category-dot" aria-hidden="true"></span>
+                            <h3 class="faq-category-title">{{ category.title }}</h3>
+                            <span class="faq-category-count">{{ category.items|length }}</span>
+                        </div>
+
+                        <div class="faq-items-list">
+                            {% for item in category.items %}
+                                <article class="faq-card"
+                                         data-faq-item
+                                         data-faq-category="{{ category.slug }}"
+                                         data-faq-search="{{ item.question|lower }} {{ item.answer|lower }} {{ item.keywords|lower }}">
+                                    <h4 class="faq-question-heading">
+                                        <button type="button"
+                                                class="faq-question-btn"
+                                                id="btn-{{ item.id }}"
+                                                aria-expanded="false"
+                                                aria-controls="panel-{{ item.id }}">
+                                            <span class="faq-question-text">{{ item.question }}</span>
+                                            <span class="faq-chevron" aria-hidden="true">
+                                                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <polyline points="6 9 12 15 18 9"></polyline>
+                                                </svg>
+                                            </span>
+                                        </button>
+                                    </h4>
+                                    <div id="panel-{{ item.id }}"
+                                         class="faq-answer-panel"
+                                         role="region"
+                                         aria-labelledby="btn-{{ item.id }}"
+                                         hidden>
+                                        <div class="faq-answer-body">
+                                            <p>{{ item.answer }}</p>
+                                        </div>
+                                    </div>
+                                </article>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <!-- Empty Search State -->
+            <div id="faq-empty-state" class="help-empty-state" style="display: none;">
+                <div class="help-empty-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        <line x1="8" y1="11" x2="14" y2="11"></line>
+                    </svg>
+                </div>
+                <h3 class="help-empty-title">No matching FAQs found</h3>
+                <p class="help-empty-desc">
+                    Try a different keyword or submit your question directly using the Contact Support form.
+                </p>
+                <button type="button" id="faq-reset-btn" class="btn btn-secondary btn-sm">
+                    Reset Filters
+                </button>
+            </div>
+        </section>
+
+        <!-- Right Column: Contact Support Form + Assistance Info + Quick Links -->
+        <aside class="help-sidebar-stack" aria-label="Contact support and quick resources">
+
+            <!-- Contact Support Card -->
+            <section class="help-card help-contact-card" aria-labelledby="contact-support-heading">
+                <div class="help-card-header">
+                    <div class="help-card-icon">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 id="contact-support-heading" class="help-card-title">Contact Support</h2>
+                        <p class="help-card-subtitle">
+                            Submitting as <strong>{{ pharmacy_profile.pharmacy_name }}</strong>
+                        </p>
+                    </div>
+                </div>
+
+                <form method="post" action="{% url 'pharmacy:help_support' %}" class="help-support-form" id="pharmacy-support-form" novalidate>
+                    {% csrf_token %}
+
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-error" style="margin-bottom: 1rem;">
+                            {% for err in form.non_field_errors %}
+                                <p style="margin: 0;">{{ err }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
+                    <div class="help-form-group">
+                        <label for="{{ form.subject.id_for_label }}" class="form-label">
+                            Subject <span class="required-mark">*</span>
+                        </label>
+                        {{ form.subject }}
+                        {% if form.subject.errors %}
+                            <div class="field-error">{{ form.subject.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="help-form-group">
+                        <label for="{{ form.category.id_for_label }}" class="form-label">
+                            Issue Category <span class="required-mark">*</span>
+                        </label>
+                        {{ form.category }}
+                        {% if form.category.errors %}
+                            <div class="field-error">{{ form.category.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="help-form-group">
+                        <div class="help-label-row">
+                            <label for="{{ form.message.id_for_label }}" class="form-label">
+                                Message / Description <span class="required-mark">*</span>
+                            </label>
+                            <span id="support-message-counter" class="help-char-counter">0 / 2000</span>
+                        </div>
+                        {{ form.message }}
+                        {% if form.message.errors %}
+                            <div class="field-error">{{ form.message.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <button type="submit" class="btn btn-primary help-submit-btn">
+                        <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="22" y1="2" x2="11" y2="13"></line>
+                            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                        </svg>
+                        <span>Submit Support Request</span>
+                    </button>
+                </form>
+            </section>
+
+            <!-- Recent Submitted Requests for this Pharmacy -->
+            {% if recent_requests %}
+                <section class="help-card" aria-labelledby="recent-requests-heading">
+                    <div class="help-card-header-simple">
+                        <h2 id="recent-requests-heading" class="help-card-title">Your Recent Support Requests</h2>
+                        <span class="help-count-pill">{{ recent_requests|length }}</span>
+                    </div>
+                    <div class="help-ticket-list">
+                        {% for ticket in recent_requests %}
+                            <div class="help-ticket-item">
+                                <div class="help-ticket-top">
+                                    <span class="help-ticket-id">#{{ ticket.id }}</span>
+                                    <span class="help-ticket-status status-{{ ticket.status|lower }}">
+                                        {{ ticket.get_status_display }}
+                                    </span>
+                                </div>
+                                <p class="help-ticket-subject">{{ ticket.subject }}</p>
+                                <div class="help-ticket-meta">
+                                    <span>{{ ticket.get_category_display }}</span>
+                                    <span>{{ ticket.created_at|date:"d M Y, h:i A" }}</span>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </section>
+            {% endif %}
+
+            <!-- Support Information & Useful Portal Links -->
+            <section class="help-card help-info-card" aria-labelledby="support-info-heading">
+                <div class="help-card-header-simple">
+                    <h2 id="support-info-heading" class="help-card-title">Support Information &amp; Quick Links</h2>
+                </div>
+                <p class="help-info-text">
+                    All support requests submitted here are recorded directly against your verified
+                    <strong>{{ pharmacy_profile.pharmacy_name }}</strong> account so our administrators can review
+                    issues with full pharmacy context. For faster resolution, include any Prescription Request ID
+                    or medicine name when describing an issue.
+                </p>
+
+                <div class="help-quick-links">
+                    <a href="{% url 'pharmacy:dashboard' %}" class="help-quick-link">
+                        <span>Pharmacy Dashboard</span>
+                        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                    </a>
+                    <a href="{% url 'pharmacy:requests_inbox' %}" class="help-quick-link">
+                        <span>Prescription Requests</span>
+                        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                    </a>
+                    <a href="{% url 'pharmacy:inventory' %}" class="help-quick-link">
+                        <span>Manage Inventory</span>
+                        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                    </a>
+                    <a href="{% url 'pharmacy:update_stock' %}" class="help-quick-link">
+                        <span>Update Stock</span>
+                        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                    </a>
+                    <a href="{% url 'pharmacy:analytics' %}" class="help-quick-link">
+                        <span>Analytics &amp; Reports</span>
+                        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                    </a>
+                    <a href="{% url 'pharmacy:settings' %}" class="help-quick-link">
+                        <span>Pharmacy Settings</span>
+                        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                    </a>
+                </div>
+            </section>
+
+        </aside>
+
+    </div>
+
+</div>
+{% endblock content %}
+
+{% block extra_js %}
+<script defer src="{% static 'js/pharmacy_help_support.js' %}?v=1.0.0"></script>
+{% endblock extra_js %}
+

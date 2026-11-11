@@ -1,4 +1,5 @@
 {% extends 'patient/base_patient.html' %}
+{% load static %}
 
 {% block title %}Upload Prescription | Patient Portal | MedAccess{% endblock title %}
 {% block header_title %}Upload Prescription{% endblock header_title %}
@@ -39,30 +40,76 @@
                     </div>
                 {% endif %}
 
-                <div class="file-dropzone" id="file-dropzone">
-                    <div class="dropzone-icon">
-                        <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                            <polyline points="21 15 16 10 5 21"></polyline>
-                        </svg>
+                <div class="file-dropzone" id="file-dropzone" data-pdf-worker-src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js">
+                    <div id="dropzone-empty-state" class="dropzone-empty-state">
+                        <div class="dropzone-icon">
+                            <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                <polyline points="21 15 16 10 5 21"></polyline>
+                            </svg>
+                        </div>
+
+                        <p class="dropzone-title">Select Prescription Image</p>
+                        <p class="dropzone-subtitle">Click to browse your device for a clear photo or PDF scan</p>
+
+                        <label for="prescription-image-input" class="btn btn-secondary dropzone-btn">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                            </svg>
+                            <span>Choose File</span>
+                        </label>
                     </div>
-
-                    <p class="dropzone-title">Select Prescription Image</p>
-                    <p class="dropzone-subtitle">Click to browse your device for a clear photo or document scan</p>
-
-                    <label for="prescription-image-input" class="btn btn-secondary dropzone-btn">
-                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                            <polyline points="17 8 12 3 7 8"></polyline>
-                            <line x1="12" y1="3" x2="12" y2="15"></line>
-                        </svg>
-                        <span>Choose File</span>
-                    </label>
 
                     {{ form.prescription_image }}
 
-                    <!-- File details preview once selected -->
+                    <!-- Visual file preview (Image or first-page PDF canvas) -->
+                    <div id="rx-preview-container" class="rx-upload-preview-container" style="display: none;">
+                        <div id="rx-preview-stage" class="rx-upload-preview-stage">
+                            <div class="rx-preview-badge-bar">
+                                <span id="rx-preview-badge" class="rx-preview-type-badge" style="display: none;">
+                                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                        <polyline points="14 2 14 8 20 8"></polyline>
+                                    </svg>
+                                    <span id="rx-preview-badge-text">FILE</span>
+                                </span>
+                                <span id="rx-preview-page-info" class="rx-preview-page-pill" style="display: none;"></span>
+                            </div>
+
+                            <div id="rx-preview-loading" class="rx-upload-preview-loading" style="display: none;">
+                                <div class="rx-preview-spinner" aria-hidden="true"></div>
+                                <span>Rendering PDF preview...</span>
+                            </div>
+
+                            <img id="rx-preview-img"
+                                 class="rx-upload-preview-img"
+                                 alt="Selected prescription preview"
+                                 style="display: none;">
+
+                            <canvas id="rx-preview-canvas"
+                                    class="rx-upload-preview-canvas"
+                                    aria-label="Selected PDF first page preview"
+                                    style="display: none;"></canvas>
+
+                            <div id="rx-preview-fallback" class="rx-upload-preview-fallback" style="display: none;">
+                                <div class="rx-fallback-icon">
+                                    <svg viewBox="0 0 24 24" width="38" height="38" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                        <polyline points="14 2 14 8 20 8"></polyline>
+                                        <line x1="8" y1="13" x2="16" y2="13"></line>
+                                        <line x1="8" y1="17" x2="13" y2="17"></line>
+                                    </svg>
+                                </div>
+                                <p id="rx-fallback-title" class="rx-fallback-title">Preview unavailable</p>
+                                <p id="rx-fallback-desc" class="rx-fallback-desc">Your document is ready to upload.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- File details & quick actions once selected -->
                     <div id="file-info" class="file-info" style="display: none;">
                         <div class="file-info-icon">
                             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -72,16 +119,24 @@
                         </div>
                         <div class="file-info-text">
                             <span class="file-name" id="selected-file-name">filename.jpg</span>
-                            <span class="file-size" id="selected-file-size">0 KB</span>
+                            <div class="file-meta-row">
+                                <span class="file-size" id="selected-file-size">0 KB</span>
+                                <span class="file-meta-extra" id="selected-file-meta" style="display: none;"></span>
+                            </div>
+                        </div>
+                        <div class="file-info-actions">
+                            <label for="prescription-image-input" class="rx-preview-action-btn">Change File</label>
+                            <button type="button" id="rx-preview-remove-btn" class="rx-preview-action-btn rx-preview-remove-btn">Remove</button>
                         </div>
                     </div>
                 </div>
 
                 {% if form.prescription_image.errors %}
-                    <div class="field-error" style="margin-top: 0.75rem;">
+                    <div id="rx-server-error" class="field-error" style="margin-top: 0.75rem;">
                         {{ form.prescription_image.errors.0 }}
                     </div>
                 {% endif %}
+                <div id="rx-client-error" class="field-error" role="alert" style="display: none; margin-top: 0.75rem;"></div>
 
                 <!-- File Specs & Supported formats -->
                 <div class="upload-specs">
@@ -152,32 +207,7 @@
 {% endblock content %}
 
 {% block extra_js %}
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const fileInput = document.getElementById('prescription-image-input');
-    const fileInfo = document.getElementById('file-info');
-    const selectedFileName = document.getElementById('selected-file-name');
-    const selectedFileSize = document.getElementById('selected-file-size');
-
-    if (fileInput) {
-        fileInput.addEventListener('change', function() {
-            if (fileInput.files && fileInput.files[0]) {
-                const file = fileInput.files[0];
-                selectedFileName.textContent = file.name;
-                const sizeKb = (file.size / 1024).toFixed(1);
-                if (file.size > 1024 * 1024) {
-                    const sizeMb = (file.size / (1024 * 1024)).toFixed(2);
-                    selectedFileSize.textContent = sizeMb + ' MB';
-                } else {
-                    selectedFileSize.textContent = sizeKb + ' KB';
-                }
-                fileInfo.style.display = 'flex';
-            } else {
-                fileInfo.style.display = 'none';
-            }
-        });
-    }
-});
-</script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script defer src="{% static 'js/prescription_upload_preview.js' %}?v=1.0.0"></script>
 {% endblock extra_js %}
 

@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="referrer" content="strict-origin-when-cross-origin">
     <title>{% block title %}Pharmacy Portal | MedAccess{% endblock title %}</title>
-    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=3.1.0">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=3.2.0">
     <script>
         (function() {
             var saved = localStorage.getItem('medaccess_theme');
@@ -117,15 +117,15 @@
                 <span>Settings</span>
             </a>
 
-            <!-- 8. Help & Support (Placeholder) -->
-            <a href="#" class="sidebar-link disabled" title="Help & Support — Available in next task" style="opacity: 0.65; cursor: default;">
+            <!-- 8. Help & Support -->
+            <a href="{% url 'pharmacy:help_support' %}"
+               class="sidebar-link {% block nav_help %}{% endblock nav_help %}">
                 <svg viewBox="0 0 24 24">
                     <circle cx="12" cy="12" r="10"></circle>
                     <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
                     <line x1="12" y1="17" x2="12.01" y2="17"></line>
                 </svg>
                 <span>Help & Support</span>
-                <span style="margin-left: auto; font-size: 0.6875rem; background: #e2e8f0; color: #475569; padding: 2px 6px; border-radius: 4px;">Soon</span>
             </a>
         </nav>
 
