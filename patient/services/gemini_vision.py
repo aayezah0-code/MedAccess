@@ -92,27 +92,31 @@ class MedicineExtraction(BaseModel):
     """
     medicine_name: str = Field(
         default="",
-        description="Exact brand or generic name written on prescription. Do not correct or guess."
+        description="Exact brand or generic name written on prescription without dosage/frequency. Do not correct or guess."
     )
     strength: str = Field(
         default="",
-        description="Potency or strength (e.g., '500 mg', '10 ml', '0.5%'). Empty string if not stated."
+        description="Potency or strength with unit if written (e.g., '500 mg', '50 mcg', '10 ml', '0.5%'). Empty string if not stated."
     )
     dosage: str = Field(
         default="",
-        description="Quantity or form per intake (e.g., '1 tablet', '2 puffs', '5 ml'). Empty string if not stated."
+        description="Unit dose per intake (e.g., '1 tablet', '1 capsule', '2 puffs', '5 ml'). Extract from regimen if written; empty string if not stated."
     )
     frequency: str = Field(
         default="",
-        description="Intake schedule (e.g., '1-0-1', 'Once daily', 'TDS', 'SOS'). Empty string if not stated."
+        description="Intake schedule or pattern (e.g., '1-0-1', '0-0-1', '1-1-1', 'Once daily', 'Twice daily', 'OD', 'BD', 'TDS', 'HS', 'SOS'). Empty string if not stated."
     )
     duration: str = Field(
         default="",
-        description="Duration of treatment (e.g., '5 days', '2 weeks'). Empty string if not stated."
+        description="Course length or duration (e.g., '5 days', '7 days', '2 weeks', '1 month', 'x 5d'). Empty string if not stated."
+    )
+    quantity: str = Field(
+        default="",
+        description="Total dispensed/prescribed pack or unit count if explicitly stated (e.g., '10 tablets', '#30', '1 bottle'). Empty string if not explicitly stated."
     )
     instructions: str = Field(
         default="",
-        description="Timing or food instructions (e.g., 'After food', 'Before breakfast'). Empty string if not stated."
+        description="Timing, route, or food instructions (e.g., 'After food', 'Before breakfast', 'PO'). Empty string if not stated."
     )
     needs_verification: bool = Field(
         default=False,
@@ -172,7 +176,12 @@ CLINICAL_PRESCRIPTION_SYSTEM_INSTRUCTION: str = (
     "record each item in 'unclear_details'.\n"
     "5. MULTI-PAGE CONTINUATIONS: Analyze all pages in their sequential order. If medication lists span "
     "multiple pages, produce a single consolidated list without duplicate entries.\n"
-    "6. FORMAT: Output strictly valid JSON conforming to the requested schema. Return empty strings "
+    "6. COMPLETE REGIMEN EXTRACTION: Carefully inspect all columns, right-hand margins, and shorthand "
+    "grids on the prescription so visible strength ('50 mcg', '10 mg'), per-intake dosage ('1 tab'), "
+    "frequency ('1-0-1', '0-0-1', 'OD', 'BD', 'TDS', 'HS'), duration ('5 days', 'x 10d', '1 month'), "
+    "explicit quantity ('#15', '10 tabs'), and food/timing instructions are captured in their respective "
+    "fields rather than omitted or collapsed together.\n"
+    "7. FORMAT: Output strictly valid JSON conforming to the requested schema. Return empty strings "
     "for fields not explicitly stated in the prescription. Return an empty 'medicines' array if no "
     "medications are present in the document."
 )
@@ -304,7 +313,7 @@ def validate_extracted_prescription_data(data: Any) -> Dict[str, Any]:
             )
 
         # Normalize clean record
-        validated_medicines.append({
+        item_record = {
             "medicine_name": med["medicine_name"].strip(),
             "strength": med["strength"].strip(),
             "dosage": med["dosage"].strip(),
@@ -313,7 +322,14 @@ def validate_extracted_prescription_data(data: Any) -> Dict[str, Any]:
             "instructions": med["instructions"].strip(),
             "needs_verification": needs_verification,
             "verification_reason": med["verification_reason"].strip(),
-        })
+        }
+        if "quantity" in med:
+            if not isinstance(med["quantity"], str):
+                raise GeminiValidationError(
+                    f"medicines[{idx}].quantity must be a string, got {type(med['quantity']).__name__}."
+                )
+            item_record["quantity"] = med["quantity"].strip()
+        validated_medicines.append(item_record)
 
     return {
         "medicines": validated_medicines,

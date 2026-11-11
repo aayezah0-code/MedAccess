@@ -610,3 +610,339 @@ class InventoryAvailabilityEngineTests(TestCase):
 
         self.assertEqual(reports, [])
 
+
+class AvailabilityRegressionAndMatchingTests(TestCase):
+    """
+    Regression & edge-case suite covering real-world prescription matching,
+    equivalent formulation inventory aggregation, unit-aware strength checks,
+    compound dosage/frequency/duration retention, pharmacy isolation, and UI states.
+    """
+
+    def setUp(self):
+        from django.test import Client
+        from django.urls import reverse
+
+        self.today = timezone.localdate()
+        self.client = Client()
+
+        self.patient_user = User.objects.create_user(
+            username='reg_patient',
+            email='reg_patient@test.com',
+            password='Password123!',
+            role='PATIENT',
+            email_verified=True,
+        )
+        self.patient_profile = PatientProfile.objects.create(
+            user=self.patient_user,
+            current_latitude=Decimal('23.2500000'),
+            current_longitude=Decimal('77.4200000'),
+        )
+
+        self.pharma_a_user = User.objects.create_user(
+            username='reg_pharma_a',
+            email='reg_pharma_a@test.com',
+            password='Password123!',
+            role='PHARMACY',
+            email_verified=True,
+        )
+        self.pharmacy_a = PharmacyProfile.objects.create(
+            user=self.pharma_a_user,
+            pharmacy_name='Alpha Care Pharmacy',
+            pharmacy_license_number='DL-REG-01',
+            gst_number='23AAAAA1111A1Z1',
+            phone_number='9876543210',
+            email='reg_pharma_a@test.com',
+            address='101 Lake View Road',
+            city='Bhopal',
+            state='Madhya Pradesh',
+            pincode='462001',
+            latitude=Decimal('23.2510000'),
+            longitude=Decimal('77.4210000'),
+            approval_status='APPROVED',
+        )
+
+        self.pharma_b_user = User.objects.create_user(
+            username='reg_pharma_b',
+            email='reg_pharma_b@test.com',
+            password='Password123!',
+            role='PHARMACY',
+            email_verified=True,
+        )
+        self.pharmacy_b = PharmacyProfile.objects.create(
+            user=self.pharma_b_user,
+            pharmacy_name='Beta Care Pharmacy',
+            pharmacy_license_number='DL-REG-02',
+            gst_number='23BBBBB2222B1Z2',
+            phone_number='9876543211',
+            email='reg_pharma_b@test.com',
+            address='202 Market Square',
+            city='Bhopal',
+            state='Madhya Pradesh',
+            pincode='462002',
+            latitude=Decimal('23.2530000'),
+            longitude=Decimal('77.4230000'),
+            approval_status='APPROVED',
+        )
+
+        # Master catalogue medicines mirroring real MedAccess patterns
+        self.med_levo_50_seed = Medicine.objects.create(
+            medicine_name='Levothyroxine 50 mcg',
+            strength=None,
+            dosage_form=None,
+            composition=None,
+        )
+        self.med_levo_50_tab = Medicine.objects.create(
+            medicine_name='Levothyroxine',
+            strength='50 mcg',
+            dosage_form='Tablet',
+            composition='Levothyroxine (50mcg)',
+        )
+        self.med_levo_100 = Medicine.objects.create(
+            medicine_name='Levothyroxine 100 mcg',
+            strength=None,
+        )
+        self.med_levo_50_mg = Medicine.objects.create(
+            medicine_name='Levothyroxine 50 mg',
+            strength='50mg',
+        )
+        self.med_cetirizine_10 = Medicine.objects.create(
+            medicine_name='Cetirizine 10 mg',
+            strength=None,
+        )
+        self.med_cetirizine_brand = Medicine.objects.create(
+            medicine_name='Okacet Tablet',
+            strength='10mg',
+            dosage_form='Tablet',
+            composition='Cetirizine (10mg)',
+        )
+        self.med_amlodipine_5 = Medicine.objects.create(
+            medicine_name='Amlodipine 5 mg',
+            strength=None,
+        )
+        self.med_telma_am_combo = Medicine.objects.create(
+            medicine_name='Telma-AM Tablet',
+            strength='40mg + 5mg',
+            dosage_form='Tablet',
+            composition='Telmisartan (40mg) + Amlodipine (5mg)',
+        )
+        self.med_telmisartan_40 = Medicine.objects.create(
+            medicine_name='Telmisartan 40 mg',
+            strength=None,
+        )
+        self.med_telmisartan_80 = Medicine.objects.create(
+            medicine_name='Telmisartan 80 mg',
+            strength=None,
+        )
+
+        self.prescription = Prescription.objects.create(
+            patient=self.patient_profile,
+            status='COMPLETED',
+            prescription_image='patient/prescriptions/reg_test.jpg',
+        )
+        self.check_url = reverse('patient:check_pharmacies_availability', kwargs={'pk': self.prescription.pk})
+
+    def test_case_whitespace_unit_equivalent_and_pharmacy_isolation(self):
+        """
+        Matching handles whitespace, casing, '50mcg' vs '50 mcg', equivalent catalogue IDs
+        ('Levothyroxine' + '50 mcg' vs 'Levothyroxine 50 mcg'), and isolates stock per pharmacy.
+        """
+        # Pharmacy A holds stock on the variant record & single-salt composition record
+        Inventory.objects.create(
+            pharmacy=self.pharmacy_a,
+            medicine=self.med_levo_50_tab,
+            batch_number='LV-50-A',
+            expiry_date=self.today + timedelta(days=120),
+            quantity=60,
+        )
+        Inventory.objects.create(
+            pharmacy=self.pharmacy_a,
+            medicine=self.med_cetirizine_brand,
+            batch_number='CZ-10-A',
+            expiry_date=self.today + timedelta(days=120),
+            quantity=4,  # Insufficient for 10 required -> PARTIALLY_AVAILABLE
+        )
+        # Pharmacy B only holds Amlodipine combo (must NOT match single Amlodipine 5 mg)
+        Inventory.objects.create(
+            pharmacy=self.pharmacy_b,
+            medicine=self.med_telma_am_combo,
+            batch_number='TAM-B',
+            expiry_date=self.today + timedelta(days=120),
+            quantity=100,
+        )
+
+        PrescriptionMedicine.objects.create(
+            prescription=self.prescription,
+            medicine_name='  levothyroxine (50mcg)  ',
+            strength=None,
+            dosage='1 tablet',
+            frequency='OD',
+            duration='30d',
+            source='AI_CONFIRMED',
+        )
+        PrescriptionMedicine.objects.create(
+            prescription=self.prescription,
+            medicine_name='  CETIRIZINE  ',
+            strength='10mg',
+            dosage='1 tablet',
+            frequency='1-0-1',
+            duration='5 days',
+            source='AI_CONFIRMED',
+        )
+        PrescriptionMedicine.objects.create(
+            prescription=self.prescription,
+            medicine_name='Amlodipine',
+            strength='5 mg',
+            dosage='1 tab',
+            frequency='Once daily',
+            duration='1 week',
+            source='AI_CONFIRMED',
+        )
+
+        self.client.force_login(self.patient_user)
+        resp = self.client.get(self.check_url)
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        self.assertEqual(data['status'], 'success')
+
+        by_pharma = {p['pharmacy_id']: p for p in data['pharmacies']}
+        alpha = by_pharma[self.pharmacy_a.id]
+        beta = by_pharma[self.pharmacy_b.id]
+
+        alpha_items = {it['prescribed_name'].strip().lower(): it for it in alpha['items']}
+        beta_items = {it['prescribed_name'].strip().lower(): it for it in beta['items']}
+
+        # Pharmacy A: Levothyroxine (60 >= 30 -> FULLY_AVAILABLE), Cetirizine (4 < 10 -> PARTIALLY_AVAILABLE), Amlodipine (0 -> OUT_OF_STOCK)
+        levo_a = alpha_items['levothyroxine (50mcg)']
+        self.assertEqual(levo_a['availability_status'], 'FULLY_AVAILABLE')
+        self.assertEqual(levo_a['available_quantity'], 60)
+        self.assertEqual(levo_a['required_quantity'], 30)
+        self.assertEqual(levo_a['prescribed_dosage'], '1 tablet')
+        self.assertEqual(levo_a['prescribed_frequency'], 'OD')
+        self.assertEqual(levo_a['prescribed_duration'], '30d')
+
+        cet_a = alpha_items['cetirizine']
+        self.assertEqual(cet_a['availability_status'], 'PARTIALLY_AVAILABLE')
+        self.assertEqual(cet_a['available_quantity'], 4)
+        self.assertEqual(cet_a['required_quantity'], 10)
+
+        amlo_a = alpha_items['amlodipine']
+        self.assertEqual(amlo_a['availability_status'], 'OUT_OF_STOCK')
+        self.assertEqual(amlo_a['available_quantity'], 0)
+
+        # Pharmacy B must NOT see Pharmacy A's stock, and Telma-AM combo must NOT satisfy single Amlodipine
+        self.assertEqual(beta_items['levothyroxine (50mcg)']['available_quantity'], 0)
+        self.assertEqual(beta_items['levothyroxine (50mcg)']['availability_status'], 'OUT_OF_STOCK')
+        self.assertEqual(beta_items['amlodipine']['available_quantity'], 0)
+        self.assertEqual(beta_items['amlodipine']['availability_status'], 'OUT_OF_STOCK')
+
+    def test_strength_and_unit_mismatch_never_treated_as_identical(self):
+        """50 mcg must not match 100 mcg or 50 mg; 40 mg Telmisartan must not match 80 mg."""
+        Inventory.objects.create(
+            pharmacy=self.pharmacy_a,
+            medicine=self.med_levo_100,
+            batch_number='LV-100',
+            expiry_date=self.today + timedelta(days=90),
+            quantity=50,
+        )
+        Inventory.objects.create(
+            pharmacy=self.pharmacy_a,
+            medicine=self.med_levo_50_mg,
+            batch_number='LV-50MG',
+            expiry_date=self.today + timedelta(days=90),
+            quantity=50,
+        )
+        res = match_prescription_medicine_to_catalogue({'medicine_name': 'Levothyroxine', 'strength': '50 mcg'})
+        self.assertEqual(res.match_status, 'MATCHED')
+        matched_ids = {m.id for m in res.matched_medicines}
+        self.assertNotIn(self.med_levo_100.id, matched_ids)
+        self.assertNotIn(self.med_levo_50_mg.id, matched_ids)
+        self.assertEqual(get_pharmacy_medicine_stock(self.pharmacy_a, res.medicine), 0)
+
+    def test_spelling_variant_telismartan_matches_correct_strength_only(self):
+        """Misspelled 'Telismartan' with '40 mg' matches 'Telmisartan 40 mg' (never 80 mg) and reads inventory."""
+        Inventory.objects.create(
+            pharmacy=self.pharmacy_a,
+            medicine=self.med_telmisartan_40,
+            batch_number='TEL-40',
+            expiry_date=self.today + timedelta(days=90),
+            quantity=30,
+        )
+        Inventory.objects.create(
+            pharmacy=self.pharmacy_a,
+            medicine=self.med_telmisartan_80,
+            batch_number='TEL-80',
+            expiry_date=self.today + timedelta(days=90),
+            quantity=45,
+        )
+        PrescriptionMedicine.objects.create(
+            prescription=self.prescription,
+            medicine_name='Telismartan',
+            strength='40 mg',
+            dosage='1 tablet',
+            frequency='OD',
+            duration='15 days',
+            source='AI_CONFIRMED',
+        )
+
+        reports = check_prescription_pharmacy_availability(
+            self.prescription,
+            patient_lat=23.2500,
+            patient_lon=77.4200,
+            radius_km=10.0,
+        )
+        alpha = next(r for r in reports if r.pharmacy_id == self.pharmacy_a.id)
+        item = alpha.items[0]
+        self.assertEqual(item.match_status, 'MATCHED')
+        self.assertEqual(item.matched_catalogue_id, self.med_telmisartan_40.id)
+        self.assertEqual(item.available_quantity, 30)
+        self.assertEqual(item.required_quantity, 15)
+        self.assertEqual(item.availability_status, 'FULLY_AVAILABLE')
+
+    def test_unmatched_medicine_distinguished_from_out_of_stock(self):
+        """Unmatched catalogue medicine must report UNMAPPED + NOT_STOCKED rather than OUT_OF_STOCK."""
+        PrescriptionMedicine.objects.create(
+            prescription=self.prescription,
+            medicine_name='CompletelyUnknownMedXYZ',
+            strength='100 mg',
+            dosage='1 tablet',
+            frequency='OD',
+            duration='5 days',
+            source='MANUAL',
+        )
+        reports = check_prescription_pharmacy_availability(
+            self.prescription,
+            patient_lat=23.2500,
+            patient_lon=77.4200,
+            radius_km=10.0,
+        )
+        item = reports[0].items[0]
+        self.assertEqual(item.match_status, 'UNMAPPED')
+        self.assertEqual(item.availability_status, 'NOT_STOCKED')
+        self.assertIn('No matching medicine found in master catalogue', item.explanation)
+
+    def test_compound_regimen_and_missing_details_behavior(self):
+        """Valid compound strings calculate quantity; genuinely missing fields explain clearly without inventing values."""
+        qty_comp, note_comp = parse_quantity_or_calculate_course({
+            'dosage': '1 tablet',
+            'frequency': '1-0-1 (after food)',
+            'duration': '2 weeks',
+        })
+        self.assertEqual(qty_comp, 28)
+        self.assertIn('28 units', note_comp)
+
+        qty_half, _ = parse_quantity_or_calculate_course({
+            'dosage': '1/2 tablet',
+            'frequency': 'OD',
+            'duration': '10d',
+        })
+        self.assertEqual(qty_half, 5)
+
+        qty_miss, note_miss = parse_quantity_or_calculate_course({
+            'dosage': '1 tablet',
+            'frequency': '',
+            'duration': '',
+        })
+        self.assertIsNone(qty_miss)
+        self.assertEqual(note_miss, 'Required quantity not specified (missing: frequency, duration).')
+
+

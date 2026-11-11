@@ -3100,6 +3100,35 @@ class GeminiVisionServiceTests(SimpleTestCase):
         self.assertEqual(result.metadata["page_count"], 2)
         self.assertEqual(len(result.medicines), 2)
 
+    @override_settings(GEMINI_API_KEY="test-mock-api-key")
+    def test_optional_quantity_and_regimen_fields_preserved(self):
+        """Optional quantity and full dosage/frequency/duration fields survive validation."""
+        payload = {
+            "medicines": [
+                {
+                    "medicine_name": "Levothyroxine",
+                    "strength": "50 mcg",
+                    "dosage": "1 tablet",
+                    "frequency": "OD",
+                    "duration": "30 days",
+                    "quantity": "30 tablets",
+                    "instructions": "Empty stomach",
+                    "needs_verification": False,
+                    "verification_reason": "",
+                }
+            ],
+            "unclear_details": [],
+        }
+        mock_response = MagicMock()
+        mock_response.text = json.dumps(payload)
+        self.mock_client.models.generate_content.return_value = mock_response
+
+        result = extract_prescription_details([self.sample_page_1], client=self.mock_client)
+        self.assertEqual(result.medicines[0]["dosage"], "1 tablet")
+        self.assertEqual(result.medicines[0]["frequency"], "OD")
+        self.assertEqual(result.medicines[0]["duration"], "30 days")
+        self.assertEqual(result.medicines[0]["quantity"], "30 tablets")
+
 
 class PrescriptionMedicineSchemaEnhancementTests(TestCase):
     """

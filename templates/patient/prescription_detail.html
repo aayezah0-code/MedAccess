@@ -245,9 +245,14 @@
                                                 <input type="text" name="duration" value="{{ item.duration }}" class="form-input" placeholder="e.g. 5 days">
                                             </div>
                                             <div class="form-group">
-                                                <label class="form-label">Instructions</label>
-                                                <input type="text" name="instructions" value="{{ item.instructions }}" class="form-input" placeholder="e.g. After meals">
+                                                <label class="form-label">Quantity</label>
+                                                <input type="text" name="quantity" value="{{ item.quantity }}" class="form-input" placeholder="e.g. 10 tablets (optional)">
                                             </div>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label class="form-label">Instructions</label>
+                                            <input type="text" name="instructions" value="{{ item.instructions }}" class="form-input" placeholder="e.g. After meals">
                                         </div>
 
                                         <div class="form-actions-right">
@@ -1163,7 +1168,23 @@
             (p.items || []).forEach(item => {
                 const availClass = 'avail-' + item.availability_status.toLowerCase();
                 let displayStatus = item.availability_status.replace(/_/g, ' ');
-                if (item.availability_status === 'IN_STOCK') displayStatus = 'In Stock (Indeterminate Qty)';
+                if (item.match_status === 'UNMAPPED' || item.availability_status === 'NOT_STOCKED') {
+                    displayStatus = 'Not in Catalogue';
+                } else if (item.availability_status === 'IN_STOCK') {
+                    displayStatus = 'In Stock (Qty Unspecified)';
+                } else if (item.availability_status === 'PARTIALLY_AVAILABLE') {
+                    displayStatus = 'Insufficient Stock';
+                }
+
+                const rxParts = [];
+                if (item.prescribed_dosage) rxParts.push('Dosage: ' + item.prescribed_dosage);
+                if (item.prescribed_frequency) rxParts.push('Freq: ' + item.prescribed_frequency);
+                if (item.prescribed_duration) rxParts.push('Duration: ' + item.prescribed_duration);
+                if (item.prescribed_quantity) rxParts.push('Qty: ' + item.prescribed_quantity);
+                if (item.prescribed_instructions) rxParts.push('Notes: ' + item.prescribed_instructions);
+                const rxSummaryLine = rxParts.length > 0
+                    ? `<span class="pharma-med-note" style="color: var(--color-text-muted);">${escapeHtml(rxParts.join(' \u2022 '))}</span>`
+                    : '';
 
                 html += `
                     <div class="pharma-med-row">
@@ -1172,6 +1193,7 @@
                                 ${escapeHtml(item.prescribed_name)}
                                 ${item.prescribed_strength ? `<small style="color: #64748b;">(${escapeHtml(item.prescribed_strength)})</small>` : ''}
                             </span>
+                            ${rxSummaryLine}
                             <span class="pharma-med-note">
                                 ${escapeHtml(item.explanation || '')}
                                 ${item.required_quantity_note ? ` &bull; <em>${escapeHtml(item.required_quantity_note)}</em>` : ''}
@@ -1249,7 +1271,12 @@
             }
 
             const availClass = 'avail-' + (item.availability_status || '').toLowerCase();
-            const displayStatus = (item.availability_status || '').replace(/_/g, ' ');
+            let displayStatus = (item.availability_status || '').replace(/_/g, ' ');
+            if (item.match_status === 'UNMAPPED' || item.availability_status === 'NOT_STOCKED') {
+                displayStatus = 'Not in Catalogue';
+            } else if (item.availability_status === 'PARTIALLY_AVAILABLE') {
+                displayStatus = 'Insufficient Stock';
+            }
 
             tbodyHtml += `
                 <tr>

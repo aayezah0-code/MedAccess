@@ -269,17 +269,18 @@ def enrich_prescription_details(prescription):
         if isinstance(raw_medicines, list):
             for idx, raw_item in enumerate(raw_medicines):
                 if isinstance(raw_item, dict):
-                    name = str(raw_item.get('medicine_name', '')).strip()
+                    name = str(raw_item.get('medicine_name') or '').strip()
                     item_dict = {
                         'index': idx,
                         'medicine_name': name,
-                        'strength': str(raw_item.get('strength', '')).strip(),
-                        'dosage': str(raw_item.get('dosage', '')).strip(),
-                        'frequency': str(raw_item.get('frequency', '')).strip(),
-                        'duration': str(raw_item.get('duration', '')).strip(),
-                        'instructions': str(raw_item.get('instructions', '')).strip(),
+                        'strength': str(raw_item.get('strength') or '').strip(),
+                        'dosage': str(raw_item.get('dosage') or '').strip(),
+                        'frequency': str(raw_item.get('frequency') or '').strip(),
+                        'duration': str(raw_item.get('duration') or '').strip(),
+                        'quantity': str(raw_item.get('quantity') or '').strip(),
+                        'instructions': str(raw_item.get('instructions') or '').strip(),
                         'needs_verification': bool(raw_item.get('needs_verification', False)),
-                        'verification_reason': str(raw_item.get('verification_reason', '')).strip(),
+                        'verification_reason': str(raw_item.get('verification_reason') or '').strip(),
                         'is_confirmed': idx in confirmed_indices,
                     }
                 elif isinstance(raw_item, str) and raw_item.strip():
@@ -291,6 +292,7 @@ def enrich_prescription_details(prescription):
                         'dosage': '',
                         'frequency': '',
                         'duration': '',
+                        'quantity': '',
                         'instructions': '',
                         'needs_verification': False,
                         'verification_reason': '',
@@ -563,6 +565,10 @@ def confirm_extracted_medicine_view(request, pk):
     dosage = request.POST.get('dosage', '').strip()[:255] or None
     frequency = request.POST.get('frequency', '').strip()[:100] or None
     duration = request.POST.get('duration', '').strip()[:100] or None
+    if 'quantity' in request.POST:
+        quantity = request.POST.get('quantity', '').strip()[:100] or None
+    else:
+        quantity = str(original_item.get('quantity') or '').strip()[:100] or None
     instructions = request.POST.get('instructions', '').strip() or None
 
     try:
@@ -573,6 +579,7 @@ def confirm_extracted_medicine_view(request, pk):
             dosage=dosage,
             frequency=frequency,
             duration=duration,
+            quantity=quantity,
             instructions=instructions,
             source='AI_CONFIRMED',
             extracted_index=extracted_index,
