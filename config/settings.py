@@ -178,6 +178,47 @@ STORAGES = {
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
+# Private Tigris S3-compatible object storage (enabled in production via USE_TIGRIS_STORAGE=True)
+USE_TIGRIS_STORAGE = os.getenv('USE_TIGRIS_STORAGE', 'False').strip().lower() in ('1', 'true', 'yes', 'on')
+AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID', '')
+AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY', '')
+AWS_STORAGE_BUCKET_NAME = os.getenv('AWS_STORAGE_BUCKET_NAME', 'medaccess-prescriptions')
+AWS_S3_ENDPOINT_URL = os.getenv('AWS_S3_ENDPOINT_URL', 'https://t3.storage.dev')
+AWS_S3_REGION_NAME = os.getenv('AWS_S3_REGION_NAME', 'auto')
+
+
+def build_tigris_storage_config():
+    """Build STORAGES['default'] config for private Tigris S3-compatible storage."""
+    from botocore.config import Config
+
+    return {
+        "BACKEND": "storages.backends.s3.S3Storage",
+        "OPTIONS": {
+            "access_key": AWS_ACCESS_KEY_ID,
+            "secret_key": AWS_SECRET_ACCESS_KEY,
+            "bucket_name": AWS_STORAGE_BUCKET_NAME,
+            "endpoint_url": AWS_S3_ENDPOINT_URL,
+            "region_name": AWS_S3_REGION_NAME,
+            "addressing_style": "virtual",
+            "signature_version": "s3v4",
+            "default_acl": None,
+            "querystring_auth": True,
+            "querystring_expire": 300,
+            "file_overwrite": False,
+            "client_config": Config(
+                s3={"addressing_style": "virtual"},
+                signature_version="s3v4",
+                request_checksum_calculation="when_required",
+                response_checksum_validation="when_required",
+            ),
+        },
+    }
+
+
+_IS_TEST_RUN = 'test' in sys.argv or any('test' in arg for arg in sys.argv)
+if USE_TIGRIS_STORAGE and not _IS_TEST_RUN:
+    STORAGES["default"] = build_tigris_storage_config()
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 

@@ -191,9 +191,9 @@ def upload_prescription_view(request):
 
             # Step 5 - 9: Process file & execute Gemini Vision extraction
             try:
-                # Step 5: Pass file through Task 3A file processor
-                file_target = getattr(prescription.prescription_image, 'path', None) or prescription.prescription_image
-                processed = process_prescription_file(file_target)
+                # Step 5: Pass storage-opened file through Task 3A file processor (works for local and S3 storage)
+                with prescription.prescription_image.open('rb') as rx_file:
+                    processed = process_prescription_file(rx_file)
 
                 # Step 6: Extract structured prescription details via Task 3B service
                 extraction_result = extract_prescription_details(processed)
@@ -353,16 +353,10 @@ def prescription_list_view(request):
     if patient_profile:
         prescriptions = patient_profile.prescriptions.order_by('-uploaded_at')
         for rx in prescriptions:
-            # File format detection (PDF vs Image) and storage presence check
+            # File format detection (PDF vs Image) without remote HEAD calls per item
             rx.is_pdf = bool(
                 rx.prescription_image and rx.prescription_image.name.lower().endswith('.pdf')
             )
-            try:
-                rx.file_exists = bool(
-                    rx.prescription_image and rx.prescription_image.storage.exists(rx.prescription_image.name)
-                )
-            except Exception:
-                rx.file_exists = False
 
             # Categorized medicines and confirmation progress
             summary = enrich_prescription_details(rx)
@@ -1766,19 +1760,15 @@ def prescription_secure_image_view(request, pk):
     user = request.user
     authorized = False
 
-    role = getattr(user, 'role', '')
-
-    if role == 'PATIENT':
-        if hasattr(user, 'patient_profile') and prescription.patient_id == user.patient_profile.id:
-            authorized = True
-    elif role == 'PHARMACY':
-        if hasattr(user, 'pharmacy_profile'):
-            authorized = PrescriptionRequest.objects.filter(
-                prescription=prescription,
-                pharmacy=user.pharmacy_profile,
-                status__in=['PENDING', 'ACCEPTED', 'PROCESSING', 'READY_FOR_PICKUP', 'COMPLETED']
-            ).exists()
-    elif user.is_staff or user.is_superuser or role == 'ADMIN':
+    if hasattr(user, 'patient_profile') and prescription.patient_id == user.patient_profile.id:
+        authorized = True
+    elif hasattr(user, 'pharmacy_profile') and PrescriptionRequest.objects.filter(
+        prescription=prescription,
+        pharmacy=user.pharmacy_profile,
+        status__in=['PENDING', 'ACCEPTED', 'PROCESSING', 'READY_FOR_PICKUP', 'COMPLETED']
+    ).exists():
+        authorized = True
+    elif user.is_staff or user.is_superuser or getattr(user, 'role', '').upper() == 'ADMIN':
         authorized = True
 
     if not authorized:
@@ -1788,7 +1778,12 @@ def prescription_secure_image_view(request, pk):
         raise Http404("No document attached to this prescription.")
 
     try:
+        storage = prescription.prescription_image.storage
+        if not storage.exists(prescription.prescription_image.name):
+            raise Http404("Prescription document does not exist in storage.")
         f = prescription.prescription_image.open('rb')
+    except Http404:
+        raise
     except Exception:
         raise Http404("Prescription document could not be opened.")
 

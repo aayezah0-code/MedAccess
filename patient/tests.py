@@ -1264,6 +1264,123 @@ class PrescriptionSecureImageSecurityTests(TestCase):
         self.assertEqual(response.status_code, 404)
         missing_rx.delete()
 
+    def test_remote_storage_missing_object_returns_404_before_open(self):
+        """If remote storage reports exists() == False, view returns 404 without calling open()."""
+        mock_storage = MagicMock()
+        mock_storage.exists.return_value = False
+        self.client.login(username='secure_patient1', password='TestPassword123!')
+        with patch.object(self.prescription.prescription_image.field, 'storage', mock_storage):
+            response = self.client.get(self.image_url)
+        self.assertEqual(response.status_code, 404)
+        mock_storage.exists.assert_called_once_with(self.prescription.prescription_image.name)
+        mock_storage.open.assert_not_called()
+
+
+class TigrisStorageIntegrationTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.patient_user = User.objects.create_user(
+            username='tigris_patient',
+            email='tigris_patient@medaccess.test',
+            password='TestPassword123!',
+            role='PATIENT',
+            first_name='Aarav'
+        )
+        self.patient_user.email_verified = True
+        self.patient_user.save()
+        self.patient_profile = PatientProfile.objects.create(
+            user=self.patient_user,
+            blood_group='B+'
+        )
+        img = Image.new('RGB', (100, 100), color='white')
+        buf = io.BytesIO()
+        img.save(buf, format='JPEG')
+        self.valid_image_bytes = buf.getvalue()
+
+    def tearDown(self):
+        for rx in Prescription.objects.filter(patient=self.patient_profile):
+            try:
+                if rx.prescription_image and rx.prescription_image.storage.exists(rx.prescription_image.name):
+                    rx.prescription_image.storage.delete(rx.prescription_image.name)
+            except Exception:
+                pass
+
+    def test_build_tigris_storage_config_instantiates_private_s3_storage(self):
+        """Tigris storage builder produces private S3Storage options compatible with Tigris and boto3."""
+        from django.core.files.storage import InvalidStorageError, storages
+        from storages.backends.s3 import S3Storage
+        from config.settings import build_tigris_storage_config
+
+        cfg = build_tigris_storage_config()
+        self.assertEqual(cfg['BACKEND'], 'storages.backends.s3.S3Storage')
+        opts = cfg['OPTIONS']
+        self.assertEqual(opts['addressing_style'], 'virtual')
+        self.assertEqual(opts['signature_version'], 's3v4')
+        self.assertIsNone(opts['default_acl'])
+        self.assertTrue(opts['querystring_auth'])
+        self.assertFalse(opts['file_overwrite'])
+        self.assertEqual(opts['client_config'].request_checksum_calculation, 'when_required')
+        self.assertEqual(opts['client_config'].response_checksum_validation, 'when_required')
+
+        try:
+            instance = storages.create_storage({
+                **cfg,
+                'OPTIONS': {
+                    **opts,
+                    'access_key': 'test-access-key',
+                    'secret_key': 'test-secret-key',
+                    'bucket_name': 'medaccess-prescriptions',
+                    'endpoint_url': 'https://t3.storage.dev',
+                    'region_name': 'auto',
+                },
+            })
+        except InvalidStorageError as exc:
+            self.fail(f"Failed to instantiate Tigris S3Storage: {exc}")
+
+        self.assertIsInstance(instance, S3Storage)
+        self.assertEqual(instance.bucket_name, 'medaccess-prescriptions')
+        self.assertEqual(instance.endpoint_url, 'https://t3.storage.dev')
+
+    @patch('patient.views.extract_prescription_details')
+    def test_upload_prescription_works_without_filesystem_path(self, mock_extract):
+        """Upload processing opens the FieldFile through Storage API even when .path raises NotImplementedError."""
+        from django.db.models.fields.files import FieldFile
+
+        mock_extract.return_value = GeminiExtractionResult(
+            medicines=[{
+                'medicine_name': 'Paracetamol',
+                'strength': '500 mg',
+                'dosage': '1 tablet',
+                'frequency': '1-0-1',
+                'duration': '3 days',
+                'instructions': 'After food',
+                'needs_verification': False,
+                'verification_reason': '',
+            }],
+            unclear_details=[],
+            raw_json='{}',
+            metadata={'model': 'gemini-3.5-flash-lite', 'page_count': 1, 'duration_seconds': 0.1}
+        )
+        self.client.login(username='tigris_patient', password='TestPassword123!')
+        valid_file = SimpleUploadedFile(
+            name='tigris_rx.jpg',
+            content=self.valid_image_bytes,
+            content_type='image/jpeg'
+        )
+        with patch.object(FieldFile, 'path', new_callable=lambda: property(lambda self: (_ for _ in ()).throw(NotImplementedError("S3 storage has no local path")))):
+            response = self.client.post(
+                reverse('patient:upload_prescription'),
+                {'prescription_image': valid_file},
+                follow=True,
+            )
+
+        self.assertEqual(response.status_code, 200)
+        prescription = Prescription.objects.filter(patient=self.patient_profile).first()
+        self.assertIsNotNone(prescription)
+        self.assertEqual(prescription.status, 'COMPLETED')
+        self.assertTrue(prescription.prescription_image.name.startswith('patient/prescriptions/'))
+
+
 
 
 from unittest.mock import patch, MagicMock
